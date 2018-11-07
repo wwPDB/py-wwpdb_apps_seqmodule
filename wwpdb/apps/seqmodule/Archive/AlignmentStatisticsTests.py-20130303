@@ -1,0 +1,146 @@
+##
+# File:    AlignmentStatisticsTests.py
+# Author:  jdw
+# Date:    1-Feb-2010
+# Updates:
+# 12-Mar-2010 jdw Revised example handling.
+# 20-Apr-2010 jdw Ported to module seqmodule.
+##
+"""
+Test cases for the update of alignment statistics.  These tests first
+load data to the sequence data store and then perform an update of the
+alignment statistics in the feature dictionaries for coordinate and
+reference sequences.
+
+Note - these test cases require the RCSB environment -
+
+"""
+__docformat__ = "restructuredtext en"
+__author__    = "John Westbrook"
+__email__     = "jwest@rcsb.rutgers.edu"
+__license__   = "Creative Commons Attribution 3.0 Unported"
+__version__   = "V0.07"
+
+
+import sys, unittest, traceback
+import time, os, os.path
+
+from wwpdb.apps.seqmodule.webapp.WebRequest      import SequenceInputRequest
+from wwpdb.apps.seqmodule.io.SequenceDataImport  import SequenceDataImportRcsb
+from wwpdb.apps.seqmodule.align.AlignmentStatistics import AlignmentStatistics
+
+class AlignmentStatisticsTests(unittest.TestCase):
+    def setUp(self):
+        # Create a session object
+        #
+        self.__verbose=True
+        self.__lfh = sys.stderr
+        #
+        # Create a session object and session directories for test cases
+        self.__reqObj=SequenceInputRequest(paramDict={},verbose=self.__verbose,log=self.__lfh)
+        self.__reqObj.setValue("SessionPath","../sessions")
+        self.__sobj=self.__reqObj.newSessionObj()
+        self.__sessionPath=self.__sobj.getPath()
+        #
+        # Local example data -
+        #
+        #self.__rcsbIdExample='RCSB101544'
+        #self.__rcsbIdExample='RCSB058417'        
+        #
+        # Load up some test data - 
+        #
+        #self.__rcsbId='RCSB101544'
+        #self.__rcsbId='RCSB054845'
+        #self.__rcsbId='RCSB160027'
+        #self.__rcsbId= 'RCSB056215'
+        #
+        #self.__rcsbIdExample='RCSB058417'        
+        #self.__rcsbIdExample='rcsb058198'
+        self.__rcsbIdExample='rcsb058195'        
+        #self.__rcsbIdExample='rcsb101653'        
+
+        # Repository example ids
+        #
+        self.__rcsbId='rcsb057823'
+        self.__idList=['rcsb057171','rcsb057620','rcsb057630','rcsb057584','RCSB055517','RCSB055521','RCSB055427','RCSB055438',
+                       'RCSB029080','RCSB057750','RCSB057764','RCSB057679','RCSB057685','rcsb056215','rcsb057525','rcsb057776',
+                       'rcsb055453','rcsb057430']
+
+    def tearDown(self):
+        pass
+    
+
+    def testStatsRcsbExample(self): 
+        """ 
+        """
+        self.__lfh.write("\n------------------------ ")
+        self.__lfh.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        self.__lfh.write(" -------------------------\n")
+        try:
+            self.__reqObj.setValue("RcsbDataPath","../examples/rcsb-data")
+            self.__reqObj.setValue("RcsbReferenceSequencePath","../examples/rcsb-sequence")
+            
+            sdi=SequenceDataImportRcsb(reqObj=self.__reqObj,rcsbId=self.__rcsbIdExample,fileSource='rcsb-repository',
+                                       verbose=self.__verbose,log=self.__lfh,fetchPdbFile=False)
+            sdi.doImport()
+            #sdi.printIt()
+            alstat=AlignmentStatistics(sessionObj=self.__sobj,verbose=self.__verbose,log=self.__lfh)
+            alstat.doUpdate()
+            
+        except:
+            traceback.print_exc(file=self.__lfh)
+            self.fail()
+
+
+    def testStatsRepository(self): 
+        """ 
+        """
+        self.__lfh.write("\n------------------------ ")
+        self.__lfh.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        self.__lfh.write(" -------------------------\n")
+        try:
+            self.__reqObj.setValue("RcsbDataPath","/annotation")
+            self.__reqObj.setValue("RcsbReferenceSequencePath","/www-rcsb/supertool/blast/rcsb")                
+            
+            sdi=SequenceDataImportRcsb(reqObj=self.__reqObj,rcsbId=self.__rcsbId,fileSource='rcsb-repository',verbose=self.__verbose,log=self.__lfh)
+            sdi.doImport()            
+            alstat=AlignmentStatistics(sessionObj=self.__sobj,verbose=self.__verbose,log=self.__lfh)
+            alstat.doUpdate()
+            
+        except:
+            traceback.print_exc(file=self.__lfh)
+            self.fail()
+
+
+    def testStatsRepositoryList(self): 
+        """ 
+        """
+        self.__lfh.write("\n------------------------ ")
+        self.__lfh.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        self.__lfh.write(" -------------------------\n")
+        try:
+            for id in self.__idList:
+                self.__reqObj.setValue("RcsbDataPath","/annotation")
+                self.__reqObj.setValue("RcsbReferenceSequencePath","/www-rcsb/supertool/blast/rcsb")                                
+                sdi=SequenceDataImportRcsb(reqObj=self.__reqObj,rcsbId=id,fileSource='rcsb-repository',verbose=self.__verbose,log=self.__lfh,fetchPdbFile=False)
+                sdi.doImport()
+                sdi.printIt()
+                alstat=AlignmentStatistics(sessionObj=self.__sobj,verbose=self.__verbose,log=self.__lfh)
+                alstat.doUpdate()
+            
+        except:
+            traceback.print_exc(file=self.__lfh)
+            self.fail()
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(AlignmentStatisticsTests("testStatsRcsbExample"))
+    return suite
+
+
+def xxsuiteAll():
+    return unittest.makeSuite(AlignmentStatisticsTests,'test')
+
+if __name__ == '__main__':
+    unittest.main()
+

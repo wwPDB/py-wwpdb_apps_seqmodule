@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Sequence Alignment Depiction V0.04</title>
+  <link rel="stylesheet" type="text/css" media="all" href="/styles/oneColLiqCtrHdr.css" />
+  <link rel="stylesheet" type="text/css" media="all" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.2/themes/south-street/jquery-ui.css" />
+  <link rel="stylesheet" type="text/css" media="print" href="/styles/print.css" />
+  <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+  <script type="text/javascript">google.load("jquery", "1.4.1"); google.load("jqueryui", "1.7.2");</script>
+  <!--[if IE]><script type="text/javascript" src="/js/excanvas.compiled.js" charset="utf-8"></script><![endif]-->
+  <script type="text/javascript">
+  var sessionID="%(sessionid)s";
+  var seqView = "%(seqview)s";
+  var alignIds = "%(alignids)s";
+  </script>
+  <script type="text/javascript" src="/js/main.js"></script>
+</head>
+<body class="oneColLiqCtrHdr">
+<div id="container">
+  <div id="header">
+  	<div id="logo"><a href="/seqtool/index.html" title="Home"><img src="/images/wwpdb_logo.gif" width="187" height="58" alt="logo" /></a></div>
+    <div id="headerCont">
+   	  <h1>Sequence Alignment Tool</h1>
+      <div class="loading"></div>
+    </div>
+  <!-- end #header --></div>
+  <br class="clearfloat" />
+  <div id="mainContent">
+    <p class="noprint">
+    <input type="button" id="go" name="go" value="Save Alignment" />
+    <input type="button" id="refresh" name="refresh" value="Refresh Alignment" />
+    <input type="button" id="makeedit" name="makeedit" value="Make Editable" />
+    <input type="button" id="makeselect" name="makeselect" value="Make Selectable" />
+    <input type="button" id="makesort" name="makesort" value="Make Sortable" />
+    <select id="viewer" name="viewer">
+		<option value="jmol" selected="selected">Jmol</option>
+		<option value="astex">Astex</option>
+	</select>
+    <input type="button" id="view3d" name="view3d" value="Load 3D Viewer" />
+    <select id="gedittype" name="gedittype" class="inp-ala-gly">
+		<option value="cf-ala-gly" class="inp-ala-gly" selected="selected">ALA/GLY</option>
+		<option value="cf-glu-gln" class="inp-glu-gln">GLU/GLN</option>
+        <option value="cf-asp-asn" class="inp-asp-asn">ASP/ASN</option>
+	</select>
+    <input type="button" id="predefgedit" name="predefgedit" value="Change" />
+    <input type="button" id="deleteselect" name="delectselect" value="Mark for Deletion" />
+    <input type="button" id="makeglobaledit" name="makeglobaledit" value="Make Global Edit" />
+    <input type="button" id="undo" name="undo" value="Undo" />
+    </p>
+    <div class="errmsg ui-state-error ui-corner-all"></div>
+    <p id="feedback">You've selected: <span id="select-result">none</span>.</p>
+	<div id="result"><img class="loadimg" src="/images/loading.gif" alt="Loading..." /></div>
+    <div id="tableview"><img class="loadimg" src="/images/loading.gif" alt="Loading..." /></div>
+    <br class="clearfloat" />
+    <div id="molviewer" title="3D Viewer"></div>
+    <div id="globaldialog" title="Change Selected Values"></div>
+    <br />
+    <div class="ui-state-highlight ui-corner-all">
+        <p><span class="ui-icon ui-icon-info fltlft"></span>
+            <span class="bgcolconflict smallbox">Conflicts</span>
+            <span class="bgcoldelete smallbox">Deleted Residues</span>
+            <span class="bgcolundo smallbox">Undo</span>
+            <span class="bgcolreplace smallbox">Replace</span>
+            <span class="bgcolinsert smallbox">Insert</span>
+            <span class="bgcoldna smallbox">DNA</span>
+            <span class="bgcolrna smallbox">RNA</span>
+            <br class="clearfloat" />
+        </p>
+    </div>
+    <br />
+    <br />
+	<!-- end #mainContent --></div>
+  <div id="footer">
+    <p>&copy; 2010 wwPDB Sequence Editor tool Alpha Site V0.05</p>
+  <!-- end #footer --></div>
+<!-- end #container --></div>
+</body>
+</html>

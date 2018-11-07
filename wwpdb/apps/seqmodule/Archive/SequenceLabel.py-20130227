@@ -1,0 +1,502 @@
+##
+# File:    SequenceLabel.py
+# Date:    16-Dec-2009
+#
+# Updates:
+#  15-Jan-2010 jdw Refactor 
+#  18-Jan-2010 jdw Add sequence label
+#  18-Jan-2010 jdw Add sequence version identifier
+#  19-Jan-2010 jdw Add alternative sequence identifier         
+#  12-Feb-2010 jdw Add class SequenceFeature()
+#  20-Apr-2010 jdw Port to module seqmodule.
+#  02-May-2010 jdw Add accessors for source features.
+##
+"""
+Containers for sequence and residue labels/features used as identifiers and classifiers
+of aligned sequence data. 
+
+"""
+__docformat__ = "restructuredtext en"
+__author__    = "John Westbrook"
+__email__     = "jwest@rcsb.rutgers.edu"
+__license__   = "Creative Commons Attribution 3.0 Unported"
+__version__   = "V0.07"
+
+import sys
+
+class SequenceFeature(object):
+    """  Manages access to sequence feature data -
+
+         Storage model is dictionary of key value pairs -
+
+         Content include database identifiers, source details, and sequence comparison statistics.
+    """
+    def __init__(self,verbose=False):
+        self.__versbose=verbose
+        self.__fListStr  = ['DB_NAME','DB_CODE','DB_ACCESSION','SOURCE_ORGANISM','SOURCE_STRAIN','SOURCE_TAXID','POLYMER_TYPE']
+        self.__fListNum  = ['ALIGN_LENGTH','AUTH_XYZ_SEQ_SIM','AUTH_XYZ_SEQ_SIM_WITH_GAPS',
+                            'MATCH_LENGTH','AUTH_REF_SEQ_SIM','AUTH_REF_SEQ_SIM_WITH_GAPS',
+                            'AUTH_REF_SEQ_SIM_BLAST','REF_MATCH_BEGIN','REF_MATCH_END','ORG_ORDER_ID']
+        self.__fD={}
+        self.__reset()
+            
+    def __reset(self):
+        self.__fD={}
+        for ff in self.__fListStr:
+            self.__fD[ff]=''
+        for ff in self.__fListNum:
+            self.__fD[ff]=0
+
+    def printIt(self,log=sys.stderr):
+        log.write("+SequenceFeature() - Feature Dictionary\n")        
+        for k,v in self.__fD.items():
+            log.write("  Key=%20s  : %s\n" % (k,v))
+
+    def clear(self):
+        self.__reset()
+
+    def get(self):
+        return self.__fD
+
+    def set(self,featureDictionary):
+        self.__reset()
+        for k,v in featureDictionary.items():
+            if ((k in self.__fListStr) or (k in self.__fListNum)) :
+                self.__fD[k]=v
+
+
+    def setItem(self,ky,val):
+        if ((ky in self.__fListStr) or (ky in self.__fListNum)) :
+            self.__fD[ky]=val
+
+    def getItem(self,ky):
+        if self.__fD.has_key(ky):
+            return self.__fD[ky]
+        else:
+            return ''
+
+    def setPolymerType(self, type):
+        self.__fD['POLYMER_TYPE']=type
+
+    def getPolymerType(self):
+        if self.__fD.has_key('POLYER_TYPE'):
+            return (self.__fD['POLYMER_TYPE'])
+        else:
+            return ''
+        
+        
+    def setId(self, dbName='',dbCode='', dbAccession=''):
+        self.__fD['DB_NAME']=dbName
+        self.__fD['DB_CODE']=dbCode
+        self.__fD['DB_ACCESSION']=dbAccession
+
+    def setSource(self, organism='',strain='', taxid=''):
+        self.__fD['SOURCE_ORGANISM']=organism
+        self.__fD['SOURCE_STRAIN']=strain
+        self.__fD['SOURCE_TAXID']=taxid
+
+    def getSourceOrganism(self):
+        if (self.__fD.has_key('SOURCE_ORGANISM')):
+            return (self.__fD['SOURCE_ORGANISM'])
+        else:
+            return ''
+
+    def getSourceTaxId(self):
+        if (self.__fD.has_key('SOURCE_TAXID')):
+            return (self.__fD['SOURCE_TAXID'])
+        else:
+            return ''
+
+    def getSourceStrain(self):
+        if (self.__fD.has_key('SOURCE_STRAIN')):    
+            return (self.__fD['SOURCE_STRAIN'])
+        else:
+            return ''
+
+    def getMatchLength(self):
+        if (self.__fD.has_key('MATCH_LENGTH')):    
+            return (self.__fD['MATCH_LENGTH'])
+        else:
+            return 0
+
+
+    def setAuthXyzAlignDetails(self, seqLen=0, alignLen=0,seqSim=0.0,seqSimWithGaps=0.0):
+        self.__fD['MATCH_LENGTH']=seqLen
+        self.__fD['ALIGN_LENGTH']=alignLen
+        self.__fD['AUTH_XYZ_SEQ_SIM']=seqSim
+        self.__fD['AUTH_XYZ_SEQ_SIM_WITH_GAPS']=seqSimWithGaps
+
+    def setAuthRefAlignDetails(self, seqLen=0, alignLen=0,seqSim=0.0,seqSimWithGaps=0.0):
+        self.__fD['MATCH_LENGTH']=seqLen
+        self.__fD['ALIGN_LENGTH']=alignLen
+        self.__fD['AUTH_REF_SEQ_SIM']=seqSim
+        self.__fD['AUTH_REF_SEQ_SIM_WITH_GAPS']=seqSimWithGaps
+
+    def clearAlignDetails(self):
+        self.__fD['REF_MATCH_BEGIN']=0
+        self.__fD['REF_MATCH_END']=0                
+        self.__fD['MATCH_LENGTH']=0
+        self.__fD['ALIGN_LENGTH']=0
+        self.__fD['AUTH_XYZ_SEQ_SIM']=0.0
+        self.__fD['AUTH_XYZ_SEQ_SIM_WITH_GAPS']=0.0
+        self.__fD['AUTH_REF_SEQ_SIM']=0.0
+        self.__fD['AUTH_REF_SEQ_SIM_WITH_GAPS']=0.0        
+        
+    def markupDatabaseReferenceWithUrl(self,seqAltId=0):
+        return self.__markupDatabaseReferenceWithUrl(dbName=self.__fD['DB_NAME'],dbAccession=self.__fD['DB_ACCESSION'],seqAltId=seqAltId)
+    
+    def __markupDatabaseReferenceWithUrl(self,dbName,dbAccession,seqAltId=0):
+        if (seqAltId > 0):
+            altDetails = " (R" + str(seqAltId) + ") "
+        else:
+            altDetails = ""
+            
+        if (dbName == "UNP"):
+            lab ='<a href="http://www.uniprot.org/uniprot/%s" target="blank">%s</a>' %  (dbAccession,dbName + ":" + dbAccession + altDetails)
+        elif (dbName == "GENBANK"):
+            lab = dbName + ":" + dbAccession + altDetails
+        else:
+            lab = dbName + ":" + dbAccession + altDetails
+        return lab
+
+    def markupAuthorFeatures(self):
+        return self.__markupAlignmentFeatures(dbSourceOrg=self.__fD['SOURCE_ORGANISM'],taxId=self.__fD['SOURCE_TAXID'])
+        
+    def markupReferenceFeatures(self):
+        return self.__markupAlignmentFeatures(dbSourceOrg=self.__fD['SOURCE_ORGANISM'],taxId=self.__fD['SOURCE_TAXID'],
+                                              alignLength=self.__fD['ALIGN_LENGTH'],seqSim=self.__fD['AUTH_REF_SEQ_SIM'],
+                                              seqSimWithGaps=self.__fD['AUTH_REF_SEQ_SIM_WITH_GAPS'],
+                                              alignBegin=self.__fD['REF_MATCH_BEGIN'],alignEnd=self.__fD['REF_MATCH_END']
+                                              )
+
+    def __markupAlignmentFeatures(self,dbSourceOrg,taxId='',alignLength=0, seqSim=0.0, seqSimWithGaps=0.0, alignBegin=0, alignEnd=0):
+        
+        dL=[]
+        """if (len(dbSourceOrg) > 0):
+            tS='<span class="detailkey">Organism: </span><span class="detailvalue">%s</span><br />' % dbSourceOrg
+            dL.append(tS)
+
+        if (len(taxId) > 0):
+            tS='<span class="detailkey">Taxid: </span><span class="detailvalue">%s</span><br />' % taxId
+            dL.append(tS)"""
+
+        
+        if ( seqSim > 0.001):
+            tS='<span class="detailkey">Identity (w/o gaps): </span><span class="detailvalue">%6.3f</span><br />' % float(seqSim)
+            dL.append(tS)
+
+        """if ( seqSimWithGaps > 0.001):
+            tS='<span class="detailkey">Identity (w/ gaps): </span><span class="detailvalue">%6.3f</span><br />' % float(seqSimWithGaps)
+            dL.append(tS)"""
+
+        if ( alignLength > 0):
+            tS='<span class="detailkey">Align length (w/ author sequence): </span><span class="detailvalue">%d</span><br />' % int(alignLength)
+            dL.append(tS)
+
+        if ( alignEnd > 0):
+            tS='<span class="detailkey">Align range: </span><span class="detailvalue">%d-%d</span><br />' % (int(alignBegin),int(alignEnd))
+            dL.append(tS)
+
+
+        return "\n".join(dL)
+
+    def markupXyzFeatures(self):
+        return self.__markupXyzFeatures(alignLength=self.__fD['ALIGN_LENGTH'],seqSim=self.__fD['AUTH_XYZ_SEQ_SIM'],
+                                        seqSimWithGaps=self.__fD['AUTH_XYZ_SEQ_SIM_WITH_GAPS'])        
+        
+    def __markupXyzFeatures(self,  alignLength=0, seqSim=0.0, seqSimWithGaps=0.0):
+        
+        dL=[]
+        if ( alignLength > 0):
+            tS='<span class="detailkey">Align length (w/ author sequence): </span><span class="detailvalue">%d</span><br />' % int(alignLength)
+            dL.append(tS)
+
+        if ( seqSim > 0.001):
+            tS='<span class="detailkey">Identity (w/o gaps):</span><span class="detailvalue">%6.3f </span><br />' % float(seqSim)
+            dL.append(tS)
+
+        if ( seqSimWithGaps > 0.001):
+            tS='<span class="detailkey">Identity (w/ gaps):</span><span class="detailvalue">%6.3f </span><br />' % float(seqSimWithGaps)
+            dL.append(tS)            
+
+        return "\n".join(dL)
+
+    
+
+class SequenceLabel(object):
+    """
+    Container for sequence labels within sequence alignment depictions - 
+
+    The sequence label includes the following information:
+
+    Sequence type (e.g. ref,auth,coordinate(xyz),)
+    Sequence instance identifier   (e.g. PDB chain identifier, PDBx asym_id,)
+    Alternative identifier         (Identifies alternatives via integer 0, 1, 2, ...  where 0 is primary case)
+    Version identifier             (e.g. integer 0, 1, 2, ...  where 0 is the starting version)
+
+    The packed sequence label has the format:
+
+    seqType + '_' + seqInstId + '_' + seqAltId  + '_' + seqVersion 
+
+    """
+
+    def __init__(self,verbose=False):
+        self.__versbose=verbose
+        self.__reset()
+        
+    def __reset(self):
+        self.__seqType=''
+        self.__seqInstId=''
+        self.__seqAltId=1                
+        self.__seqVersion=1        
+
+    def set(self,seqType='ref', seqInstId='',  seqAltId=1, seqVersion=1):
+        self.__seqType=seqType
+        self.__seqInstId=seqInstId
+        self.__seqAltId=int(seqAltId)
+        self.__seqVersion=int(seqVersion)
+
+    def get(self):
+        return ( self.__seqType, self.__seqInstId, int(self.__seqAltId), int(self.__seqVersion))        
+
+    def getSequenceType(self):
+        return self.__seqType
+
+    def setSequenceType(self,seqType):
+        self.__seqType=seqType
+
+    def getSequenceInstId(self):
+        return self.__seqInstId
+
+    def setSequenceInstId(self,seqInstId):
+        self.__seqInstId=seqInstId
+
+    def getSequenceAlternativeId(self):
+        return int(self.__seqAltId)
+
+    def setSequenceAlternativeId(self,seqAltId):
+        self.__seqAltId=int(seqAltId)
+
+    def getSequenceVersion(self):
+        return int(self.__seqVersion)
+
+    def setSequenceVersion(self,seqVersion):
+        self.__seqVersion=int(seqVersion)
+
+    def printIt(self,ofh):
+        ofh.write("\nResidue Label Contents:\n")
+        ofh.write("  Sequence type            %s\n"  % self.__seqType)
+        ofh.write("  Sequence instance    Id  %s\n"  % self.__seqInstId)
+        ofh.write("  Sequence alternative Id  %s\n"  % str(self.__seqAltId))        
+        ofh.write("  Sequence version     Id  %s\n"  % str(self.__seqVersion))        
+
+
+    def pack(self):
+        """
+        Return a string identifier containing sequence label details.
+        
+        """
+        idS = self.__seqType  + '_' + self.__seqInstId + '_' + str(self.__seqAltId) + '_' + str(self.__seqVersion)
+        return idS
+
+    def unpack(self,sequenceLabelString):
+        """
+        Update the internal sequence details with the data stored in the input sequence label.
+        """
+        self.__reset()
+        try:
+            idL=sequenceLabelString.split('_')
+            self.__seqType          =idL[0]
+            self.__seqInstId        =idL[1]
+            self.__seqAltId         =int(idL[2])
+            self.__seqVersion       =int(idL[3])
+            return True
+        except:
+            return False
+
+
+    def getDict(self):
+        """
+        Return a dictionary of the elements of the sequence label details.
+        """
+        idD={}
+        idD['TYPE']            =self.__seqType
+        idD['CHAIN_ID']        =self.__seqInstId
+        idD['ALTERNATIVE_ID']  =self.__seqAltId
+        idD['VERSION']         =self.__seqVersion
+        return idD 
+
+
+class ResidueLabel(object):
+    """
+    Container for residue labels within sequence alignments -
+
+    The residue label includes the following information:
+
+    Sequence type (e.g. ref,auth,coordinate(xyz),)
+    Sequence instance identifier    (e.g. PDB chain identifier, PDBx asym_id,)
+    Sequence version identifier     (e.g. integer 1, 2, ...  where 1 is the starting version)
+    Sequence alternative identifier (e.g. integer 1, 2, ...  where 1 is the primary case)
+    Residue code - (e.g. amino acid 3-letter code)
+    Residue label index  - (PDB format residue index)
+    Sequence index  - residue position in sequence zero-based index
+    Alignment index - residue position in alignment (zero-based index)
+    Type - AA, RNA, DNA, SA
+
+    The packed residue label has the format:
+
+    seqType + '_' + seqInstId + '_' + seqAltId + '_' + seqVersion + '_' + residueCode3 + '_'
+            + residueLabelIndex + '_' +  seqIndex + '_' + alignIndex + '_' + residueType
+        
+    """
+    def __init__(self,verbose=False):
+        self.__versbose=verbose
+        self.__reset()
+        
+    def __reset(self):
+        self.__seqType=''
+        self.__seqInstId=''
+        self.__seqAltId=1        
+        self.__seqVersion=1                       
+        self.__residueCode3=''
+        self.__residueLabelIndex=''
+        self.__alignIndex=0
+        self.__seqIndex=0
+        self.__residueType='AA'
+
+    def set(self,seqType='ref',seqInstId='', seqAltId=1, seqVersion=1, residueCode3='',residueLabelIndex=0,alignIndex=0,seqIndex=0,residueType='AA'):
+        self.__seqType=seqType
+        self.__seqInstId=seqInstId
+        self.__seqAltId=int(seqAltId)        
+        self.__seqVersion=int(seqVersion)
+        self.__residueCode3=residueCode3
+        self.__residueLabelIndex=residueLabelIndex
+        self.__seqIndex=seqIndex
+        self.__alignIndex=int(alignIndex)
+        self.__residueType=residueType
+        
+    def getSequenceType(self):
+        return self.__seqType
+
+    def setSequenceType(self,seqType):
+        self.__seqType=seqType
+
+    def getResidueType(self):
+        return self.__residueType
+
+    def setResidueType(self,residueType):
+        self.__residueType=residueType        
+
+    def getSequenceInstId(self):
+        return self.__seqInstId
+
+    def setSequenceInstId(self,seqInstId):
+        self.__seqInstId=seqInstId
+
+    def getSequenceAltId(self):
+        return int(self.__seqAltId)
+
+    def setSequenceAltId(self,seqAltId):
+        self.__seqAltId=int(seqAltId)
+
+
+    def getResidueCode3(self):
+        return self.__residueCode3
+
+    def setResidueCode3(self,residueCode3):
+        self.__residueCode3=residueCode3    
+
+    def getResidueLabelIndex(self):
+        return self.__residueLabelIndex
+
+    def setResidueLabelIndex(self,residueLabelIndex):
+        self.__residueLabelIndex=residueLabelIndex
+
+    def getAlignmentIndex(self):
+        return int(self.__alignIndex)
+
+    def setAlignmentIndex(self,alignIndex):
+        self.__alignIndex=int(alignIndex)
+
+    def getSequenceIndex(self):
+        return self.__seqIndex
+
+    def setSequenceIndex(self,seqIndex):
+        self.__seqIndex=seqIndex
+
+    def getSequenceVersion(self):
+        return int(self.__seqVersion)
+
+    def setSequenceVersion(self,seqVersion):
+        self.__seqVersion=int(seqVersion)
+        
+    def printIt(self,ofh):
+        ofh.write("\nResidue Label Contents:\n")
+        ofh.write("  Sequence type         %s\n"  % self.__seqType)
+        ofh.write("  Sequence instance Id  %s\n"  % self.__seqInstId)
+        ofh.write("  Sequence alternative  %s\n"  % str(self.__seqAltId))
+        ofh.write("  Sequence version  Id  %d\n"  % str(self.__seqVersion))        
+        ofh.write("  Residue 3-letter code %s\n"  % self.__residueCode3)
+        ofh.write("  Residue label index   %s\n"  % self.__residueLabelIndex)
+        ofh.write("  Sequence  index       %6s\n" % self.__seqIndex)
+        ofh.write("  Alignment index       %6d\n" % int(self.__alignIndex))
+        ofh.write("  Residue type          %6s\n" % str(self.__residueType))                
+
+    def pack(self):
+        """
+        Return a string identifier containing residue label details.
+        
+        """
+        tCode=self.__residueCode3
+        if tCode == ".":
+            tCode = "-"
+        idS = self.__seqType  + '_' + self.__seqInstId + '_' \
+              +  str(self.__seqAltId) + '_' +str(self.__seqVersion) + \
+              '_' + tCode  + '_' + str(self.__residueLabelIndex) + '_' + \
+              str(self.__seqIndex) + '_' + str(self.__alignIndex) + '_' + str(self.__residueType)
+              
+        return idS
+
+    def unpack(self,residueLabelString):
+        """
+        Update the internal residue details with the data stored in the input residue label.
+        """
+        self.__reset()
+        try:
+            idL=residueLabelString.split('_')
+            self.__seqType          =idL[0]
+            self.__seqInstId        =idL[1]
+            self.__seqAltId         =idL[2]            
+            self.__seqVersion       =idL[3]                                    
+            self.__residueCode3    =idL[4]
+            if (self.__residueCode3 == "-"):
+                self.__residueCode3 = "."
+            self.__residueLabelIndex=idL[5]
+            self.__seqIndex         =idL[6]
+            self.__alignIndex       =idL[7]
+            self.__residueType      =idL[8]                        
+
+            return True
+        except:
+            return False
+
+    def getSeq(self):
+        return (self.__seqType,self.__seqInstId,self.__seqAltId, self.__seqVersion)
+    
+    def getDict(self):
+        """
+        Return a dictionary of the elements of the residue label details.
+        """
+        idD={}
+        idD['TYPE']            =self.__seqType
+        idD['CHAIN_ID']        =self.__seqInstId
+        idD['ALTERNATIVE']     =self.__seqAltId
+        idD['VERSION']         =self.__seqVersion
+        idD['CODE3']           =self.__residueCode3
+        idD['INDEX_LABEL']     =self.__residueLabelIndex
+        idD['INDEX_ALIGNMENT'] =self.__alignIndex
+        idD['INDEX_SEQUENCE']  =self.__seqIndex
+        idD['RESIDUE_TYPE']    =self.__residueType
+
+        return idD 
+
