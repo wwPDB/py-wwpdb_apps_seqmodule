@@ -20,7 +20,7 @@ __version__   = "V0.07"
 
 
 import sys, os.path, traceback
-from wwpdb.utils.rcsb.RcsbDpUtility       import RcsbDpUtility
+from wwpdb.utils.dp.RcsbDpUtility       import RcsbDpUtility
 
 class DataFileAdapter(object):
     """  Manage data model format type conversions.

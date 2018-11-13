@@ -27,9 +27,9 @@ import os.path
 from wwpdb.apps.seqmodule.io.ReferenceSequenceUtils import ReferenceSequenceUtils
 from wwpdb.apps.seqmodule.io.ModelSequenceUtils import ModelSequenceUtils
 from wwpdb.apps.seqmodule.io.PdbxIoUtils import PdbxFileIo, ReferenceSequenceIo
-from wwpdb.utils.rcsb.FormatOut import FormatOut
-from wwpdb.utils.rcsb.PathInfo import PathInfo
-from wwpdb.api.facade.ConfigInfo import ConfigInfo, getSiteId
+from wwpdb.io.misc.FormatOut import FormatOut
+from wwpdb.io.locator.PathInfo import PathInfo
+from wwpdb.utils.config.ConfigInfo import ConfigInfo, getSiteId
 
 
 class ReferenceSequenceUtilsTests(unittest.TestCase):

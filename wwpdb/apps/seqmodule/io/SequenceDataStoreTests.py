@@ -19,7 +19,7 @@ __version__   = "V0.07"
 import sys, unittest, traceback
 import time, os, os.path
 
-from wwpdb.api.facade.ConfigInfo                   import ConfigInfo,getSiteId
+from wwpdb.utils.config.ConfigInfo                   import ConfigInfo,getSiteId
 from wwpdb.apps.seqmodule.webapp.SeqModWebRequest  import SeqModInputRequest
 from wwpdb.apps.seqmodule.io.SequenceDataStore     import SequenceDataStore
 from wwpdb.apps.seqmodule.util.SequenceExamples    import SequenceExamples

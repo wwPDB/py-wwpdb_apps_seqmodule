@@ -23,7 +23,7 @@ import sys, os, string, traceback
 
 from wwpdb.apps.seqmodule.io.PdbxIoUtils    import PolymerLinkageIo,PdbxFileIo
 
-from wwpdb.utils.rcsb.RcsbDpUtility                     import RcsbDpUtility
+from wwpdb.utils.dp.RcsbDpUtility                     import RcsbDpUtility
 
 class PolymerLinkageUtils(object):
     """

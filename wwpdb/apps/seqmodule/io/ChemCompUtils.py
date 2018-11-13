@@ -25,7 +25,7 @@ import re
 import traceback
 import time
 import cPickle
-from wwpdb.api.facade.ConfigInfo import ConfigInfo
+from wwpdb.utils.config.ConfigInfo import ConfigInfo
 from cc_dict_util.persist.PdbxChemCompDictUtil import PdbxChemCompDictUtil
 from cc_dict_util.persist.PdbxChemCompDictIndex import PdbxChemCompDictIndex
 

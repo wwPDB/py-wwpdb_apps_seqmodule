@@ -53,16 +53,16 @@ from wwpdb.apps.seqmodule.util.Autodict import Autodict
 # new
 from wwpdb.apps.seqmodule.align.MultiAlignPseudo import MultiAlignPseudo
 #
-from wwpdb.utils.rcsb.PathInfo import PathInfo
-from wwpdb.utils.rcsb.RcsbDpUtility import RcsbDpUtility
-from wwpdb.utils.rcsb.FormatOut import FormatOut
+from wwpdb.io.locator.PathInfo import PathInfo
+from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
+from wwpdb.io.misc.FormatOut import FormatOut
 from wwpdb.utils.pair_align.wrapper.libPairwiseAlignPackage import PairwiseAlign, ostream
 #
-from pdbx.reader.PdbxReader import PdbxReader
-from pdbx.writer.PdbxWriter import PdbxWriter
-from pdbx.reader.PdbxContainers import *
+from mmcif.io.PdbxReader import PdbxReader
+from mmcif.io.PdbxWriter import PdbxWriter
+from mmcif.api.PdbxContainers import *
 #
-#from wwpdb.api.facade.DataReference  import DataFileReference
+#from wwpdb.wwpdb.utils.wf.DataReference  import DataFileReference
 #
 #
 

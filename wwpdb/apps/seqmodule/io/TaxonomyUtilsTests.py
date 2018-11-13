@@ -24,8 +24,8 @@ import os.path
 import time
 
 from wwpdb.apps.seqmodule.io.TaxonomyUtils import TaxonomyUtils
-from wwpdb.utils.rcsb.FormatOut import FormatOut
-from wwpdb.api.facade.ConfigInfo import ConfigInfo, getSiteId
+from wwpdb.io.misc.FormatOut import FormatOut
+from wwpdb.utils.config.ConfigInfo import ConfigInfo, getSiteId
 
 
 class TaxonomyUtilsTests(unittest.TestCase):

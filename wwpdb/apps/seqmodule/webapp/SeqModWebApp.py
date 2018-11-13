@@ -95,12 +95,12 @@ from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabelUtils
 from wwpdb.apps.seqmodule.io.SequenceDataExport import SequenceDataExport
 from wwpdb.api.status.dbapi.WfTracking import WfTracking
 
-from wwpdb.api.facade.ConfigInfo import ConfigInfo
+from wwpdb.utils.config.ConfigInfo import ConfigInfo
 from wwpdb.utils.rcsb.DetachUtils import DetachUtils
 from wwpdb.utils.rcsb.WebUploadUtils import WebUploadUtils
 from wwpdb.utils.rcsb.WebDownloadUtils import WebDownloadUtils
 from wwpdb.utils.rcsb.UtilDataStore import UtilDataStore
-from wwpdb.utils.rcsb.PathInfo import PathInfo
+from wwpdb.io.locator.PathInfo import PathInfo
 
 
 class SeqModWebApp(object):

@@ -14,7 +14,7 @@ Test cases from funning reference sequence database blast searches and processin
 
 import sys, unittest, os, os.path, traceback
 
-from wwpdb.api.facade.ConfigInfo          import ConfigInfo,getSiteId
+from wwpdb.utils.config.ConfigInfo          import ConfigInfo,getSiteId
 from wwpdb.utils.seqdb_v2.BlastProcess    import BlastProcess
 
 

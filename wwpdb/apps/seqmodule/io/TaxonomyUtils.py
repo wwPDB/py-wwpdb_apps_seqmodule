@@ -26,7 +26,7 @@ import sys
 import re
 import traceback
 import cPickle
-from wwpdb.api.facade.ConfigInfo import ConfigInfo
+from wwpdb.utils.config.ConfigInfo import ConfigInfo
 
 
 class TaxonomyUtils(object):

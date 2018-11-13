@@ -45,7 +45,7 @@ from wwpdb.utils.seqdb_v2.ReadNcbiBlastXml import ReadNcbiBlastXmlString
 from wwpdb.utils.seqdb_v2.FetchUnpXml import FetchUnpXml
 from wwpdb.utils.seqdb_v2.FetchNcbiXml import FetchFullNcbiXml, FetchNcbiXml
 from wwpdb.utils.seqdb_v2.FetchUniProtEntry import FetchUniProtEntry
-from wwpdb.utils.rcsb.RcsbDpUtility import RcsbDpUtility
+from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
 from wwpdb.apps.seqmodule.io.BlastPlusReader import BlastPlusReader
 
 

@@ -50,11 +50,11 @@ import sys
 import re
 import traceback
 
-from pdbx_v2.adapter.IoAdapterPy import IoAdapterPy
-from pdbx_v2.adapter.IoAdapterCore import IoAdapterCore
+from mmcif.io.IoAdapterPy import IoAdapterPy
+from mmcif.io.IoAdapterCore import IoAdapterCore
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
-from pdbx_v2.reader.PdbxContainers import *
-from pdbx_v2.reader.DataCategory import DataCategory
+from mmcif.api.PdbxContainers import *
+from mmcif.api.DataCategory import DataCategory
 
 
 class PdbxFileIo(object):

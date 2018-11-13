@@ -45,7 +45,7 @@ from wwpdb.apps.seqmodule.util.SequenceAssign import SequenceAssignArchive, Sequ
 from wwpdb.apps.seqmodule.update.UpdatePolymerEntitySourceDetails import UpdatePolymerEntitySourceDetails
 from wwpdb.apps.seqmodule.control.SequenceDataAssemble import SequenceDataAssemble
 
-from wwpdb.utils.rcsb.FormatOut import FormatOut
+from wwpdb.io.misc.FormatOut import FormatOut
 
 
 class SummaryView(object):

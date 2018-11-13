@@ -18,7 +18,7 @@ __license__   = "Creative Commons Attribution 3.0 Unported"
 __version__   = "V0.07"
 
 import sys,os.path,os, shutil,traceback
-from wwpdb.utils.rcsb.PathInfo                 import PathInfo
+from wwpdb.io.locator.PathInfo                 import PathInfo
 
 from wwpdb.apps.seqmodule.io.SequenceDataStore import SequenceDataStore
 

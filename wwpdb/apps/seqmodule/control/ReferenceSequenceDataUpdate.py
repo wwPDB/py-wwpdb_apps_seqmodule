@@ -23,7 +23,7 @@ from wwpdb.apps.seqmodule.util.SequenceLabel                import SequenceLabel
 from wwpdb.apps.seqmodule.util.SequenceAssign               import SequenceAssignArchive,SequenceAssignDepositor,ReferenceSequence
 from wwpdb.apps.seqmodule.util.SequenceReferenceData        import SequenceReferenceData
 from wwpdb.apps.seqmodule.align.AlignmentStatistics         import AlignmentStatistics
-from wwpdb.utils.rcsb.PathInfo                              import PathInfo
+from wwpdb.io.locator.PathInfo                              import PathInfo
 from wwpdb.apps.seqmodule.control.SequenceDataAssemble      import SequenceDataAssemble
 
 

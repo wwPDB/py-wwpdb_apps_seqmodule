@@ -16,7 +16,7 @@ __license__   = "Creative Commons Attribution 3.0 Unported"
 __version__   = "V0.07"
 
 import sys, os, os.path
-from wwpdb.api.facade.DataReference  import DataFileReference
+from wwpdb.wwpdb.utils.wf.DataReference  import DataFileReference
 
 class PathInfo(object):
     """ Common methods for finding path information for sequence resources and data files.

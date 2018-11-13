@@ -32,13 +32,13 @@ from wwpdb.apps.seqmodule.control.SummaryView import SummaryView
 from wwpdb.apps.seqmodule.control.SummaryViewDepiction import SummaryViewDepiction
 from wwpdb.apps.seqmodule.control.DataImporter import DataImporter
 
-from wwpdb.utils.rcsb.FormatOut import FormatOut
+from wwpdb.io.misc.FormatOut import FormatOut
 
-from wwpdb.api.facade.ConfigInfo import ConfigInfo, getSiteId
+from wwpdb.utils.config.ConfigInfo import ConfigInfo, getSiteId
 from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest
 
-from wwpdb.utils.rcsb.PathInfo import PathInfo
-from wwpdb.utils.rcsb.DataFileAdapter import DataFileAdapter
+from wwpdb.io.locator.PathInfo import PathInfo
+from wwpdb.io.file.DataFileAdapter import DataFileAdapter
 
 
 class SequenceDataPrepTests(unittest.TestCase):

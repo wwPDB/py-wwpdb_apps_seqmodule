@@ -26,9 +26,9 @@ from wwpdb.apps.seqmodule.align.AlignmentViewDepiction import AlignmentViewDepic
 from wwpdb.apps.seqmodule.align.AlignmentStatistics    import AlignmentStatistics
 from wwpdb.apps.seqmodule.control.SequenceDataAssemble import SequenceDataAssemble
 #
-from wwpdb.utils.rcsb.FormatOut                     import FormatOut
-from wwpdb.utils.rcsb.PathInfo                      import PathInfo
-from wwpdb.api.facade.ConfigInfo                    import ConfigInfo,getSiteId
+from wwpdb.io.misc.FormatOut                     import FormatOut
+from wwpdb.io.locator.PathInfo                      import PathInfo
+from wwpdb.utils.config.ConfigInfo                    import ConfigInfo,getSiteId
 from wwpdb.apps.seqmodule.webapp.SeqModWebRequest   import SeqModInputRequest
 
 class AlignmentViewTests(unittest.TestCase):

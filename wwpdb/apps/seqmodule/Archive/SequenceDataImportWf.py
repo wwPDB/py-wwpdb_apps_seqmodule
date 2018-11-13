@@ -40,15 +40,15 @@ from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceDat
 from wwpdb.apps.seqmodule.util.SequenceLabel         import SequenceFeature
 from wwpdb.apps.seqmodule.util.SequenceExamples      import SequenceExamples
 
-from wwpdb.utils.rcsb.FormatOut               import FormatOut
+from wwpdb.io.misc.FormatOut               import FormatOut
 from wwpdb.utils.rcsb.RcsbDpUtil              import RcsbDpUtil
 # for WF version
-from wwpdb.utils.rcsb.RcsbDpUtility           import RcsbDpUtility
-from wwpdb.api.facade.ConfigInfo              import ConfigInfo
+from wwpdb.utils.dp.RcsbDpUtility           import RcsbDpUtility
+from wwpdb.utils.config.ConfigInfo              import ConfigInfo
 
 from wwpdb.utils.pair_align.wrapper.libPairwiseAlignPackage import PairwiseAlign, ostream
 
-from wwpdb.api.facade.DataReference  import DataFileReference
+from wwpdb.wwpdb.utils.wf.DataReference  import DataFileReference
 
 def editDistance(s1, s2):
     """

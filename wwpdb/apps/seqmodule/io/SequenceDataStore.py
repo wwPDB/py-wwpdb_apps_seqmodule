@@ -45,7 +45,7 @@ import pprint
 import traceback
 
 from wwpdb.apps.seqmodule.util.Autodict import Autodict
-from wwpdb.utils.rcsb.PathInfo import PathInfo
+from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceFeature
 
 

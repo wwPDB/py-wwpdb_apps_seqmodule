@@ -45,8 +45,8 @@ from wwpdb.apps.seqmodule.io.ReferenceSequenceUtils import ReferenceSequenceUtil
 from wwpdb.apps.seqmodule.link.PolymerLinkageUtils import PolymerLinkageUtils
 from wwpdb.apps.seqmodule.link.PolymerLinkageDepict import PolymerLinkageDepict
 
-from wwpdb.utils.rcsb.PathInfo import PathInfo
-from wwpdb.utils.rcsb.RcsbDpUtility import RcsbDpUtility
+from wwpdb.io.locator.PathInfo import PathInfo
+from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
 from wwpdb.utils.rcsb.UtilDataStore import UtilDataStore
 
 

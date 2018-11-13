@@ -22,11 +22,11 @@ import time, os, os.path
 
 from wwpdb.apps.seqmodule.link.PolymerLinkageUtils  import PolymerLinkageUtils
 from wwpdb.apps.seqmodule.link.PolymerLinkageDepict import PolymerLinkageDepict
-from wwpdb.utils.rcsb.FormatOut  import FormatOut
+from wwpdb.io.misc.FormatOut  import FormatOut
 
-from wwpdb.api.facade.ConfigInfo                        import ConfigInfo,getSiteId
+from wwpdb.utils.config.ConfigInfo                        import ConfigInfo,getSiteId
 from wwpdb.apps.seqmodule.webapp.SeqModWebRequest       import SeqModInputRequest
-from wwpdb.utils.rcsb.PathInfo                          import PathInfo
+from wwpdb.io.locator.PathInfo                          import PathInfo
 
 
 class PolymerLinkageUtilsTests(unittest.TestCase):

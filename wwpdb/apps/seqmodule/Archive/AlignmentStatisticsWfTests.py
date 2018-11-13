@@ -23,8 +23,8 @@ from wwpdb.apps.seqmodule.align.AlignmentStatistics import AlignmentStatistics
 #
 from wwpdb.apps.seqmodule.io.SequenceDataExport  import SequenceDataExportRcsb
 
-from wwpdb.api.facade.DataReference  import DataFileReference
-from wwpdb.api.facade.ConfigInfo import ConfigInfo
+from wwpdb.wwpdb.utils.wf.DataReference  import DataFileReference
+from wwpdb.utils.config.ConfigInfo import ConfigInfo
 from wwpdb.utils.rcsb.RcsbDpUtil import RcsbDpUtil
 
 class SequenceDataImportWfTests(unittest.TestCase):

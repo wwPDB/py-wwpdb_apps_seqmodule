@@ -19,9 +19,9 @@ from wwpdb.utils.seqdb_v2.ReadUnpBlastXml  import ReadUnpBlastXmlString
 from wwpdb.utils.seqdb_v2.NcbiBlastService import NcbiBlastService
 from wwpdb.utils.seqdb_v2.ReadNcbiBlastXml import ReadNcbiBlastXmlString
 from wwpdb.utils.seqdb_v2.mmCIFUtil        import mmCIFUtil
-from pdbx_v2.reader.PdbxContainers         import *
-from pdbx_v2.reader.DataCategory           import DataCategory
-from pdbx_v2.writer.PdbxWriter             import PdbxWriter
+from mmcif.api.PdbxContainers         import *
+from mmcif.api.DataCategory           import DataCategory
+from mmcif.io.PdbxWriter             import PdbxWriter
 #
 
 def sort_comp(a, b):

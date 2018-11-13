@@ -61,7 +61,7 @@ from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel, ResidueLabel,
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
 from wwpdb.apps.seqmodule.io.ChemCompUtils import ChemCompUtils
 from wwpdb.utils.pair_align.wrapper.libPairwiseAlignPackage import PairwiseAlign
-from wwpdb.utils.rcsb.PathInfo import PathInfo
+from wwpdb.io.locator.PathInfo import PathInfo
 
 def IsCompatible(comment, newResName):
     compatibilityMap = { "ala-gly-like" : [ "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", "LYS", \

@@ -43,9 +43,9 @@ from wwpdb.apps.seqmodule.control.SequenceDataAssemble          import SequenceD
 from wwpdb.apps.seqmodule.align.AlignmentStatistics             import AlignmentStatistics
 from wwpdb.apps.seqmodule.align.MultiAlignPseudo                import MultiAlignPseudo
 
-from wwpdb.utils.rcsb.DataFileAdapter                           import DataFileAdapter
+from wwpdb.io.file.DataFileAdapter                           import DataFileAdapter
 from wwpdb.utils.rcsb.RcsbPath                                  import RcsbPath
-from wwpdb.utils.rcsb.PathInfo                                  import PathInfo
+from wwpdb.io.locator.PathInfo                                  import PathInfo
 
 class DataImporter(object):
     """ Controlling class for data import operations
