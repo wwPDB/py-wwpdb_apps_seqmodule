@@ -45,7 +45,8 @@ setup(
     #
     install_requires=['wwpdb.utils.config', 'wwpdb.io', 'wwpdb.utils.session',
                       'wwpdb.utils.wf', 'wwpdb.utils.seqdb_v2', 'wwpdb.utils.db',
-                      'wwpdb.utils.align', 'wwpdb.utils.detach'],
+                      'wwpdb.utils.align', 'wwpdb.utils.detach',
+                      'wwpdb.utils.dp', 'wwpdb.utils.cc_dict_util'],
     packages=find_packages(exclude=['wwpdb.apps.tests-seqmodule',
                                     'mock-data']),
     # Enables Manifest to be used

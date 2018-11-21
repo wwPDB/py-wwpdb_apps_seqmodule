@@ -157,7 +157,7 @@ class PairwiseAlignTests(unittest.TestCase):
             sys.stdout.write("Failed sequences = %d\n" % len(myFails))
 
             sys.stdout.flush()
-            ofh = open("tmp-align-results.out", 'w')
+            ofh = sys.stdout
             ofh.write("This example includes %d test sequences.\n" % len(self.sTests))
             for k, v in self.sTests.items():
                 ofh.write("Conflict list for case %s\n" % k)
@@ -165,7 +165,7 @@ class PairwiseAlignTests(unittest.TestCase):
             ofh.write("Alignment Details \n")
             pA.prAlignmentFull()
             ofh.write("Done\n")
-            ofh.close()
+    
         except:
             traceback.print_exc(file=sys.stdout)
             self.fail()
