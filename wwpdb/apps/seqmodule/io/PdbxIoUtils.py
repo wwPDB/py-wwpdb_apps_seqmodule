@@ -79,7 +79,7 @@ class PdbxFileIo(object):
             cList = self.__ioObj.readFile(fPath)
             return cList[index]
         except:
-            if (self.__verbose):
+            if self.__verbose:
                 traceback.print_exc(file=self.__lfh)
             return None
 
@@ -168,7 +168,7 @@ class PolymerLinkageIo(object):
                     val = str(row[colNames.index(col)])
                     if val is None:
                         val = ''
-                    elif ((val == '.') or (val == '?')):
+                    elif (val == '.') or (val == '?'):
                         val = ''
                     rD[col] = val
                 else:
@@ -320,7 +320,7 @@ class ReferenceSequenceIo(object):
                             rD[col] = ''
                         else:
                             rD[col] = str(row[colNames.index(col)])
-            if (ok):
+            if ok:
                 try:
                     seq_sim = float(rD['identity']) / float(rD['alignLen'])
                     # self.__lfh.write("+ReferenceSequenceIo.readMatchResults() row %d of %d identity %r alignlen %r seq_sim %f\n"
@@ -825,23 +825,24 @@ class ModelFileIo(object):
                 commonName = self.__getFirstValueFromList(["gene_src_common_name", "common_name", "organism_common_name"], catObj, ii)
                 variant = self.__getFirstValueFromList(["pdbx_gene_src_variant", "pdbx_variant"], catObj, ii)
                 #
-                geneName = catObj.getValueOrDefault("pdbx_gene_src_gene", ii, '')
-                hostOrgSource = catObj.getValueOrDefault("pdbx_host_org_scientific_name", ii, '')
-                hostOrgVector = catObj.getValueOrDefault("pdbx_host_org_vector", ii, '')
-                hostOrgVectorType = catObj.getValueOrDefault("pdbx_host_org_vector_type", ii, '')
-                hostOrgStrain = catObj.getValueOrDefault("pdbx_host_org_strain", ii, '')
-                hostOrgTaxId = catObj.getValueOrDefault("pdbx_host_org_ncbi_taxonomy_id", ii, '')
-                hostOrgPlasmidName = catObj.getValueOrDefault("plasmid_name", ii, '')
-                hostOrgCommonName = catObj.getValueOrDefault("host_org_common_name", ii, '')
-                hostOrgCellLine = catObj.getValueOrDefault("pdbx_host_org_cell_line", ii, '')
-                hostOrgVariant = catObj.getValueOrDefault("pdbx_host_org_variant", ii, '')
+                geneName = self.__getValueOrDefault(catObj, "pdbx_gene_src_gene", ii, '')
+                hostOrgSource = self.__getValueOrDefault(catObj, "pdbx_host_org_scientific_name", ii, '')
+                hostOrgVector = self.__getValueOrDefault(catObj, "pdbx_host_org_vector", ii, '')
+                hostOrgVectorType = self.__getValueOrDefault(catObj, "pdbx_host_org_vector_type", ii, '')
+                hostOrgStrain = self.__getValueOrDefault(catObj, "pdbx_host_org_strain", ii, '')
+                hostOrgTaxId = self.__getValueOrDefault(catObj, "pdbx_host_org_ncbi_taxonomy_id", ii, '')
+                hostOrgPlasmidName = self.__getValueOrDefault(catObj, "plasmid_name", ii, '')
+                hostOrgCommonName = self.__getValueOrDefault(catObj, "host_org_common_name", ii, '')
+                hostOrgCellLine = self.__getValueOrDefault(catObj, "pdbx_host_org_cell_line", ii, '')
+                hostOrgVariant = self.__getValueOrDefault(catObj, "pdbx_host_org_variant", ii, '')
 
-                beg = catObj.getValueOrDefault("pdbx_beg_seq_num", ii, beg)
-                end = catObj.getValueOrDefault("pdbx_end_seq_num", ii, end)
+                beg = self.__getValueOrDefault(catObj, "pdbx_beg_seq_num", ii, beg)
+                end = self.__getValueOrDefault(catObj, "pdbx_end_seq_num", ii, end)
                 #
-                entitySeqType = catObj.getValueOrDefault("pdbx_seq_type", ii, entitySeqType)
-                entityPartId = catObj.getValueOrDefault("pdbx_src_id", ii, entityPartId)
-                details = catObj.getValueOrDefault("details", ii, details)
+
+                entitySeqType = self.__getValueOrDefault(catObj, "pdbx_seq_type", ii, entitySeqType)
+                entityPartId = self.__getValueOrDefault(catObj, "pdbx_src_id", ii, entityPartId)
+                details = self.__getValueOrDefault(catObj, "details", ii, details)
 
                 d['SOURCE_NAME'] = scientificName
                 d['SOURCE_COMMON_NAME'] = commonName
@@ -888,13 +889,23 @@ class ModelFileIo(object):
                 rL.append(d)
             #
             # reset the part id to 1 if there is only 1
-            if (len(rL) == 1):
+            if len(rL) == 1:
                 rL[0]['SEQ_PART_ID'] = 1
         except:
             if self.__verbose:
                 traceback.print_exc(file=self.__lfh)
 
         return rL
+
+    def __getValueOrDefault(self, catObj, attrib, row, default):
+        """Returns default value if attribute does not exist or row number out of range
+        """
+        # API changed for lower code. getValueOrDefault used to return default for missing attribute.
+        # Now raises exception.
+        if catObj.hasAttribute(attrib):
+            return catObj.getValueOrDefault(attrib, row, default)
+        else:
+            return default
 
     def assignSourceDefaultList(self, entityId, seqLength=0):
         """ Assign default dictionaries containing source feature details.
@@ -1234,11 +1245,11 @@ class ModelFileIo(object):
         """  _pdbx_original_pdb_coordinates.coord_section
         """
         try:
-            if (self.__currentContainer.exists('pdbx_original_pdb_coordinates')):
+            if self.__currentContainer.exists('pdbx_original_pdb_coordinates'):
                 encapCoordTable = self.__currentContainer.getObj('pdbx_original_pdb_coordinates')
-            elif (self.__currentContainer.exists('ndb_original_pdb_coordinates')):
+            elif self.__currentContainer.exists('ndb_original_pdb_coordinates'):
                 encapCoordTable = self.__currentContainer.getObj('ndb_original_pdb_coordinates')
-            elif (self.__currentContainer.exists('ndb_original_ndb_coordinates')):
+            elif self.__currentContainer.exists('ndb_original_ndb_coordinates'):
                 encapCoordTable = self.__currentContainer.getObj('ndb_original_ndb_coordinates')
             row = encapCoordTable.getRow(0)
         except:
