@@ -23,7 +23,10 @@ import os
 import sys
 import traceback
 import time
-import cPickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 from wwpdb.utils.config.ConfigInfo import ConfigInfo
 from wwpdb.utils.cc_dict_util.persist.PdbxChemCompDictUtil import PdbxChemCompDictUtil
 from wwpdb.utils.cc_dict_util.persist.PdbxChemCompDictIndex import PdbxChemCompDictIndex
@@ -48,7 +51,7 @@ class ChemCompUtils(object):
         self.__pathChemCompDictStoreFile = os.path.join(self.__cI.get('SITE_REFDATA_CHEM_COMP_INDEX_PATH'), 'chemcomp-all.db')
         self.__pathChemCompDictFile = os.path.join(self.__cI.get('SITE_CC_DICT_PATH'), 'Components-all-v3.cif')
         #
-        self.__pickleProtocol = cPickle.HIGHEST_PROTOCOL
+        self.__pickleProtocol = pickle.HIGHEST_PROTOCOL
         #
         self.__parentD = None
         self.__childD = None

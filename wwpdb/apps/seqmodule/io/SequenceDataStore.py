@@ -37,7 +37,10 @@ __version__ = "V0.07"
 
 
 import sys
-import cPickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 import time
 import os
 import os.path
@@ -142,7 +145,7 @@ class SequenceDataStore(object):
         self.__assignD = {}
 
         #
-        #self.__pickleProtocol = cPickle.HIGHEST_PROTOCOL
+        #self.__pickleProtocol = pickle.HIGHEST_PROTOCOL
         self.__pickleProtocol = 0
         #
         self.__setup()
@@ -179,15 +182,15 @@ class SequenceDataStore(object):
     def serialize(self):
         try:
             fb = open(self.__filePath, 'wb')
-            cPickle.dump(self.__E, fb, self.__pickleProtocol)
-            cPickle.dump(self.__G, fb, self.__pickleProtocol)
-            cPickle.dump(self.__P, fb, self.__pickleProtocol)
-            cPickle.dump(self.__I, fb, self.__pickleProtocol)
-            cPickle.dump(self.__D, fb, self.__pickleProtocol)
-            cPickle.dump(self.__S, fb, self.__pickleProtocol)
-            cPickle.dump(self.__L, fb, self.__pickleProtocol)
-            cPickle.dump(self.__depositorAssignD, fb, self.__pickleProtocol)
-            cPickle.dump(self.__assignD, fb, self.__pickleProtocol)
+            pickle.dump(self.__E, fb, self.__pickleProtocol)
+            pickle.dump(self.__G, fb, self.__pickleProtocol)
+            pickle.dump(self.__P, fb, self.__pickleProtocol)
+            pickle.dump(self.__I, fb, self.__pickleProtocol)
+            pickle.dump(self.__D, fb, self.__pickleProtocol)
+            pickle.dump(self.__S, fb, self.__pickleProtocol)
+            pickle.dump(self.__L, fb, self.__pickleProtocol)
+            pickle.dump(self.__depositorAssignD, fb, self.__pickleProtocol)
+            pickle.dump(self.__assignD, fb, self.__pickleProtocol)
             fb.close()
         except:
             if (self.__verbose):
@@ -197,15 +200,15 @@ class SequenceDataStore(object):
     def deserialize(self):
         try:
             fb = open(self.__filePath, 'rb')
-            self.__E = cPickle.load(fb)
-            self.__G = cPickle.load(fb)
-            self.__P = cPickle.load(fb)
-            self.__I = cPickle.load(fb)
-            self.__D = cPickle.load(fb)
-            self.__S = cPickle.load(fb)
-            self.__L = cPickle.load(fb)
-            self.__depositorAssignD = cPickle.load(fb)
-            self.__assignD = cPickle.load(fb)
+            self.__E = pickle.load(fb)
+            self.__G = pickle.load(fb)
+            self.__P = pickle.load(fb)
+            self.__I = pickle.load(fb)
+            self.__D = pickle.load(fb)
+            self.__S = pickle.load(fb)
+            self.__L = pickle.load(fb)
+            self.__depositorAssignD = pickle.load(fb)
+            self.__assignD = pickle.load(fb)
             fb.close()
         except:
             if (self.__debug):

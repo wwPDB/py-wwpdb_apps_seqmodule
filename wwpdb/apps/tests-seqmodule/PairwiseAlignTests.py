@@ -165,7 +165,7 @@ class PairwiseAlignTests(unittest.TestCase):
             ofh.write("Alignment Details \n")
             pA.prAlignmentFull()
             ofh.write("Done\n")
-    
+
         except:
             traceback.print_exc(file=sys.stdout)
             self.fail()

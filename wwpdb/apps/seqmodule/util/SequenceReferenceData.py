@@ -257,7 +257,7 @@ class SequenceReferenceData(object):
             if s == ")":
                 inP=False
                 r3L.append(r3)
-                if SequenceReferenceData._monDict3.has_key(r3):
+                if r3 in SequenceReferenceData._monDict3:
                     r1L.append(SequenceReferenceData._monDict3[r3])
                 else:
                     r1L.append('X')
@@ -266,7 +266,7 @@ class SequenceReferenceData(object):
             if inP:
                 r3 += s
             else:
-                if SequenceReferenceData._monDict1.has_key(s):
+                if s in SequenceReferenceData._monDict1:
                     r3L.append(SequenceReferenceData._monDict1[s])
                 else:
                     r3L.append('UNK')
@@ -295,7 +295,7 @@ class SequenceReferenceData(object):
             if s == ")":
                 inP=False
                 r3L.append(r3)
-                if SequenceReferenceData._monDict3.has_key(r3):
+                if r3 in SequenceReferenceData._monDict3:
                     r1L.append(SequenceReferenceData._monDict3[r3])
                 else:
                     r1L.append('X')
@@ -304,7 +304,7 @@ class SequenceReferenceData(object):
             if inP:
                 r3 += s
             else:
-                if SequenceReferenceData._monDictRNA1.has_key(s):
+                if s in SequenceReferenceData._monDictRNA1:
                     r3L.append(SequenceReferenceData._monDictRNA1[s])
                 else:
                     r3L.append('UNK')
@@ -334,7 +334,7 @@ class SequenceReferenceData(object):
             if s == ")":
                 inP=False
                 r3L.append(r3)
-                if SequenceReferenceData._monDict3.has_key(r3):
+                if r3 in SequenceReferenceData._monDict3:
                     r1L.append(SequenceReferenceData._monDict3[r3])
                 else:
                     r1L.append('X')
@@ -343,7 +343,7 @@ class SequenceReferenceData(object):
             if inP:
                 r3 += s
             else:
-                if SequenceReferenceData._monDictDNA1.has_key(s):
+                if s in SequenceReferenceData._monDictDNA1:
                     r3L.append(SequenceReferenceData._monDictDNA1[s])
                 else:
                     r3L.append('UNK')
@@ -356,7 +356,7 @@ class SequenceReferenceData(object):
         o1L=[]
         if polyTypeCode == "RNA" or polyTypeCode == "XNA":
             for r1 in s1L:
-                if self._complimentRNA.has_key(r1):
+                if r1 in self._complimentRNA:
                     o1L.append(self._complimentRNA[r1])
                 else:
                     if (self.__verbose):
@@ -364,7 +364,7 @@ class SequenceReferenceData(object):
                     o1L.append(r1)
         elif polyTypeCode == "DNA":
             for r1 in s1L:
-                if self._complimentDNA.has_key(r1):
+                if r1 in self._complimentDNA:
                     o1L.append(self._complimentDNA[r1])
                 else:
                     if (self.__verbose):
@@ -391,7 +391,7 @@ class SequenceReferenceData(object):
         for r1 in s1L:
             if r1 in ['-']:
                 continue
-            if SequenceReferenceData._monDict1.has_key(r1):
+            if r1 in SequenceReferenceData._monDict1:
                 sTup3L.append((SequenceReferenceData._monDict1[r1],str(ir),'',idx))
             else:
                 sTup3L.append(('UNK',str(ir),'',idx))
@@ -407,7 +407,7 @@ class SequenceReferenceData(object):
         ir=int(iBegin)
         idx=1
         for r1 in s1L:
-            if SequenceReferenceData._monDictRNA1.has_key(r1):
+            if r1 in SequenceReferenceData._monDictRNA1:
                 sTup3L.append((SequenceReferenceData._monDictRNA1[r1],str(ir),'',idx))
             else:
                 sTup3L.append(('UNK',str(ir),'',idx))
@@ -423,7 +423,7 @@ class SequenceReferenceData(object):
         ir=int(iBegin)
         idx=1
         for r1 in s1L:
-            if SequenceReferenceData._monDictRNA1.has_key(r1):
+            if r1 in SequenceReferenceData._monDictRNA1:
                 sTup3L.append((SequenceReferenceData._monDictDNA1[r1],str(ir),'',idx))
             else:
                 sTup3L.append(('UNK',str(ir),'',idx))
@@ -449,7 +449,7 @@ class SequenceReferenceData(object):
         s1L=self.__toList(s1S)
         s3L=[]
         for r1 in s1L:
-            if SequenceReferenceData._monDict1.has_key(r1):
+            if r1 in SequenceReferenceData._monDict1:
                 s3L.append(SequenceReferenceData._monDict1[r1])
             else:
                 s3L.append('UNK')
@@ -459,7 +459,7 @@ class SequenceReferenceData(object):
         s1L=self.__toList(s1S)
         s3L=[]
         for r1 in s1L:
-            if SequenceReferenceData._monDict1.has_key(r1):
+            if r1 in SequenceReferenceData._monDict1:
                 s3L.append(SequenceReferenceData._monDictDNA1[r1])
             else:
                 s3L.append('UNK')
@@ -469,7 +469,7 @@ class SequenceReferenceData(object):
         s1L=self.__toList(s1S)
         s3L=[]
         for r1 in s1L:
-            if SequenceReferenceData._monDict1.has_key(r1):
+            if r1 in SequenceReferenceData._monDict1:
                 s3L.append(SequenceReferenceData._monDictRNA1[r1])
             else:
                 s3L.append('UNK')
@@ -488,7 +488,7 @@ class SequenceReferenceData(object):
         for r3 in r3List:
             if r3 == self.__gapSymbol:
                 oL.append( self.__gapSymbol )
-            elif SequenceReferenceData._monDict3.has_key(r3):
+            elif r3 in SequenceReferenceData._monDict3:
                 oL.append( SequenceReferenceData._monDict3[r3] )
             else:
                 oL.append('X')
@@ -499,7 +499,7 @@ class SequenceReferenceData(object):
         for r3 in r3List:
             if r3 == self.__gapSymbol:
                 oL.append( self.__gapSymbol )
-            elif SequenceReferenceData._monDict3.has_key(r3):
+            elif r3 in SequenceReferenceData._monDict3:
                 oL.append( SequenceReferenceData._monDict3[r3] )
             else:
                 oL.append('('+r3+')')
@@ -514,7 +514,7 @@ class SequenceReferenceData(object):
         for r3 in r3List:
             if r3 == self.__gapSymbol:
                 tS=self.__gapSymbol
-            elif SequenceReferenceData._monDict3.has_key(r3):
+            elif r3 in SequenceReferenceData._monDict3:
                 tS=SequenceReferenceData._monDict3[r3]
             else:
                 tS='('+r3+')'
@@ -531,12 +531,12 @@ class SequenceReferenceData(object):
     def cnv3To1(self,r3):
         if r3 == self.__gapSymbol:
             return self.__gapSymbol
-        elif SequenceReferenceData._monDict3.has_key(r3):
+        elif r3 in SequenceReferenceData._monDict3:
             return SequenceReferenceData._monDict3[r3]
         else:
             return 'X'        
 
     def isStandard3(self,r3):
-        return SequenceReferenceData._monDict3.has_key(r3)
+        return r3 in SequenceReferenceData._monDict3
 
 

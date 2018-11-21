@@ -23,9 +23,11 @@ __version__ = "V0.07"
 
 import os
 import sys
-import re
 import traceback
-import cPickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 from wwpdb.utils.config.ConfigInfo import ConfigInfo
 
 
@@ -45,7 +47,7 @@ class TaxonomyUtils(object):
         self.__cI = ConfigInfo(self.__siteId)
         self.__taxPath = self.__cI.get('SITE_REFDATA_TAXONOMY_PATH')
 
-        self.__pickleProtocol = cPickle.HIGHEST_PROTOCOL
+        self.__pickleProtocol = pickle.HIGHEST_PROTOCOL
         #
         self.__namesPicPath = os.path.join(self.__taxPath, 'names.pic')
         self.__names = None
@@ -76,7 +78,7 @@ class TaxonomyUtils(object):
     def __serialize(self, d, fn):
         try:
             fb = open(fn, 'wb')
-            cPickle.dump(d, fb, self.__pickleProtocol)
+            pickle.dump(d, fb, self.__pickleProtocol)
             fb.close()
         except:
             pass
@@ -84,7 +86,7 @@ class TaxonomyUtils(object):
     def __deserialize(self, fn):
         try:
             fb = open(fn, 'rb')
-            d = cPickle.load(fb)
+            d = pickle.load(fb)
             fb.close()
             if self.__verbose:
                 self.__lfh.write("+TaxonomyUtils.__deserialize() return %d records for file %s\n" % (len(d), fn))

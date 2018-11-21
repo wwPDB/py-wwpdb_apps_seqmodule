@@ -22,7 +22,13 @@ __license__   = "Creative Commons Attribution 3.0 Unported"
 __version__   = "V0.07"
 
 
-import sys, cPickle, time, os.path
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+import os.path
+import sys
+
 
 def getEditStoreFilename(alignmentTag=''):
     """ Add a tag to the edit store data filename to differentiate multiple active alignment views. - 
@@ -153,7 +159,7 @@ class SequenceEditStore(object):
         self.__sessionPath='.'
         self.__filePath=self.__fileName
 
-        #self.__pickleProtocol = cPickle.HIGHEST_PROTOCOL
+        #self.__pickleProtocol = pickle.HIGHEST_PROTOCOL
         self.__pickleProtocol=0        
         
         self.__setup()
@@ -187,7 +193,7 @@ class SequenceEditStore(object):
     def serialize(self):
         try:
             fb=open(self.__filePath,'wb')
-            cPickle.dump(self.__editList,fb,self.__pickleProtocol)
+            pickle.dump(self.__editList,fb,self.__pickleProtocol)
             fb.close()
         except:
             pass
@@ -195,7 +201,7 @@ class SequenceEditStore(object):
     def deserialize(self):
         try:
             fb=open(self.__filePath,'rb')            
-            self.__editList=cPickle.load(fb)
+            self.__editList=pickle.load(fb)
             fb.close()
             #for tup in tupList:
             #    sEd=SequenceEdit()
