@@ -20,8 +20,8 @@ __license__   = "Creative Commons Attribution 3.0 Unported"
 __version__   = "V0.07"
 
 import sys
-from wwpdb.utils.session.WebRequest   import InputRequest,ResponseContent
-from wwpdb.utils.rcsb.UtilDataStore                     import UtilDataStore
+from wwpdb.utils.session.WebRequest      import InputRequest,ResponseContent
+from wwpdb.utils.session.UtilDataStore   import UtilDataStore
 
 class SeqModInputRequest(InputRequest):
     def __init__(self,paramDict,verbose=False,log=sys.stderr):

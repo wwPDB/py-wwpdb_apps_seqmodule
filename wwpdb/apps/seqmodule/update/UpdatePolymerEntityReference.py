@@ -27,8 +27,7 @@ from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel, SequenceFeatu
 from wwpdb.apps.seqmodule.util.SequenceAssign import SequenceAssignArchive, SequenceAssignDepositor, ReferenceSequence
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
 from wwpdb.apps.seqmodule.align.AlignmentStatistics import AlignmentStatistics
-
-from wwpdb.utils.pair_align.wrapper.libPairwiseAlignPackage import PairwiseAlign
+from wwpdb.utils.align.alignlib import PairwiseAlign
 
 
 class UpdatePolymerEntityReference(object):

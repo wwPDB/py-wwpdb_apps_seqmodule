@@ -43,8 +43,7 @@ from wwpdb.apps.seqmodule.control.SequenceDataAssemble          import SequenceD
 from wwpdb.apps.seqmodule.align.AlignmentStatistics             import AlignmentStatistics
 from wwpdb.apps.seqmodule.align.MultiAlignPseudo                import MultiAlignPseudo
 
-from wwpdb.io.file.DataFileAdapter                           import DataFileAdapter
-from wwpdb.utils.rcsb.RcsbPath                                  import RcsbPath
+from wwpdb.utils.dp.DataFileAdapter                           import DataFileAdapter
 from wwpdb.io.locator.PathInfo                                  import PathInfo
 
 class DataImporter(object):
@@ -386,17 +385,8 @@ class DataImporter(object):
 
              Returns the imported model file Name or None 
         """
-        try:
-            rp=RcsbPath(verbose=self.__verbose,log=self.__lfh)
-            rp.setId(idCode)
-            srcFilePath=rp.getFilePath(fileType='cif')
-            (dirPath,fileName)=os.path.split(srcFilePath)
-            dstFilePath=os.path.join(self.__sessionPath,fileName)
-            shutil.copyfile(srcFilePath,dstFilePath)
-            return fileName
-        except:
-            traceback.print_exc(file=self.__lfh)
-            return None
+        # Not used anymore
+        return None
 
     def __processArchiveOrInstanceCase(self):
             if (self.__verbose):

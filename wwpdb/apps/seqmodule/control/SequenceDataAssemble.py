@@ -28,7 +28,6 @@ __version__ = "V0.09"
 
 import sys
 import os
-import string
 import shutil
 import time
 import traceback
@@ -42,12 +41,11 @@ from wwpdb.apps.seqmodule.io.PdbxIoUtils import PdbxFileIo, ModelFileIo, Referen
 from wwpdb.apps.seqmodule.io.ModelSequenceUtils import ModelSequenceUtils
 from wwpdb.apps.seqmodule.io.ReferenceSequenceUtils import ReferenceSequenceUtils
 
-from wwpdb.apps.seqmodule.link.PolymerLinkageUtils import PolymerLinkageUtils
 from wwpdb.apps.seqmodule.link.PolymerLinkageDepict import PolymerLinkageDepict
 
 from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
-from wwpdb.utils.rcsb.UtilDataStore import UtilDataStore
+from wwpdb.utils.session.UtilDataStore import UtilDataStore
 
 
 class SequenceDataAssemble(object):

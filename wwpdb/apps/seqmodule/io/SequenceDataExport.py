@@ -56,13 +56,11 @@ from wwpdb.apps.seqmodule.align.MultiAlignPseudo import MultiAlignPseudo
 from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
 from wwpdb.io.misc.FormatOut import FormatOut
-from wwpdb.utils.pair_align.wrapper.libPairwiseAlignPackage import PairwiseAlign, ostream
+from wwpdb.utils.align.alignlib import PairwiseAlign
 #
-from mmcif.io.PdbxReader import PdbxReader
 from mmcif.io.PdbxWriter import PdbxWriter
 from mmcif.api.PdbxContainers import *
 #
-#from wwpdb.wwpdb.utils.wf.DataReference  import DataFileReference
 #
 #
 

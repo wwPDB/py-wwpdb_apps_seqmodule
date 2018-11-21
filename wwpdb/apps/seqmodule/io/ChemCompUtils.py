@@ -21,13 +21,12 @@ __version__ = "V0.07"
 
 import os
 import sys
-import re
 import traceback
 import time
 import cPickle
 from wwpdb.utils.config.ConfigInfo import ConfigInfo
-from cc_dict_util.persist.PdbxChemCompDictUtil import PdbxChemCompDictUtil
-from cc_dict_util.persist.PdbxChemCompDictIndex import PdbxChemCompDictIndex
+from wwpdb.utils.cc_dict_util.persist.PdbxChemCompDictUtil import PdbxChemCompDictUtil
+from wwpdb.utils.cc_dict_util.persist.PdbxChemCompDictIndex import PdbxChemCompDictIndex
 
 class ChemCompUtils(object):
     """ Accessors for chemical component index of residue modifications.

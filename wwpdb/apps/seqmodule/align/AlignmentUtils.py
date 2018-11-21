@@ -60,7 +60,7 @@ from wwpdb.apps.seqmodule.io.AlignDataStore import AlignDataStore
 from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel, ResidueLabel, SequenceFeature
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
 from wwpdb.apps.seqmodule.io.ChemCompUtils import ChemCompUtils
-from wwpdb.utils.pair_align.wrapper.libPairwiseAlignPackage import PairwiseAlign
+from wwpdb.utils.align.alignlib import PairwiseAlign
 from wwpdb.io.locator.PathInfo import PathInfo
 
 def IsCompatible(comment, newResName):

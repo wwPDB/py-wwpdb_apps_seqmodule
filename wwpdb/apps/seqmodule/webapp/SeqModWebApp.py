@@ -93,13 +93,13 @@ from wwpdb.apps.seqmodule.align.AlignmentUtils import AlignmentUtils
 from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabelUtils
 
 from wwpdb.apps.seqmodule.io.SequenceDataExport import SequenceDataExport
-from wwpdb.api.status.dbapi.WfTracking import WfTracking
+from wwpdb.utils.wf.dbapi.WfTracking import WfTracking
 
 from wwpdb.utils.config.ConfigInfo import ConfigInfo
-from wwpdb.utils.rcsb.DetachUtils import DetachUtils
-from wwpdb.utils.rcsb.WebUploadUtils import WebUploadUtils
-from wwpdb.utils.rcsb.WebDownloadUtils import WebDownloadUtils
-from wwpdb.utils.rcsb.UtilDataStore import UtilDataStore
+from wwpdb.utils.detach.DetachUtils import DetachUtils
+from wwpdb.utils.session.WebUploadUtils import WebUploadUtils
+from wwpdb.utils.session.WebDownloadUtils import WebDownloadUtils
+from wwpdb.utils.session.UtilDataStore import UtilDataStore
 from wwpdb.io.locator.PathInfo import PathInfo
 
 

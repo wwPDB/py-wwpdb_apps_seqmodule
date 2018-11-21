@@ -30,7 +30,7 @@ from wwpdb.apps.seqmodule.io.SequenceDataStore       import SequenceDataStore
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
 from wwpdb.apps.seqmodule.util.SequenceLabel         import SequenceFeature
 #
-from wwpdb.utils.pair_align.wrapper.libPairwiseAlignPackage import PairwiseAlign
+from wwpdb.utils.align.alignlib import PairwiseAlign
 
 
 class AlignmentStatistics(object):
