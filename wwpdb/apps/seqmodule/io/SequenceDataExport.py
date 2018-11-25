@@ -59,6 +59,8 @@ from wwpdb.io.misc.FormatOut import FormatOut
 from wwpdb.utils.align.alignlib import PairwiseAlign
 #
 from mmcif.io.PdbxWriter import PdbxWriter
+from mmcif.api.DataCategory import DataCategory
+# Is following needed?
 from mmcif.api.PdbxContainers import *
 #
 #
