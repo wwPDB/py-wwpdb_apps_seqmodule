@@ -352,7 +352,7 @@ class SequenceReferenceData(object):
         return (r1L,r3L)
 
     def compliment1NA(self,s1S,polyTypeCode):
-        s1L=self.__toList(s1S)
+        s1L=self.toList(s1S)
         o1L=[]
         if polyTypeCode == "RNA" or polyTypeCode == "XNA":
             for r1 in s1L:
@@ -384,7 +384,7 @@ class SequenceReferenceData(object):
             return self.__cnv1To3ListIdxAA(s1S,iBegin,indexStep=indexStep)
 
     def __cnv1To3ListIdxAA(self,s1S,iBegin,indexStep=1):
-        s1L=self.__toList(s1S)
+        s1L=self.toList(s1S)
         sTup3L=[]
         ir=int(iBegin)
         idx=1
@@ -392,9 +392,9 @@ class SequenceReferenceData(object):
             if r1 in ['-']:
                 continue
             if r1 in SequenceReferenceData._monDict1:
-                sTup3L.append((SequenceReferenceData._monDict1[r1],str(ir),'',idx))
+                sTup3L.append((SequenceReferenceData._monDict1[r1],str(ir),'',idx,r1))
             else:
-                sTup3L.append(('UNK',str(ir),'',idx))
+                sTup3L.append(('UNK',str(ir),'',idx,r1))
                 if (self.__verbose):
                     self.__lfh.write("+SequenceReferenceData.__cnv1To3ListIdAA() Failed to map one-letter-code %s using UNK\n" % r1)
             ir+=indexStep
@@ -402,15 +402,17 @@ class SequenceReferenceData(object):
         return sTup3L
 
     def __cnv1To3ListIdxRNA(self,s1S,iBegin,indexStep=1):
-        s1L=self.__toList(s1S)
+        s1L=self.toList(s1S)
         sTup3L=[]
         ir=int(iBegin)
         idx=1
         for r1 in s1L:
+            if r1 in ['-']:
+                continue
             if r1 in SequenceReferenceData._monDictRNA1:
-                sTup3L.append((SequenceReferenceData._monDictRNA1[r1],str(ir),'',idx))
+                sTup3L.append((SequenceReferenceData._monDictRNA1[r1],str(ir),'',idx,r1))
             else:
-                sTup3L.append(('UNK',str(ir),'',idx))
+                sTup3L.append(('UNK',str(ir),'',idx,r1))
                 if (self.__verbose):
                     self.__lfh.write("+SequenceReferenceData.__cnv1To3ListIdRNA() Failed to map one-letter-code %s using UNK\n" % r1)
             ir+=indexStep
@@ -418,15 +420,17 @@ class SequenceReferenceData(object):
         return sTup3L
 
     def __cnv1To3ListIdxDNA(self,s1S,iBegin,indexStep=1):
-        s1L=self.__toList(s1S)
+        s1L=self.toList(s1S)
         sTup3L=[]
         ir=int(iBegin)
         idx=1
         for r1 in s1L:
-            if r1 in SequenceReferenceData._monDictRNA1:
-                sTup3L.append((SequenceReferenceData._monDictDNA1[r1],str(ir),'',idx))
+            if r1 in ['-']:
+                continue
+            if r1 in SequenceReferenceData._monDictDNA1:
+                sTup3L.append((SequenceReferenceData._monDictDNA1[r1],str(ir),'',idx,r1))
             else:
-                sTup3L.append(('UNK',str(ir),'',idx))
+                sTup3L.append(('UNK',str(ir),'',idx,r1))
                 if (self.__verbose):
                     self.__lfh.write("+SequenceReferenceData.__cnv1To3ListIdRNA() Failed to map one-letter-code %s using UNK\n" % r1)
             ir+=indexStep
@@ -446,7 +450,7 @@ class SequenceReferenceData(object):
 
 
     def __cnv1To3ListAA(self,s1S):
-        s1L=self.__toList(s1S)
+        s1L=self.toList(s1S)
         s3L=[]
         for r1 in s1L:
             if r1 in SequenceReferenceData._monDict1:
@@ -456,26 +460,26 @@ class SequenceReferenceData(object):
         return s3L
 
     def __cnv1To3ListDNA(self,s1S):
-        s1L=self.__toList(s1S)
+        s1L=self.toList(s1S)
         s3L=[]
         for r1 in s1L:
-            if r1 in SequenceReferenceData._monDict1:
+            if r1 in SequenceReferenceData._monDictDNA1:
                 s3L.append(SequenceReferenceData._monDictDNA1[r1])
             else:
                 s3L.append('UNK')
         return s3L
 
     def __cnv1To3ListRNA(self,s1S):
-        s1L=self.__toList(s1S)
+        s1L=self.toList(s1S)
         s3L=[]
         for r1 in s1L:
-            if r1 in SequenceReferenceData._monDict1:
+            if r1 in SequenceReferenceData._monDictRNA1:
                 s3L.append(SequenceReferenceData._monDictRNA1[r1])
             else:
                 s3L.append('UNK')
         return s3L
 
-    def __toList(self,strIn):
+    def toList(self,strIn):
         sL=[]
         for ss in strIn:
             if ss in string.whitespace:
@@ -537,6 +541,6 @@ class SequenceReferenceData(object):
             return 'X'        
 
     def isStandard3(self,r3):
-        return r3 in SequenceReferenceData._monDict3
+        return (r3 in SequenceReferenceData._monDict3)
 
 

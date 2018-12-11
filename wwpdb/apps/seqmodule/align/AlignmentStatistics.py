@@ -174,8 +174,8 @@ class AlignmentStatistics(object):
             #
             r3L=[]
             for tup in seqAuthIdx:
-                r3L.append(tup[0])
-            pA.setReferenceSequence(r3L, 'auth:'+seqId0)
+                r3L.append(str(tup[0]))
+            pA.setReferenceSequence(r3L, 'auth:'+str(seqId0))
 
             # -----
             # Get the instance sequences from the coordinate data.
@@ -209,11 +209,11 @@ class AlignmentStatistics(object):
                 for tup in seqXyzIdx:
                     # Filter any gaps prior to alignment  -- 
                     if tup[0] != self.__gapSymbol:
-                        r3L.append(tup[0])
+                        r3L.append(str(tup[0]))
                         typicalLink.append(0 if ('long_begin' in tup[2]) else 1 )
 
                 sLen[seqId]=len(r3L)
-                pA.addTestSequenceWithLink(r3L,'xyz:'+seqId,typicalLink)
+                pA.addTestSequenceWithLink(r3L,'xyz:'+str(seqId),typicalLink)
             #
             pA.doAlign()
             # 
@@ -227,7 +227,7 @@ class AlignmentStatistics(object):
                 verList=self.__sds.getVersionIds(seqId=seqId, partId=partId, altId=altId, dataType="sequence", seqType='xyz')
                 verLatest=verList[0]                
                 #
-                aL=pA.getAlignment('xyz:'+seqId)
+                aL=pA.getAlignment('xyz:'+str(seqId))
                 alignLength=len(aL)
                 numMatch=0
                 numMatchGaps=0
@@ -303,8 +303,8 @@ class AlignmentStatistics(object):
                 
                 r3L=[]
                 for tup in seqAuthIdx[seqBeg-1:seqEnd]:
-                    r3L.append(tup[0])
-                pA.setReferenceSequence(r3L, 'auth:' + seqId0 + '_P' + str(partId))
+                    r3L.append(str(tup[0]))
+                pA.setReferenceSequence(r3L, 'auth:' + str(seqId0) + '_P' + str(partId))
                 refSeqLen=len(seqAuthIdx[seqBeg-1:seqEnd])
 
                 # Get the sequence of each reference sequence in this group - 
@@ -330,7 +330,7 @@ class AlignmentStatistics(object):
                     seqRefIdx=self.__sds.getSequence(seqId=seqId0,seqType='ref',partId=partId,altId=altId,version=verLatest)
                     r3L=[]
                     for tup in seqRefIdx:
-                        r3L.append(tup[0])
+                        r3L.append(str(tup[0]))
                     sLen[altId]=len(r3L)
                     pA.addTestSequence(r3L,'ref:'+str(altId)+ '_P' + str(partId))
 

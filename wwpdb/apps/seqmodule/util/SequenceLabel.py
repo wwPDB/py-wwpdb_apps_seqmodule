@@ -76,8 +76,8 @@ class SequenceFeatureMap(object):
         #
         for mapTup in mapTupList:
             # Keep the original author provided name for DNA/RNA entities
-            if (mapTup[0] == 'ENTITY_DESCRIPTION') and refFD.has_key('DB_NAME') and (refFD['DB_NAME'] in ['GB','DBJ','EMB','EMBL']):
-                if ((not authFD.has_key(mapTup[0])) or (not authFD[mapTup[0]])) and refFD.has_key(mapTup[1]) and len(refFD[mapTup[1]]) > 1:
+            if (mapTup[0] == 'ENTITY_DESCRIPTION') and ('DB_NAME' in refFD) and (refFD['DB_NAME'] in ['GB','DBJ','EMB','EMBL']):
+                if ((not mapTup[0] in authFD) or (not authFD[mapTup[0]])) and (mapTup[1] in refFD) and len(refFD[mapTup[1]]) > 1:
                     authFD[mapTup[0]] = refFD[mapTup[1]]
                 #
             elif refFD[mapTup[1]] is not None and len(refFD[mapTup[1]]) > 1:
@@ -151,6 +151,7 @@ class SequenceFeature(object):
                            'HOST_ORG_PLASMID_ORIG', 'HOST_ORG_COMMON_NAME_ORIG', 'HOST_ORG_CELL_LINE_ORIG',
                            'DB_MOLECULE_NAME', 'DB_MOLECULE_SYNONYMS', 'DB_GENE_NAME',
                            'DB_MOLECULE_EC', 'DB_MOLECULE_DESCRIPTION', 'DB_MOLECULE_COMMENTS', 'DB_MOLECULE_KEYWORDS',
+                           'REF_ENTRY_ID', 'REF_ENTRY_ENTITY_ID', 'REF_ENTRY_STATUS', 'REF_ENTRY_ANN', 
                            'AUTH_XYZ_SEQ_BEGIN', 'AUTH_XYZ_SEQ_END', 'CURRENT_AUTH_SELECT_ID', 'CURRENT_REF_SELECT_ID']
         #
         self.__fListInt = ['FULL_LENGTH', 'ALIGN_LENGTH', 'MATCH_LENGTH', 'REF_MATCH_BEGIN', 'REF_MATCH_END', 'ORG_ORDER_ID',

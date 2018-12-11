@@ -51,7 +51,7 @@ import unittest
 # os.environ['IN_ANNOTATION'] = "no"
 # ##################################################
 
-from wwpdb.apps.seqmodule.webapp.SeqModWebApp import SeqModWebApp
+from wwpdb.apps.seqmodule.webapp.SeqModWebApp_v2 import SeqModWebApp
 
 class ImportTests(unittest.TestCase):
     def setUp(self):

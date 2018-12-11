@@ -24,7 +24,7 @@ import copy
 
 from wwpdb.apps.seqmodule.io.SequenceDataStore import SequenceDataStore
 from wwpdb.apps.seqmodule.io.TaxonomyUtils import TaxonomyUtils
-from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel, SequenceFeature, SequenceFeatureMap
+from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel, SequenceFeature
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
 
 
@@ -476,7 +476,7 @@ class UpdatePolymerEntityPartitions(object):
                 sTupL = []
                 for sT in seqIdx:
                     comment = self.__getAuthSeqComment(sT[3], pD, seqBegMin, seqEndMax)
-                    sTupL.append((sT[0], sT[1], comment, sT[3]))
+                    sTupL.append((sT[0], sT[1], comment, sT[3], sT[4], sT[5]))
                 ####
                 # self.__sds.setSequence(seqIdx,seqId0,seqType='auth',partId=partId,altId=1,version=nextVer)
                 self.__sds.setSequence(sTupL, seqId0, seqType='auth', partId=partId, altId=1, version=nextVer)
@@ -505,7 +505,7 @@ class UpdatePolymerEntityPartitions(object):
                 sTupL = []
                 for sT in seqIdx:
                     comment = self.__getAuthSeqComment(sT[3], pD, seqBegMin, seqEndMax)
-                    sTupL.append((sT[0], sT[1], comment, sT[3]))
+                    sTupL.append((sT[0], sT[1], comment, sT[3], sT[4], sT[5]))
 
                 # self.__sds.setSequence(seqIdx,seqId0,seqType='auth',partId=partId,altId=1,version=nextVer)
                 # JDW
@@ -574,7 +574,7 @@ class UpdatePolymerEntityPartitions(object):
         seqAuthIdx = self.__sds.getSequence(seqId=seqId0, seqType='auth', partId=1, altId=1, version=vL[0])
         r3List = []
         for sTup in seqAuthIdx:
-            (r3, sIdx, comment, idx) = sTup
+            (r3, sIdx, comment, idx, r1, org_r3) = sTup
             r3List.append(r3)
         seq1 = self.__srd.cnvList3to1WithModsFormatted(r3List, maxLine=60)
         #
@@ -657,7 +657,7 @@ class UpdatePolymerEntityPartitions(object):
             ir = 1
             for r3 in r3L:
                 comment = self.__getAuthSeqComment(ir, pD, seqBegMin, seqEndMax)
-                seqIdxNext.append((r3, str(ir), comment, ir))
+                seqIdxNext.append((r3, str(ir), comment, ir, self.__srd.cnv3To1(r3), r3))
                 ir += 1
             for pId in pD.keys():
                 self.__sds.setSequence(seqIdxNext, seqId0, 'auth', partId=pId, altId=1, version=nextVer)
@@ -692,7 +692,7 @@ class UpdatePolymerEntityPartitions(object):
                     sTupL = []
                     for sT in seqIdx:
                         comment = self.__getAuthSeqComment(sT[3], pD, seqBegMin, seqEndMax)
-                        sTupL.append((sT[0], sT[1], comment, sT[3]))
+                        sTupL.append((sT[0], sT[1], comment, sT[3], sT[4], sT[5]))
                     self.__sds.setSequence(sTupL, seqId0, seqType='auth', partId=partId, altId=1, version=nextVer)
                 if (self.__verbose):
                     self.__lfh.write("+UpdatePolymerEntityPartitions.__updatePolymerEntityPartitions() updating part %d from version %d to %d\n" % (partId, curVer, nextVer))
@@ -720,7 +720,7 @@ class UpdatePolymerEntityPartitions(object):
                     sTupL = []
                     for sT in seqIdx:
                         comment = self.__getAuthSeqComment(sT[3], pD, seqBegMin, seqEndMax)
-                        sTupL.append((sT[0], sT[1], comment, sT[3]))
+                        sTupL.append((sT[0], sT[1], comment, sT[3], sT[4], sT[5]))
                     self.__sds.setSequence(sTupL, seqId0, seqType='auth', partId=partId, altId=1, version=nextVer)
                 #
                 # Update features ... Using data from the principal part.

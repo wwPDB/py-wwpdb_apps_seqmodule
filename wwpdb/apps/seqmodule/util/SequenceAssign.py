@@ -298,7 +298,7 @@ class ReferenceSequenceAssign(object):
     def set(self,seqD):
         try:
             for k,v in seqD.items():
-                if ((v is None) or (v in ['?','.'])):
+                if ((v is None) or (v == '') or (v in ['?','.'])):
                     continue
                 if k in self.__attribStr:
                     self.__D[k]=str(v)
@@ -490,6 +490,8 @@ class SequenceAssignArchive(object):
                             'entity_id':'entity_id', 
                             'pdbx_db_accession':'db_accession', 
                             'pdbx_seq_one_letter_code':'seq_one_letter_code', 
+                            'db_seq_one_letter_code':'seq_one_letter_code',
+                            'seq_one_letter_code':'seq_one_letter_code',
                             'pdbx_align_begin':'seq_align_begin',
                             'db_name':'db_name', 
                             'db_code':'db_code'}

@@ -21,14 +21,13 @@ __email__     = "jwest@rcsb.rutgers.edu"
 __license__   = "Creative Commons Attribution 3.0 Unported"
 __version__   = "V0.07"
 
-
 try:
     import cPickle as pickle
 except ImportError:
-    import pickle
-import os.path
-import sys
+    import pickle as pickle
+#
 
+import sys, time, os.path
 
 def getEditStoreFilename(alignmentTag=''):
     """ Add a tag to the edit store data filename to differentiate multiple active alignment views. - 

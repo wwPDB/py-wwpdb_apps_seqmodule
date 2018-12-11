@@ -275,7 +275,7 @@ class AlignmentUtils(object):
                 leadingFlag = False
             if ((seqType != 'auth') and (sPos[0] == self.__gapSymbol)):
                 continue
-            refSeq.append(sPos[0])
+            refSeq.append(str(sPos[0]))
             tRefSeqIdx.append(sPos)
 
         if (self.__verbose):
@@ -311,7 +311,7 @@ class AlignmentUtils(object):
                 # JDW Gap handling revised  2014-Mar-20
                 # Now preserving any gaps in input sequences in the alignment prep step !
                 if sPos[0] != self.__gapSymbol:
-                    seq3L.append(sPos[0])
+                    seq3L.append(str(sPos[0]))
                     tSeqIdx.append(sPos)
                     typicalLink.append(0 if ('long_begin' in sPos[2]) else 1)
                 elif (preserveGapFlag):
@@ -349,7 +349,7 @@ class AlignmentUtils(object):
             self.__lfh.write("+AlignmentUtils.__prepareSequenceData() completed.\n")
         #
         return (alignGroupId, refDef, seqList)
-     
+
     def __doAlignment(self, refDef, seqList):
         """ Align selected test sequences with the reference sequence.  Produce a list
             of aligned sequences annotated with index information from the input  sequences.
@@ -385,14 +385,13 @@ class AlignmentUtils(object):
         refSeqFD = refDef[4]
         refSeqType = refSeqLabel.getSequenceType()
         seqFeature.set(refSeqFD)
-        self.__lfh.write("\n\n+AlignmentUtils.doAlignment() Starting new alignment with reference sequence refId %s with %d test sequences\n" % (refSeqId, len(seqList)))
         #
         authDefinedMutations = self.__getAuthDefinedMutations(seqFeature.getEntityMutationDetailsOrig())
         #
         pA = PairwiseAlign()
         pA.setVerbose(self.__verbose)
         #   set reference sequence -> ( Sequence(e.g.  [compId,compId,...]), sequence ID(e.g. ref_A_1_1_1) )
-        pA.setReferenceSequence(refSeq3, refSeqId)
+        pA.setReferenceSequence(refSeq3, str(refSeqId))
         for aSeq in seqList:
             authLabel = SequenceLabel()
             authLabel.unpack(aSeq[0])
@@ -400,9 +399,9 @@ class AlignmentUtils(object):
             #   set test sequences -> ( Sequence(e.g.  [compId,compId,...]), sequence ID(e.g. auth_A_1_1_1) )
             if (refSeqType == 'auth') and (seqType == 'ref'):
                 #pA.addTestSequenceWithLinkAndRange(aSeq[2], aSeq[0], aSeq[5], self.__authPartD[seqPartId][1], self.__authPartD[seqPartId][2])
-                pA.addTestSequenceWithLinkAndRange(aSeq[2], aSeq[0], [], self.__authPartD[seqPartId][1], self.__authPartD[seqPartId][2])
+                pA.addTestSequenceWithLinkAndRange(aSeq[2], str(aSeq[0]), [], self.__authPartD[seqPartId][1], self.__authPartD[seqPartId][2])
             else:
-                pA.addTestSequenceWithLink(aSeq[2], aSeq[0], aSeq[5])
+                pA.addTestSequenceWithLink(aSeq[2], str(aSeq[0]), aSeq[5])
             #
         #
         #self.__writeAlignSeqInfo(refSeqId, refSeq3, refSeqType, seqList)
@@ -422,7 +421,7 @@ class AlignmentUtils(object):
 
         alignRefSeq = []
         for aTup in aL0:
-            alignRefSeq.append(aTup[0])
+            alignRefSeq.append(str(aTup[0]))
 
         alignRefSeqIdx = self.__annotateAlignmentWithIndex(alignRefSeq, refSeqIdx, clearSelectedComments=True)
         lenRefAlignment = len(alignRefSeqIdx)
@@ -480,7 +479,7 @@ class AlignmentUtils(object):
 
             alignTestSeq = []
             for aTup in aL:
-                alignTestSeq.append(aTup[1])
+                alignTestSeq.append(str(aTup[1]))
             alignTestSeqIdx = self.__annotateAlignmentWithIndex(alignTestSeq, testSeqIdx)
             lenTestAlignment = len(alignTestSeqIdx)
             if (self.__debug):
@@ -496,7 +495,6 @@ class AlignmentUtils(object):
                         alignRefSeqIdx[ii] = (rT[0], rT[1], rT[2], rT[3], rT[4], '')
                         alignTestSeqIdx[ii] = (tT[0], tT[1], tT[2], tT[3], tT[4], '')
 
-            alignSeq = []
             conflictL = [(0, '')] * len(aL)
             numConflicts = 0
             for ii, aTup in enumerate(aL):
@@ -559,7 +557,6 @@ class AlignmentUtils(object):
                                                              authSeqEnd=refSeqPartEnd, authSeqPartId=testPartId, authDefinedMutations=authDefinedMutations)
 
             alignSeqList.append([testSeqId, testSeqLab, alignTestSeqIdx, conflictL, testSeqFD])
-
         #
         self.__clearExcludedConflicts(alignSeqList)
         #

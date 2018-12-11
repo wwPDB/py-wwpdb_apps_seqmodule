@@ -26,7 +26,7 @@ import cgi
 
 from wwpdb.utils.rcsb.fcgi  import WSGIServer
 #  - Application specific classes - 
-from wwpdb.apps.seqmodule.io.SeqModWebApp import SeqModWebApp
+from wwpdb.apps.seqmodule.webapp.SeqModWebApp_v2 import SeqModWebApp
 
 class MyRequestApp(object):
     """  Handle server interaction using FCGI/WSGI.

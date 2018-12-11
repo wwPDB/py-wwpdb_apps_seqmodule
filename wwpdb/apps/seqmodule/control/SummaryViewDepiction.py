@@ -170,7 +170,7 @@ class SummaryViewDepiction(object):
                 oL.append('<div class="head ui-corner-all">\n')
                 oL.append('<div>\n')
                 oL.append('<a href="#" class="toggle">')
-                oL.append('<span class="fltlft width20px"><span class="ui-icon ui-icon-circle-arrow-s"></span></span><span>Coordinate</span>')
+                oL.append('<span class="fltlft width20px"><span class="ui-icon ui-icon-circle-arrow-e"></span></span><span>Coordinate</span>')
                 oL.append('</a>\n')
                 oL.append('</div>\n')
                 oL.append('</div>')

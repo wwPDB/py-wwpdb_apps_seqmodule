@@ -31,20 +31,26 @@ class SequenceFeatureDepict(object):
         self.__fD=self.__sfObj.get()
 
     def markupDatabaseReferenceWithUrl(self,seqAltId=0):
-        return self.__markupDatabaseReferenceWithUrl(dbName=self.__fD['DB_NAME'],dbAccession=self.__fD['DB_ACCESSION'],dbIsoForm=self.__fD['DB_ISOFORM'],seqAltId=seqAltId)
+        return self.__markupDatabaseReferenceWithUrl(dbName=self.__fD['DB_NAME'],dbAccession=self.__fD['DB_ACCESSION'],dbIsoForm=self.__fD['DB_ISOFORM'],\
+                                                     seqAltId=seqAltId,entryId=self.__fD['REF_ENTRY_ID'],entityId=self.__fD['REF_ENTRY_ENTITY_ID'],\
+                                                     statusCode=self.__fD['REF_ENTRY_STATUS'],annInitial=self.__fD['REF_ENTRY_ANN'])
     
-    def __markupDatabaseReferenceWithUrl(self,dbName,dbAccession,dbIsoForm='',seqAltId=0):
+    def __markupDatabaseReferenceWithUrl(self,dbName,dbAccession,dbIsoForm='',seqAltId=0,entryId='',entityId='',statusCode='',annInitial=''):
 
         displayCode=dbAccession
         if len(dbIsoForm) > 0:        
             displayCode=dbIsoForm
-            
+        #
         if (dbName in ["UNP","SP","TR"]):
             lab ='<a href="http://www.uniprot.org/uniprot/%s" target="blank"><span class="nowrap">%s</span></a>' %  (dbAccession,dbName + ":" + displayCode)
         elif (dbName in ["GENBANK","GB"]):
             lab = dbName + ":" + displayCode
         else:
             lab = dbName + ":" + displayCode
+        #
+        if entryId:
+            lab += '<br/><br/>From:<br/>DepID:' + entryId + '<br/>EntityID:' + entityId  + '<br/>Status:' + statusCode + '<br/>Ann:' + annInitial
+        #
         return lab
 
     def markupAuthorFeatures(self):

@@ -35,12 +35,13 @@ __email__ = "jwest@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.07"
 
-
-import sys
 try:
     import cPickle as pickle
 except ImportError:
-    import pickle
+    import pickle as pickle
+#
+
+import sys
 import time
 import os
 import os.path
@@ -134,6 +135,16 @@ class SequenceDataStore(object):
         self.__fileName = fileName
         self.__filePath = None
         #
+        self.__clear()
+        #
+        #self.__pickleProtocol = pickle.HIGHEST_PROTOCOL
+        self.__pickleProtocol = 0
+        #
+        self.__setup()
+
+    def __clear(self):
+        """
+        """
         self.__D = {}
         self.__I = Autodict()
         self.__E = {}
@@ -144,12 +155,6 @@ class SequenceDataStore(object):
         self.__depositorAssignD = {}
         self.__assignD = {}
 
-        #
-        #self.__pickleProtocol = pickle.HIGHEST_PROTOCOL
-        self.__pickleProtocol = 0
-        #
-        self.__setup()
-
     def __setup(self):
 
         try:
@@ -157,7 +162,9 @@ class SequenceDataStore(object):
             self.__identifier = self.__reqObj.getValue("identifier")
             self.__pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
             if self.__fileName is not None:
-                self.__filePath = os.path.join(self.__sessionPath, self.__fileName)
+                #self.__filePath = os.path.join(self.__sessionPath, self.__fileName)
+                # Using full path file name instead
+                self.__filePath = self.__fileName
             else:
                 self.__filePath = seqDataStatsPath = self.__pI.getSequenceStatsFilePath(self.__identifier, fileSource='session')
 
@@ -196,6 +203,8 @@ class SequenceDataStore(object):
             if (self.__verbose):
                 self.__lfh.write("+SequenceDataStore.__serialize() - failing for %s\n" % self.__filePath)
                 traceback.print_exc(file=self.__lfh)
+            #
+        #
 
     def deserialize(self):
         try:
@@ -214,6 +223,9 @@ class SequenceDataStore(object):
             if (self.__debug):
                 self.__lfh.write("+SequenceDataStore.__deserialize() - failing for %s\n" % self.__filePath)
                 traceback.print_exc(file=self.__lfh)
+            #
+            self.__clear()
+        #
 
     def __makeId(self, dataType, seqType, seqId, partId=1, altId=1, version=1):
         id = "%s_%s_%s_%d_%d_%d" % (dataType, seqType, seqId, int(partId), int(altId), int(version))
@@ -363,7 +375,7 @@ class SequenceDataStore(object):
         """
         """
         try:
-            if self.__I[dataType][seqType][seqId].has_key(int(partId)):
+            if int(partId) in self.__I[dataType][seqType][seqId]:
                 del self.__I[dataType][seqType][seqId][int(partId)]
                 return True
             #

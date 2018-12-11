@@ -33,7 +33,7 @@ from wwpdb.utils.rcsb.fcgi  import WSGIServer
 from webob import Request, Response
 
 #  - URL mapping and application specific classes are launched from SeqModWebApp()
-from wwpdb.apps.seqmodule.webapp.SeqModWebApp import SeqModWebApp
+from wwpdb.apps.seqmodule.webapp.SeqModWebApp_v2 import SeqModWebApp
 
 
 class MyRequestApp(object):

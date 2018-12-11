@@ -79,7 +79,7 @@ class PdbxFileIo(object):
             cList = self.__ioObj.readFile(fPath)
             return cList[index]
         except:
-            if self.__verbose:
+            if (self.__verbose):
                 traceback.print_exc(file=self.__lfh)
             return None
 
@@ -168,7 +168,7 @@ class PolymerLinkageIo(object):
                     val = str(row[colNames.index(col)])
                     if val is None:
                         val = ''
-                    elif (val == '.') or (val == '?'):
+                    elif ((val == '.') or (val == '?')):
                         val = ''
                     rD[col] = val
                 else:
@@ -226,7 +226,7 @@ class PolymerInstanceIo(object):
 
         myList = [ 'auth_asym_id', 'auth_comp_id', 'auth_seq_id', 'comment', 'index' ]
         for col in myList:
-            if col not in myList:
+            if col not in colNames:
                 return {}
             #
         #
@@ -247,7 +247,7 @@ class PolymerInstanceIo(object):
                     rD[col] = val
                 #
             #
-            if rDic.has_key(rD['auth_asym_id']):
+            if rD['auth_asym_id'] in rDic:
                 rDic[rD['auth_asym_id']].append( ( rD['auth_comp_id'], rD['auth_seq_id'], rD['comment'], rD['index'] ) )
             else:
                 rDic[rD['auth_asym_id']] = [ ( rD['auth_comp_id'], rD['auth_seq_id'], rD['comment'], rD['index'] ) ]
@@ -320,7 +320,7 @@ class ReferenceSequenceIo(object):
                             rD[col] = ''
                         else:
                             rD[col] = str(row[colNames.index(col)])
-            if ok:
+            if (ok):
                 try:
                     seq_sim = float(rD['identity']) / float(rD['alignLen'])
                     # self.__lfh.write("+ReferenceSequenceIo.readMatchResults() row %d of %d identity %r alignlen %r seq_sim %f\n"
@@ -839,7 +839,6 @@ class ModelFileIo(object):
                 beg = self.__getValueOrDefault(catObj, "pdbx_beg_seq_num", ii, beg)
                 end = self.__getValueOrDefault(catObj, "pdbx_end_seq_num", ii, end)
                 #
-
                 entitySeqType = self.__getValueOrDefault(catObj, "pdbx_seq_type", ii, entitySeqType)
                 entityPartId = self.__getValueOrDefault(catObj, "pdbx_src_id", ii, entityPartId)
                 details = self.__getValueOrDefault(catObj, "details", ii, details)
@@ -889,7 +888,7 @@ class ModelFileIo(object):
                 rL.append(d)
             #
             # reset the part id to 1 if there is only 1
-            if len(rL) == 1:
+            if (len(rL) == 1):
                 rL[0]['SEQ_PART_ID'] = 1
         except:
             if self.__verbose:
@@ -1245,11 +1244,11 @@ class ModelFileIo(object):
         """  _pdbx_original_pdb_coordinates.coord_section
         """
         try:
-            if self.__currentContainer.exists('pdbx_original_pdb_coordinates'):
+            if (self.__currentContainer.exists('pdbx_original_pdb_coordinates')):
                 encapCoordTable = self.__currentContainer.getObj('pdbx_original_pdb_coordinates')
-            elif self.__currentContainer.exists('ndb_original_pdb_coordinates'):
+            elif (self.__currentContainer.exists('ndb_original_pdb_coordinates')):
                 encapCoordTable = self.__currentContainer.getObj('ndb_original_pdb_coordinates')
-            elif self.__currentContainer.exists('ndb_original_ndb_coordinates'):
+            elif (self.__currentContainer.exists('ndb_original_ndb_coordinates')):
                 encapCoordTable = self.__currentContainer.getObj('ndb_original_ndb_coordinates')
             row = encapCoordTable.getRow(0)
         except:

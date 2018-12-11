@@ -39,9 +39,7 @@ __version__   = "V0.07"
 
 
 import sys, os.path, shutil, glob, traceback
-from wwpdb.apps.seqmodule.control.SequenceDataAssemble          import SequenceDataAssemble
-from wwpdb.apps.seqmodule.align.AlignmentStatistics             import AlignmentStatistics
-from wwpdb.apps.seqmodule.align.MultiAlignPseudo                import MultiAlignPseudo
+from wwpdb.apps.seqmodule.control.SequenceDataAssemble_v2       import SequenceDataAssemble
 
 from wwpdb.utils.dp.DataFileAdapter                           import DataFileAdapter
 from wwpdb.io.locator.PathInfo                                  import PathInfo
@@ -78,12 +76,17 @@ class DataImporter(object):
         self.__uploadFileName = str(self.__reqObj.getValue("UploadFileName"))
         self.__uploadFileType = str(self.__reqObj.getValue("UploadFileType"))
         self.__pI=PathInfo(siteId=self.__siteId,sessionPath=self.__sessionPath,verbose=self.__verbose,log=self.__lfh)
-        self.__fileTypeList = [ [ 'model', 'pdbx', 'model', '1', 'next', True ], \
+        self.__fileTypeList_wf_instance = [ [ 'model', 'pdbx', 'model', '1', 'next', True ], \
                                 [ 'seq-data-stats', 'pic', 'seq stats', 'latest', 'next',  True ], \
                                 [ 'polymer-linkage-report', 'html', 'link report', 'latest', 'next', True ], \
+                                [ 'mismatch-warning', 'pic', 'mismatch warning', 'latest', 'latest', False ], \
+                                [ 'seq-assign', 'pdbx', 'seq assign', 'latest', 'next', False ] ]
+        self.__fileTypeList_archive = [ [ 'model', 'pdbx', 'model', '1', 'next', True ], \
+                                [ 'seq-data-stats', 'pic', 'seq stats', 'latest', 'next',  False ], \
+                                [ 'polymer-linkage-report', 'html', 'link report', 'latest', 'next', False ], \
                                 [ 'seq-assign', 'pdbx', 'seq assign', 'latest', 'next', False ] ]
         self.__seqFileTypeList = [ [ 'seq-align-data', 'pic', 'seq align', 'latest', 'next', False ], \
-                                   [ 'seqdb-match', 'pdbx', 'seqdb match', 'latest', 'latest', False ] ]
+                                   [ 'seqdb-match', 'pic', 'seqdb match', 'latest', 'latest', False ] ]
         self.__polyLinkType = [ 'polymer-linkage-distances', 'pdbx', 'polymer linkage', 'latest', 'latest', False ]
         #
         if (self.__verbose):
@@ -124,9 +127,18 @@ class DataImporter(object):
 
     def copyFiles(self, inputFileSource="archive", inputWfInstanceId=None, outputFileSource="session", outputWfInstanceId=None, versionIndex=3, \
                   includeModelFile=False, includePolyLinkFile=False, checkFileAvailability=False, entityIdList=[], messageHead="DataImporter.copyFiles()"):
-        fileTypeList = self.__fileTypeList[1:]
-        if includeModelFile:
-            fileTypeList = self.__fileTypeList
+        """
+        """
+        if (inputFileSource == "wf-instance") or (outputFileSource == "wf-instance"):
+            fileTypeList = self.__fileTypeList_wf_instance[1:]
+            if includeModelFile:
+                fileTypeList = self.__fileTypeList_wf_instance
+            #
+        else:
+            fileTypeList = self.__fileTypeList_archive[1:]
+            if includeModelFile:
+                fileTypeList = self.__fileTypeList_archive
+            #
         #
         returnOk = True
         afpL = []
@@ -221,7 +233,7 @@ class DataImporter(object):
         """ Copies target model file. Returns the imported model file Name or None
         """
         try:
-            fileType = self.__fileTypeList[0]
+            fileType = self.__fileTypeList_wf_instance[0]
             inputFilePath = self.__pI.getFilePath(self.__identifier, wfInstanceId=inputWfInstanceId, contentType=fileType[0], formatType=fileType[1], \
                                                   fileSource=inputFileSource)
             if not os.access(inputFilePath, os.R_OK):
@@ -339,20 +351,7 @@ class DataImporter(object):
             return False
         #
 
-    def runBlastSearch(self):
-        entityids = str(self.__reqObj.getValue("entityids"))
-        selectedEntityIdList = []
-        if entityids:
-            selectedEntityIdList = entityids.split(',')
-        #
-        if (self.__verbose):
-            self.__lfh.write("+DataImporter.runBlastSearch() using file source %s identifier %s instance %s selectedEntityIdList %r\n" % 
-                             (self.__fileSource,self.__identifier,self.__instance,selectedEntityIdList))
-        #
-        eIdList,status = self.loadSeqDataAssemble(calPolyLink=False, selectedEntityIdList=selectedEntityIdList, doRefSearch=True)
-        return status
-
-    def loadSeqDataAssemble(self, calPolyLink=True, selectedEntityIdList=[], doRefSearch=False):
+    def loadSeqDataAssemble(self, calPolyLink=True, doRefSearch=False):
         if (self.__verbose):
             self.__lfh.write("\n+DataImporter.loadSeqDataAssemble() RECALCULATING INITIAL DATA STATE\n")
         #
@@ -364,14 +363,8 @@ class DataImporter(object):
             self.__lfh.flush()
 
             sda=SequenceDataAssemble(reqObj=self.__reqObj,verbose=self.__verbose,log=self.__lfh)
-            sda.doAssemble(calPolyLink=calPolyLink, selectedEntityIdList=selectedEntityIdList, doRefSearch=doRefSearch)
+            sda.doAssemble(calPolyLink=calPolyLink, doRefSearch=doRefSearch)
             #
-            alstat=AlignmentStatistics(reqObj=self.__reqObj,maxRefAlign=self.__maxRefAlign,verbose=self.__verbose,log=self.__lfh)
-            alstat.doUpdate()
-            # JDW -- 
-            map=MultiAlignPseudo(reqObj=self.__reqObj,verbose=self.__verbose,log=self.__lfh)
-            map.runSelected(identifier=self.__identifier)
-
             return sda.getEntityIdList(),True
         except:
             self.__lfh.write("+DataImporter.loadSeqDataAssemble() fails with file source %s identifier %s instance %s\n" 
@@ -421,61 +414,6 @@ class DataImporter(object):
         if os.access(pdbxModelFilePath, os.R_OK):
             shutil.copyfile(pdbxModelFilePath, pdbxJMolFilePath)
         #
-
-#  Obsoleted methods --         
-    def XupdateData(self):
-        """
-        """
-        idCode=self.__identifier
-        pdbxFilePath=self.__pI.getModelPdbxFilePath(idCode,fileSource='session')
-        seqAssignFilePath=self.__pI.getSequenceAssignmentFilePath(idCode,fileSource="session")
-        #
-        pdbxFilePathArchive=self.__pI.getModelPdbxFilePath(idCode,fileSource='archive',versionId="next")
-        seqAssignFilePathArchive=self.__pI.getSequenceAssignmentFilePath(idCode,fileSource="archive",versionId="next")
-
-        if (self.__verbose):
-            self.__lfh.write("+DataImporter.updateData() session model path %s\n" % pdbxFilePath)            
-            self.__lfh.write("+DataImporter.updateData() session seq assign path %s\n" % seqAssignFilePath)            
-            self.__lfh.write("+DataImporter.updateData() archive model path %s\n" % pdbxFilePathArchive)            
-            self.__lfh.write("+DataImporter.updateData() archive seq assign path %s\n" % seqAssignFilePathArchive)            
-
-        try:
-            shutil.copyfile(pdbxFilePath,pdbxFilePathArchive)
-            shutil.copyfile(seqAssignFilePath,seqAssignFilePathArchive)
-            return True
-        except:
-            if (self.__verbose):
-                self.__lfh.write("+DataImporter.updateData() archive update failed\n")
-                traceback.print_exc(file=self.__lfh)
-        return False            
-
-    def XupdateDataInstance(self):
-        """
-        """
-        idCode=self.__identifier
-        pdbxFilePath=self.__pI.getModelPdbxFilePath(idCode,fileSource='session')
-        seqAssignFilePath=self.__pI.getSequenceAssignmentFilePath(idCode,fileSource="session")
-        #
-        
-        pdbxFilePathInstance=self.__pI.getModelPdbxFilePath(idCode,fileSource='wf-instance',wfInstanceId=self.__instance,versionId="next")
-        seqAssignFilePathInstance=self.__pI.getSequenceAssignmentFilePath(idCode,fileSource="wf-instance",wfInstanceId=self.__instance,versionId="next")
-
-
-        if (self.__verbose):
-            self.__lfh.write("+DataImporter.updateData() session model path       %s\n" % pdbxFilePath)            
-            self.__lfh.write("+DataImporter.updateData() session seq assign path  %s\n" % seqAssignFilePath)            
-            self.__lfh.write("+DataImporter.updateData() instance model path      %s\n" % pdbxFilePathInstance)            
-            self.__lfh.write("+DataImporter.updateData() instance seq assign path %s\n" % seqAssignFilePathInstance)            
-
-        try:
-            shutil.copyfile(pdbxFilePath,pdbxFilePathInstance)
-            shutil.copyfile(seqAssignFilePath,seqAssignFilePathInstance)
-            return True
-        except:
-            if (self.__verbose):
-                self.__lfh.write("+DataImporter.updateData() instance update failed\n")
-                traceback.print_exc(file=self.__lfh)
-        return False            
 
 if __name__ == '__main__':
     di=DataImporter()

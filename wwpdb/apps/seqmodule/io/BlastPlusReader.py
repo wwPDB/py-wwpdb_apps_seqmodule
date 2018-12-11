@@ -229,22 +229,8 @@ class BlastPlusReader:
             elif node.tagName == 'Hsp_num':
                 hsp_num = node.firstChild.data
                   
-
         # only take the first alignment within the hit 
         if str(hsp_num) != "1":
             dict.clear()
 
-        if (False):
-            if dict.has_key('identity'):
-                if length:
-                    identity = int(dict['identity']) * 100 / int(length)
-                    if identity < 60:
-                        dict.clear()
-                elif dict.has_key('alignLen'):
-                    identity = int(dict['identity']) * 100 / int(dict['alignLen'])
-                    if identity < 60:
-                        dict.clear()
-
-        
         return dict
-
