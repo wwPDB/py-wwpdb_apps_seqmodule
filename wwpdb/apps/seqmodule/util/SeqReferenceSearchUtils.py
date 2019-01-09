@@ -32,7 +32,7 @@ class SeqReferenceSearchUtils(object):
         self.__verbose = verbose
         self.__lfh = log
 
-    def run(self, dataSetId, eD, refRefSearchFlag):
+    def run(self, dataSetId, eD, refRefSearchFlag, forceBlastSearchFlag):
         """
         """
         sasUtil = SeqAnnotationSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, searchUtil=self.__sepsUtil, pathInfo=self.__pI, \
@@ -40,7 +40,7 @@ class SeqReferenceSearchUtils(object):
         selfRefD,sameSeqRefD = sasUtil.getSameSeqRefInfo(dataSetId, eD)
         #
         eRefD = {}
-        if len(selfRefD) == 0:
+        if (len(selfRefD) == 0) or forceBlastSearchFlag:
             lbsUtil = LocalBlastSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, doRefSearchFlag=refRefSearchFlag, \
                                             verbose=self.__verbose, log=self.__lfh)
             eRefD = lbsUtil.searchSeqReference(dataSetId=dataSetId, entityD=eD)
@@ -82,6 +82,7 @@ class SeqAnnotationSearchUtils(object):
                     #
                 #
                 annObj = GetSameSeqAnnotation(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, verbose=self.__verbose, log=self.__lfh)
+                annObj.setEntitySeq(seq=eD["SEQ_ENTITY_1"], polyTypeCode=eD["POLYMER_TYPE_CODE"])
                 if len(selfList) > 0:
                     selfInfoMap = annObj.getSeqAnnotationFromAssignFile(retList=selfList, TaxIdList=taxIdList)
                 #

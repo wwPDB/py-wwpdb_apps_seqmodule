@@ -667,7 +667,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
             return "",inputAuthList
         #
         seqId = self._getSeqLabelId((seqType, seqInstId, seqPartId, altIdList[0], verList[0]))
-        return seqId,self.__remainIdList(seqId, inputAuthList)
+        return seqId,self._substractedIdList(seqId, inputAuthList)
 
     def _substractedIdList(self, slectId, inputIdList):
         """

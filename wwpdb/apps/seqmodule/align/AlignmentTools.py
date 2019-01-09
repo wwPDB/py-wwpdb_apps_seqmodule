@@ -237,6 +237,7 @@ class AlignmentTools(AlignmentDataStore):
             self._copyXyzAlignmentToSeqAlignment()
         #
         if (len(refIdList) > 0) and self.__getRefLabelDictFromRefIdList(refIdList):
+            self._copyXyzAlignmentToSeqAlignment()
             self.__checkPartInfoDict(self.__local_authLabel)
             self.__getCurrentAuthRefAlignment()
         #
@@ -368,7 +369,7 @@ class AlignmentTools(AlignmentDataStore):
         #
         SeqIdxPartIdMap = {}
         for partId,rangePair in self.__partInfoDict.items():
-            for i in range(rangePair[0], rangePair[1] + 1):
+            for i in range(rangePair[0] - 1, rangePair[1]):
                 SeqIdxPartIdMap[i] = int(partId)
             #
         #
@@ -458,13 +459,14 @@ class AlignmentTools(AlignmentDataStore):
             self.__alignFlag = False
             return
         #
-        foundFalg = True
-        for xyzLabel in  self.__xyzLabel:
-            if xyzLabel not in self._xyzAlignLabelIndices:
-                foundFalg = False
-                break
-            #
-        #
+#       foundFalg = True
+#       for xyzLabel in  self.__xyzLabel:
+#           if xyzLabel not in self._xyzAlignLabelIndices:
+#               foundFalg = False
+#               break
+#           #
+#       #
+        foundFalg = False
         if not foundFalg:
             self._resetAlignmentInfo()
             self._resetLogInfo()

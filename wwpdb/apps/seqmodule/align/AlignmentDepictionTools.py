@@ -16,7 +16,7 @@ try:
 except ImportError:
     import pickle as pickle
 #
-import os, sys, traceback
+import copy, os, sys, traceback
 from operator import itemgetter
 
 from wwpdb.apps.seqmodule.align.AlignmentBackEndEditingTools import AlignmentBackEndEditingTools
@@ -68,11 +68,19 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         self.__updateMiscDataStore()
         self.__updateUtilDataStore()
         if len(self._selfRefPartIdList) > 0:
-            selectedIdList = self.__selectedIdList
+            selectedIdList = copy.deepcopy(self.__selectedIdList)
             selectedIdList.extend(self._selfRefPartIdList)
             self._updateDefaultSelections(selectedIdList)
+            if self._verbose:
+                self._lfh.write("self.__selectedIdList=%r\n" % self.__selectedIdList)
+                self._lfh.write("self._selfRefPartIdList=%r\n" % self._selfRefPartIdList)
+                self._lfh.write("selectedIdList=%r\n" % selectedIdList)
+            #
         else:
             self._updateDefaultSelections(self.__selectedIdList)
+            if self._verbose:
+                self._lfh.write("self.__selectedIdList=%r\n" % self.__selectedIdList)
+            #
         #
         return True
 
@@ -117,7 +125,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             self.__alignIdList,self.__selectedIdList = self._checkAndUpdateAlignment(self.__alignIdList, self.__allSelectedIdList)
         #
         if self._verbose:
-            self._lfh.write("selectedIdList=%r\n" % self.__selectedIdList)
+            self._lfh.write("self.__selectedIdList=%r\n" % self.__selectedIdList)
         #
 
     def __editAndUpdateAlignment(self):
@@ -162,13 +170,13 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             seqType = resLabelObj.getSequenceType()
             if edType in edObjMap:
                 if seqType in edObjMap[edType]:
-                    edObjMap[edType][seqType][resLabelId] = ( seqType, seqLabelId, self._seqAlignLabelIndices[seqLabelId], edObj )
+                    edObjMap[edType][seqType].append( (resLabelId, ( seqType, seqLabelId, self._seqAlignLabelIndices[seqLabelId], edObj ) ) )
                 else:
-                    edObjMap[edType][seqType] = { resLabelId: ( seqType, seqLabelId, self._seqAlignLabelIndices[seqLabelId], edObj ) }
+                    edObjMap[edType][seqType] = [ ( resLabelId, ( seqType, seqLabelId, self._seqAlignLabelIndices[seqLabelId], edObj ) ) ]
                 #
             else:
                 myD = {}
-                myD[seqType] = { resLabelId: ( seqType, seqLabelId, self._seqAlignLabelIndices[seqLabelId], edObj ) }
+                myD[seqType] = [ ( resLabelId, ( seqType, seqLabelId, self._seqAlignLabelIndices[seqLabelId], edObj ) ) ]
                 edObjMap[edType] = myD
             #
         #
@@ -183,7 +191,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 if not seqType in edObjMap[edType]:
                     continue
                 #
-                for resLabelId,editInfoTuple in edObjMap[edType][seqType].items():
+                for (resLabelId,editInfoTuple) in edObjMap[edType][seqType]:
                     try:
                         getattr(self, "_update_%s" % edType)(self._getResLabelFromResLabelId(resLabelId), editInfoTuple)
                     except:
@@ -569,7 +577,13 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         #
         myD = {}
         myD["alignids"] = ",".join(self.__alignIdList)
-        myD["selectids"] = ",".join(self.__selectedIdList)
+        if len(self._selfRefPartIdList) > 0:
+            selectedIdList = copy.deepcopy(self.__selectedIdList)
+            selectedIdList.extend(self._selfRefPartIdList)
+            myD["selectids"] = ",".join(selectedIdList)
+        else:
+            myD["selectids"] = ",".join(self.__selectedIdList)
+        #
         if not self.__misMatchTypes:
             myD["gedittype"] = "no-mismatch"
         elif len(self.__misMatchTypes) == 1:

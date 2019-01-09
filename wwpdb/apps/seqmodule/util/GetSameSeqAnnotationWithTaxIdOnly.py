@@ -38,12 +38,21 @@ class GetSameSeqAnnotation(object):
         self.__pI = pathInfo
         self.__verbose = verbose
         self.__lfh = log
+        self.__threeLetterCodeSeqList = []
         #
         if not self.__pI:
             self.__pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=False, log=self.__lfh)
         #
         self.__srd = SequenceReferenceData(verbose=self.__verbose, log=self.__lfh)
         self.__gapSymbol = self.__srd.getGapSymbol()
+
+    def setEntitySeq(self, seq="", polyTypeCode="AA"):
+        """ Set three letter sequence from input one letter seq
+        """
+        if (not seq) or (len(seq) < 1):
+            return
+        #
+        self.__threeLetterCodeSeqList = self.__srd.cnv1To3List(seq, polyTypeCode)
 
     def getSeqAnnotationFromAssignFile(self, retList=None, TaxIdList=None):
         """ retList[][0]: depID, retList[][1]: entityID, retList[][2]: pdbID, retList[][3]: AnnInitial, retList[][4]: statusCode,
@@ -213,6 +222,7 @@ class GetSameSeqAnnotation(object):
         """
         """
         alignList = []
+        threeLetterSeqList = []
         numMap = {}
         authMap = {}
         refMap = {}
@@ -261,9 +271,15 @@ class GetSameSeqAnnotation(object):
                 refMap[alignTup[2] + "_" + alignTup[3] + "_" + alignTup[4]] = len(alignList)
             #
             alignList.append(alignTup)
+            threeLetterSeqList.append(alignTup[0])
         #
-        if not alignList:
+        if (not alignList) or (len(threeLetterSeqList) != len(self.__threeLetterCodeSeqList)):
             return {}
+        #
+        for i in range(0, len(threeLetterSeqList)):
+            if str(threeLetterSeqList[i]) != str(self.__threeLetterCodeSeqList[i]):
+                return {}
+            #
         #
         for partTup in partsTaxIdInfo:
             if (not partTup[1] in numMap) or (not partTup[2] in numMap):

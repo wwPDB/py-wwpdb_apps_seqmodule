@@ -40,7 +40,6 @@ from mmcif.io.PdbxWriter import PdbxWriter
 from wwpdb.apps.seqmodule.align.AlignmentTools import AlignmentTools
 from wwpdb.apps.seqmodule.io.AlignmentDataStore import AlignmentDataStore
 from wwpdb.apps.seqmodule.link.PolymerLinkageDepict import PolymerLinkageDepict
-from wwpdb.apps.seqmodule.util.SearchEntityPolySeqs import SearchEntityPolySeqs
 from wwpdb.apps.seqmodule.util.SeqReferenceSearchUtils import SeqReferenceSearchUtils
 from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel
 from wwpdb.apps.seqmodule.util.UpdateSequenceDataStoreUtils import UpdateSequenceDataStoreUtils
@@ -71,10 +70,10 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         self.__sessionPath = self.__sessionObj.getPath()
         self.__siteId = self._reqObj.getValue("WWPDB_SITE_ID")
         self.__pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self._verbose, log=self._lfh)
-        self.__sepsUtil = SearchEntityPolySeqs(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self._verbose, log=self._lfh)
         #
         self.__dataSetId = str(self._reqObj.getValue("identifier")).upper()
         self.__doRefSearchFlag = False
+        self.__forceBlastSearchFlag = False
         self.__resetAlignmentFlag = False
         self.__misMatchPath = self.__pI.getFilePath(self.__dataSetId, contentType="mismatch-warning", formatType="pic", fileSource="session")
         #
@@ -343,7 +342,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         """
         """
         partialFilePath = self.__pI.getFilePath(dataSetId=self.__dataSetId, contentType="partial-seq-annotate", formatType="txt")
-        if not os.access(partialFilePath, os.R_OK):
+        if (not partialFilePath) or (not os.access(partialFilePath, os.R_OK)):
             return "",{}
         #
         fph = open(partialFilePath, "r")
@@ -586,9 +585,8 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         """
         rList = []
         for tupL in dataList:
-            seqSearchUtil = SeqReferenceSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, searchUtil=self.__sepsUtil, \
-                                                    pathInfo=self.__pI, verbose=self._verbose, log=self._lfh)
-            eRefD,selfRefD,sameSeqRefD = seqSearchUtil.run(self.__dataSetId, tupL[1], self.__doRefSearchFlag)
+            seqSearchUtil = SeqReferenceSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, verbose=self._verbose, log=self._lfh)
+            eRefD,selfRefD,sameSeqRefD = seqSearchUtil.run(self.__dataSetId, tupL[1], self.__doRefSearchFlag, self.__forceBlastSearchFlag)
             rList.append((tupL[0], eRefD, selfRefD, sameSeqRefD))
             #
         #
@@ -758,6 +756,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         """
         """
         self.__doRefSearchFlag = True
+        self.__forceBlastSearchFlag = True
         #
         startTime = time.time()
         if self._verbose:

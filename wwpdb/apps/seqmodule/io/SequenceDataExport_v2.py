@@ -76,6 +76,7 @@ class SequenceDataExport(object):
         # This is the setting for all selected sequences to be exported -
         #
         self.__summarySeqSelectList = exportList
+        self.__selfRefList = []
         self.__setup()
 
     def __setup(self):
@@ -202,6 +203,7 @@ class SequenceDataExport(object):
                 tup = seqId.strip().split("_")
                 # Skip self reference ids
                 if str(tup[0]).strip() == "selfref":
+                    self.__selfRefList.append(seqId)
                     continue
                 #
                 I[tup[0]][tup[1]][int(tup[2])] = (int(tup[3]), int(tup[4]))
@@ -331,6 +333,7 @@ class SequenceDataExport(object):
         rptXyzL = []
         rptCommentL = []
         rptCommentModL = []
+        rptDeleteL = []
         allRefSeqIdxD = {}
         numConflicts = 0
         conflictList = []
@@ -433,7 +436,8 @@ class SequenceDataExport(object):
             #
             alignExport = AlignmentExport(reqObj=self.__reqObj, entityId=gId, pathInfo=self.__pI, seqDataStore=self.__sds, \
                                           verbose=self.__verbose, log=self.__lfh)
-            localRptRefL,localRptCommentL,localRptCommentModL,localRptXyzL,message,numC = alignExport.doExport(idAuthSeq, idListRef, idListXyz, sourceInfo)
+            localRptRefL,localRptCommentL,localRptCommentModL,localRptDeleteL,localRptXyzL,message,numC = \
+                           alignExport.doExport(idAuthSeq, idListRef, idListXyz, self.__selfRefList, sourceInfo)
             if self.__verbose:
                 errMsg = alignExport.getErrorMessage()
                 if errMsg:
@@ -448,6 +452,9 @@ class SequenceDataExport(object):
             #
             if len(localRptCommentModL) > 0:
                 rptCommentModL.extend(localRptCommentModL)
+            #
+            if len(localRptDeleteL) > 0:
+                rptDeleteL.extend(localRptDeleteL)
             #
             if len(localRptXyzL) > 0:
                 rptXyzL.extend(localRptXyzL)
@@ -474,7 +481,7 @@ class SequenceDataExport(object):
         #
         # ref FeatureD ---
         rptRefDbL = self.__refDdReport(refFeatureD)
-        rptDeleteL = self.__deletionReport(refFeatureD, allRefSeqIdxD)
+        #rptDeleteL = self.__deletionReport(refFeatureD, allRefSeqIdxD)
 
         try:
             # Make a local copy of the mapping file in the session directory and then copy the file as needed.

@@ -1128,7 +1128,8 @@ class SeqModWebAppWorker(object):
         if (self.__verbose):
             self.__lfh.write("+SeqModWebApp.__saveSelection() - starting\n")
 
-        selectIdList = self.__reqObj.getSummarySelectList()
+        #selectIdList = self.__reqObj.getSummarySelectList()
+        selectIdList = []
         sEx = SequenceDataExport(reqObj=self.__reqObj, exportList=selectIdList, verbose=self.__verbose, log=self.__lfh)
         ok, numConflicts, conflictList, warningMsg = sEx.exportAssignments()
         if (self.__verbose):

@@ -168,7 +168,7 @@ class UpdateSequenceDataStoreUtils(object):
         """ Get next alternative number
         """
         altIdList = self.getAlternativeIdList(seqType, seqInstId, seqPartId)
-        if (altIdList) == 0:
+        if len(altIdList) == 0:
             return 1
         else:
             return int(altIdList[0]) + 1
@@ -384,8 +384,8 @@ class UpdateSequenceDataStoreUtils(object):
                 self._entityAlignInfoMap[sId]["alignids"].append(self.__seqLabel.pack())
             else:
                 self.__defSelList.append("selfref_" + str(sId) + "_" + str(partNo))
+                self._entityAlignInfoMap[sId]["alignids"].append("selfref_" + str(sId) + "_" + str(partNo))
                 continue
-            #
             #
             for (altId, rD) in enumerate(rList, start=1):
                 if "alignment" in rD:

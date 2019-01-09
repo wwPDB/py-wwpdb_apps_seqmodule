@@ -24,19 +24,28 @@ class AlignmentExport(AlignmentTools):
     def __init__(self, reqObj=None, entityId=None, pathInfo=None, seqDataStore=None, verbose=False, log=sys.stderr):
         super(AlignmentExport, self).__init__(reqObj=reqObj, entityId=entityId, pathInfo=pathInfo, seqDataStore=seqDataStore, verbose=verbose, log=log)
 
-    def doExport(self, idAuthSeq, idListRef, idListXyz, sourceType):
+    def doExport(self, idAuthSeq, idListRef, idListXyz, selfRefList, sourceType):
         """ Export alignment data
         """
         alignIdList = []
+        selectedIdList = []
         alignIdList.append(idAuthSeq)
+        selectedIdList.append(idAuthSeq)
         if len(idListRef) > 0:
             alignIdList.extend(idListRef)
+            selectedIdList.extend(idListRef)
         #
         if len(idListXyz) > 0:
             alignIdList.extend(idListXyz)
+            selectedIdList.extend(idListXyz)
         #
-        self._checkAndUpdateAlignment(alignIdList, alignIdList)
-        self._clearAllConflicts(idAuthSeq)
+        if len(selfRefList) > 0:
+            selectedIdList.extend(selfRefList)
+        #
+        self._checkAndUpdateAlignment(alignIdList, selectedIdList)
+        authIdx = self._seqAlignLabelIndices[idAuthSeq]
+        self._checkPartStartEndPosMap(authIdx, idAuthSeq)
+        self._clearAllConflicts(authIdx)
         self._assignAllConflicts(idAuthSeq, alignIdList)
         #
         errorFlag = False
@@ -49,10 +58,10 @@ class AlignmentExport(AlignmentTools):
         if errorFlag:
             return [],[],[],[],"",0
         #
-        rptRefL,rptCommentL,rptCommentModL,warningMsg = self.__alignRefReport(self._seqAlignLabelIndices[idAuthSeq], idListRef, sourceType)
+        rptRefL,rptCommentL,rptCommentModL,rptDeleteL,warningMsg = self.__alignRefReport(self._seqAlignLabelIndices[idAuthSeq], idListRef, sourceType)
         rptXyzL,numConflicts = self.__alignXyzReport(self._seqAlignLabelIndices[idAuthSeq], idListXyz)
         #
-        return rptRefL,rptCommentL,rptCommentModL,rptXyzL,warningMsg,numConflicts
+        return rptRefL,rptCommentL,rptCommentModL,rptDeleteL,rptXyzL,warningMsg,numConflicts
 
     def __alignRefReport(self, authIdx, idListRef, sourceType):
         """ Export all reference alignments
@@ -60,8 +69,9 @@ class AlignmentExport(AlignmentTools):
         rptRefL = []
         rptCommentL = []
         rptCommentModL = []
+        rptDeleteL = []
         if len(idListRef) < 1:
-            return rptRefL,rptCommentL,rptCommentModL,""
+            return rptRefL,rptCommentL,rptCommentModL,rptDeleteL,""
         #
         eelCommentL = []
         refMap = {}
@@ -71,6 +81,26 @@ class AlignmentExport(AlignmentTools):
         for idx,alignTup in enumerate(self._seqAlignList):
             entity_mon_id = str(alignTup[authIdx][1])
             entity_seq_num = str(alignTup[authIdx][2])
+            #
+            tstCompId = self._gapSymbol
+            tstSeqNum = "."
+            tstPartId = "."
+            featureD = {}
+            for idRef in idListRef:
+                if (not idRef in self._seqAlignLabelIndices) or (alignTup[self._seqAlignLabelIndices[idRef]][1] == self._gapSymbol):
+                    continue
+                #
+                (seqTypeT, seqInstIdT, seqPartIdT, seqAltIdT, seqVersionT) = refMap[idRef]
+                tstCompId = alignTup[self._seqAlignLabelIndices[idRef]][1]
+                tstSeqNum = alignTup[self._seqAlignLabelIndices[idRef]][2]
+                tstPartId = seqPartIdT
+                featureD = self.getFeature(seqTypeT, seqInstIdT, seqPartIdT, seqAltIdT, seqVersionT)
+                break
+            #
+            irow = len(rptRefL) + 1
+            rptRefL.append([str(irow), str(self._entityId), entity_mon_id, entity_seq_num, str(self._entityId), str(tstCompId), \
+                            str(tstSeqNum), str(tstPartId)])
+            #
             if len(alignTup[authIdx][5]) > 0:
                 cType,comment = self._decodeComment(alignTup[authIdx][5])
                 if sourceType.strip().upper() == "NAT":
@@ -109,26 +139,14 @@ class AlignmentExport(AlignmentTools):
                     #
                     irow = len(rptCommentL) + 1
                     rptCommentL.append([str(irow), str(self._entityId), entity_mon_id, entity_seq_num, comment])
+                elif (comment in ( "Deletion", "deletion" )) and featureD and (tstCompId != self._gapSymbol) and (tstSeqNum != ".") and (tstPartId != "."):
+                    irow = len(rptDeleteL) + 1
+                    rptDeleteL.append([str(irow), str(self._entityId), str(tstPartId), self._srd.convertDbNameToResource(featureD["DB_NAME"]), \
+                                      featureD["DB_ACCESSION"], featureD["DB_ISOFORM"], tstCompId, tstSeqNum])
                 #
             #
-            tstCompId = self._gapSymbol
-            tstSeqNum = "."
-            tstPartId = "."
-            for idRef in idListRef:
-                if (not idRef in self._seqAlignLabelIndices) or (alignTup[self._seqAlignLabelIndices[idRef]][1] == self._gapSymbol):
-                    continue
-                #
-                (seqTypeT, seqInstIdT, seqPartIdT, seqAltIdT, seqVersionT) = refMap[idRef]
-                tstCompId = alignTup[self._seqAlignLabelIndices[idRef]][1]
-                tstSeqNum = alignTup[self._seqAlignLabelIndices[idRef]][2]
-                tstPartId = seqPartIdT
-                break
-            #
-            irow = len(rptRefL) + 1
-            rptRefL.append([str(irow), str(self._entityId), entity_mon_id, entity_seq_num, str(self._entityId), str(tstCompId), \
-                            str(tstSeqNum), str(tstPartId)])
         #
-        return rptRefL,rptCommentL,rptCommentModL,self._getNaturalSourceWarningMessage(sourceType, eelCommentL)
+        return rptRefL,rptCommentL,rptCommentModL,rptDeleteL,self._getNaturalSourceWarningMessage(sourceType, eelCommentL)
 
     def __alignXyzReport(self, authIdx, idListXyz):
         """ Export all coordinate alignments
