@@ -919,7 +919,7 @@ class SeqModWebAppWorker(object):
             #
             pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
             sourceFilePath = pI.getFilePath(dataSetId=self.__reqObj.getValue("identifier"), contentType="partial-seq-annotate", formatType="txt")
-            if os.access(sourceFilePath, os.R_OK):
+            if sourceFilePath and os.access(sourceFilePath, os.R_OK):
                 rC.set("haspartialassignment", True)
             #
             # Set warning message
