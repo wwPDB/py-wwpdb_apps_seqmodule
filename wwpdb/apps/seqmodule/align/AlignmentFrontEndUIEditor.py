@@ -42,7 +42,6 @@ class AlignmentFrontEndUIEditor(object):
         -  edit : 
         -  undo :
         -  delete :
-        -  global_edit_form :
         -  global_edit_menu :
         -  global_edit :
         -  move :
@@ -103,20 +102,14 @@ class AlignmentFrontEndUIEditor(object):
             rD={}            
             rD['editlist']=self.__undo()
             return rD
-        elif self.__operation =="global_edit_form":
-            return self.__global_edit_form()
         elif self.__operation =="global_edit":
-            rD={}
-            rD['editlist']=self.__global_edit()
-            return rD
+            return self.__global_edit()
         elif self.__operation =="global_edit_menu":
             rD={}
             rD['editlist']=self.__global_edit_menu()        
             return rD
         elif self.__operation =="move":
-            rD={}
-            rD['editlist']=self.__editMove()        
-            return rD
+            return self.__editMove()        
         else:
             return {}
         #
@@ -198,11 +191,21 @@ class AlignmentFrontEndUIEditor(object):
         #
         dstLab=ResidueLabel()
         dstLab.unpack(dstResidueId)        
+        seqType    =dstLab.getSequenceType()
         dstAlignPos=dstLab.getAlignmentIndex()
         dstSeqPos  =dstLab.getSequenceIndex()
         dstLblInd  =dstLab.getResidueLabelIndex()
         dstResType =dstLab.getResidueType()
         dstCode3   =dstLab.getResidueCode3()
+        #
+        # Check if the moving is allowed
+        #
+        if (srcCode3 != "UNK") and ((seqType == "auth") or (seqType == "xyz")):
+            aU = AlignmentTools(reqObj=self.__reqObj, entityId=self.__alignmentTag, verbose=self.__verbose, log=self.__lfh)
+            errorMsg = aU.checkResidueMovingCompatibility(srcResidueId, dstResidueId)
+            if errorMsg:
+                return self.__makeResponseDict(id=srcResidueId, val=srcCode1, val3=srcCode3, editType="error", editOpId=None, newId=None, errorText=errorMsg)
+            #
         #
         # One edit applies to source residue -- which becomes a gap -- and retains its position in alignment.  
         #
@@ -243,7 +246,9 @@ class AlignmentFrontEndUIEditor(object):
         #
         ses.storeEditList(edList)
         #
-        return rDDict
+        rDTop = {}
+        rDTop["editlist"] = rDDict
+        return rDTop
 
     def __openEditStore(self):
         #
@@ -447,9 +452,16 @@ class AlignmentFrontEndUIEditor(object):
         else:
             eType="replace"
             #
-            errorMsg = self.__checkCompatibility(rLabel.getAlignmentIndex(), rLabel.getResidueCode3(), rLabel.getResidueLabelIndex(), r3L[0])
-            if errorMsg:
-                return self.__makeResponseDict(id=residueId,val=editValue,val3=editValue,editType='error',editOpId=None,newId=None,errorText=errorMsg)
+            # Check if residue name replacement is allowed
+            #
+            if r3L[0] != "UNK":
+                aU = AlignmentTools(reqObj=self.__reqObj, entityId=self.__alignmentTag, verbose=self.__verbose, log=self.__lfh)
+                errorMsg = aU.checkResidueNameReplaceCompatibility(rLabel.getAlignmentIndex(), rLabel.getResidueCode3(), \
+                                                                   rLabel.getResidueLabelIndex(), r3L[0])
+                if errorMsg:
+                    return self.__makeResponseDict(id=residueId, val=editValue, val3=editValue, editType="error", editOpId=None, \
+                                                   newId=None, errorText=errorMsg)
+                #
             #
         #
         ses=self.__openEditStore()
@@ -465,15 +477,6 @@ class AlignmentFrontEndUIEditor(object):
         rD=self.__makeResponseDict(id=residueId,val=r1,val3=r3,editType=eType,editOpId=editOpNext,newId=None)                    
         #
         return rD
-
-    def __checkCompatibility(self, alignIndex, origResName, resLabelIndex, newResName):
-        """ Check if residue name replacement is allowed
-        """
-        if newResName == "UNK":
-            return ''
-        #
-        aU = AlignmentTools(reqObj=self.__reqObj, entityId=self.__alignmentTag, verbose=self.__verbose, log=self.__lfh)
-        return aU.checkResidueNameReplaceCompatibility(alignIndex, origResName, resLabelIndex, newResName)
 
     def __editDetails(self):
         """  Store individual detail edit operations for this residue value in the the edit store -
@@ -705,136 +708,47 @@ class AlignmentFrontEndUIEditor(object):
         #
         return rD
 
-    def __global_edit_form(self):
-        """    
-        """
-        #
-        dList=['engineered mutation','cloning artifact','variant','expression tag','insertion','deletion','microheterogeneity','chromophore',
-                'linker','conflict','acetylation','amidation', 'initiating methionine']
-        oL=[]
-        for d in dList:
-            oL.append('<option value="%s">%s</option>' % (d,d))
-        #
-        form_template='''
-        <div id="formmsg"></div>
-        <form name="globalfrm" id="globalfrm" action="/service/sequence_editor/global_edit" method="post">
-            <input type="hidden" name="selectedids" value="%(selectedids)s" />
-            <input type="hidden" name="sessionid" value="%(sessionid)s" />
-            <input type="hidden" name="aligntag"  value="%(aligntag)s" />        
-            <p>
-                <label for="refres">Reference residue: </label>
-                <input type="text" name="refres" id="refres" />
-            </p>
-            <p>
-                <label for="alignedres">Aligned Residue: </label>
-                <input type="text" name="alignedres" id="alignedres" />
-            </p>
-            <p>
-                <label for="details">Details</label>
-                <select name="details" id="details">
-                    <option selected="selected" value="">Please Select</option>
-                       %(optionList)s
-                </select>
-            </p>
-            <input type="submit" name="submit" value="Submit" />
-            <input type="reset" name="reset" value="Reset" />
-        </form>
-        '''
-        #
-        selectIds=None
-        try:
-            selectIds = self.__reqObj.getValue("selectedids")
-            if (self.__verbose):
-                self.__lfh.write("+Alignment.__global_edit_form() selectids %r for session id %s\n" % (selectIds,self.__sessionId))
-            #
-        except:
-            if (self.__verbose):
-                traceback.print_exc(file=self.__lfh)
-                self.__lfh.write("+Alignment.__global_edit_form() input failure for session id %s\n" % (self.__sessionId))
-            #
-        #
-        pD={}
-        pD['selectedids']=selectIds
-        pD['sessionid']=self.__sessionId
-        pD['aligntag']=self.__alignmentTag
-        pD['optionList']=' '.join(oL)
-        #
-        rD = {}        
-        rD['htmlcontent']=(form_template % pD)
-        #
-        return rD
-
     def __global_edit(self):
         """ Perform edit operations from global edit form.
         """
-        sList = self.__reqObj.getSelectList()
-        if (self.__verbose):
-            self.__lfh.write("+Alignment.__global_edit()  Select list %r \n"  % sList)
-        #
-        if len(sList) < 1:
-            return {}
-        #
-        alignRes   = str(self.__reqObj.getValue("alignedres")).upper()
-        refRes     = str(self.__reqObj.getValue("refres")).upper()
-        detailText = self.__reqObj.getValue("details")
+        aU = AlignmentTools(reqObj=self.__reqObj, entityId=self.__alignmentTag, verbose=self.__verbose, log=self.__lfh)
+        editList,unCompatibleList = aU.getGlobalEditList()
+        if len(unCompatibleList) > 0:
+            message = ""
+            for unCompatibleTup in unCompatibleList:
+                message += "Residue '" + unCompatibleTup[2] + " " + unCompatibleTup[3] + " " + unCompatibleTup[4] + "' can not be moved to position '" \
+                         + unCompatibleTup[6]
+                if (unCompatibleTup[5] != "") and (unCompatibleTup[5] != self.__gapSymbol):
+                    message += "' where it is '" + unCompatibleTup[5] + "' in the auth sequence.<br/>\n"
+                else:
+                    message += "' where it is a gap in the auth sequence.<br/>\n"
+                #
+            #
+            return self.__makeResponseDict(id=unCompatibleList[0][0], val=unCompatibleList[0][1], val3=unCompatibleList[0][3], editType="error", \
+                                           editOpId=None, newId=None, errorText=message)
         #
         ses = self.__openEditStore()                                                
         editOpLast = ses.getLastEditOp()
-        editOpNext = int(editOpLast) + 1                
+        editOpNext = int(editOpLast) + 1
+        editType="replaceid"
         #
-        rDTop = {}
+        rDDict = {}
         edList = []
         #
-        for sTup in sList:
-            tId         = sTup[0]
-            tPriorValue = sTup[1]
-            tType       = sTup[2]
+        for eTup in editList:
+            sE = self.__makeSequenceEdit(targetId=eTup[0], editType="replaceid", newValueList=[eTup[2]], priorValue=eTup[3], opId=editOpNext, newId=eTup[4])
+            edList.append(sE)
             #
-            if ((tType == "details") and (len(detailText.strip()) > 0)):
-                # detail edit -
-                if (self.__verbose):
-                    self.__lfh.write("+Alignment.__global_edit()  Editing details for residueId %s value %s\n" %(tId,detailText))
-                #
-                eType = "details"
-                cssClass = "dblclickselect bgcolreplace"
-                #  
-                sE = SequenceEdit(self.__verbose)
-                sE.setValueNew(detailText)
-                sE.setValuePrevious(tPriorValue)
-                sE.setEditType(eType)
-                sE.setTargetElementId(tId[:-2])
-                sE.setEditOpId(editOpNext)
-                edList.append(sE)
-                if (self.__verbose):
-                    sE.printIt(self.__lfh)                    
-                #
-                rD = {}
-                rD["val"]  = detailText
-                rD["val3"] = detailText                    
-                rD["id"]   = tId
-                rD["classAdd"] = cssClass
-                rD["classRemove"] = self.__cssClassRemove
-                rD["errortext"] = "none"
-                rD["debug"] = "%s = %s" % (tId,detailText)
-                rD["tooltip"] = "Residue details " + detailText
-                rD["editopid"] = editOpNext
-                rD["edittype"] = eType
-                rDTop[tId] = rD                    
-            elif ((tType == "aligned") and (len(alignRes.strip()) > 0)):
-                sE,rD = self.__get_edit_util("form", tId, tId[:-2], tPriorValue, alignRes, "", editOpNext, " ovflow", "Global edit on residue: %s")
-                edList.append(sE)
-                rDTop[tId] = rD                    
-            elif ((tType == "reference") and (len(refRes.strip()) > 0)):
-                sE,rD = self.__get_edit_util("form", tId, tId[:-2], tPriorValue, alignRes, "", editOpNext, "", "Global edited on residue: %s")
-                edList.append(sE)
-                rDTop[tId] = rD
-            #
+            rD = self.__makeResponseDict(id=eTup[0], val=eTup[1], val3=eTup[2], editType="replaceid", editOpId=editOpNext, newId=eTup[4])
+            rDDict[eTup[0]] = rD
         #
         if (self.__verbose):
             self.__lfh.write("+Alignment.__global_edit()  Saving edit list of length %d\n" % len(edList))
         #
         ses.storeEditList(edList)
         #
+        rDTop = {}
+        rDTop["editlist"] = rDDict
         return rDTop
 
     def __global_edit_menu(self):

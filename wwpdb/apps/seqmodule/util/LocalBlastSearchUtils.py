@@ -676,6 +676,10 @@ class LocalBlastSearchUtils(object):
         if (beg_pos < 0) or (end_pos < 0):
             return [],[],0,0.0,0.0,'Alignment length error'
         #
+        refSeq = []
+        for sTup in sTup3L:
+            refSeq.append(sTup[4])
+        #
         self.__processTerminalMismatch(alignIndex, beg_pos, end_pos, refSeq)
         alignLength,seqSim,seqSimWithGaps = self.__getAlignmentStatistics(alignIndex, beg_pos, end_pos, refSeq)
         #

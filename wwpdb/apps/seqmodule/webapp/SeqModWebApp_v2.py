@@ -250,7 +250,6 @@ class SeqModWebAppWorker(object):
                            '/service/sequence_editor/new_session/wf': '_newSessionWfOp',
                            '/service/sequence_editor/edit': '_editOp',
                            '/service/sequence_editor/global_edit': '_globalEditOp',
-                           '/service/sequence_editor/global_edit_form': '_globalEditFormOp',
                            '/service/sequence_editor/global_edit_menu': '_globalEditMenuOp',
                            '/service/sequence_editor/move': '_moveEditOp',
                            '/service/sequence_editor/undo_edit': '_undoEditOp',
@@ -381,7 +380,7 @@ class SeqModWebAppWorker(object):
         for entityId in entityIdList:
             for cType in ( "seqdb-match", "seq-align-data", "mismatch-warning" ):
                 sourceFilePath = pI.getFilePath(dataSetId=identifier, contentType=cType, formatType="pic", fileSource="session", partNumber=entityId)
-                if not os.access(sourceFilePath, os.R_OK):
+                if (not sourceFilePath) or (not os.access(sourceFilePath, os.R_OK)):
                     continue
                 #
                 exportFilePath = pI.getFilePath(dataSetId=identifier, contentType=cType, formatType="pic", partNumber=entityId, versionId="next")
@@ -392,7 +391,7 @@ class SeqModWebAppWorker(object):
         foundFlag = True
         for (cType,fType,version) in ( ( "model", "pdbx", "next" ), ( "seq-data-stats", "pic", "next" ), ( "partial-seq-annotate", "txt", "latest") ):
             sourceFilePath = pI.getFilePath(dataSetId=identifier, contentType=cType, formatType=fType, fileSource="session")
-            if not os.access(sourceFilePath, os.R_OK):
+            if (not sourceFilePath) or (not os.access(sourceFilePath, os.R_OK)):
                 foundFlag = False
                 continue
             #
@@ -442,9 +441,6 @@ class SeqModWebAppWorker(object):
         return self.__editAlignment()
 
     def _globalEditMenuOp(self):
-        return self.__editAlignment()
-
-    def _globalEditFormOp(self):
         return self.__editAlignment()
 
     def _undoEditOp(self):
@@ -925,7 +921,7 @@ class SeqModWebAppWorker(object):
             # Set warning message
             #
             picklePath = pI.getFilePath(self.__reqObj.getValue("identifier"), contentType="mismatch-warning", formatType="pic", fileSource="session")
-            if (os.access(picklePath, os.F_OK)):
+            if picklePath and os.access(picklePath, os.F_OK):
                 fb = open(picklePath, "rb")
                 warningD = pickle.load(fb)
                 fb.close()
@@ -1078,7 +1074,7 @@ class SeqModWebAppWorker(object):
                 else:
                     rC.addDictionaryItems({ "gedittype" : "no-mismatch" })
                 #
-                for item in ( "alignids", "selectids" ):
+                for item in ( "alignids", "selectids", "alignmentblocklist", "blockedithtml" ):
                     if item in miscD:
                         rC.addDictionaryItems({ item : miscD[item] })
                     #
@@ -1364,7 +1360,7 @@ class SeqModWebAppWorker(object):
         #
         pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
         sourceFilePath = pI.getFilePath(dataSetId=identifier, contentType="partial-seq-annotate", formatType="txt")
-        if os.access(sourceFilePath, os.R_OK):
+        if sourceFilePath and os.access(sourceFilePath, os.R_OK):
             fph = open(sourceFilePath, "r")
             inData = fph.read()
             fph.close()

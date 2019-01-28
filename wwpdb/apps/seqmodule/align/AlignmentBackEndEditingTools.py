@@ -73,12 +73,50 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         srcResNam = editInfoTuple[3].getValueNew()[0]
         oneLetterCode = self._srd.cnv3To1(srcResNam)
         #
+        if editInfoTuple[0] == "xyz":
+            if srcResNam != self._gapSymbol:
+                for labelId,tupleIndex in self._xyzAlignLabelIndices.items():
+                    if labelId.startswith("auth"):
+                        if srcResNam != self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][1]:
+                            oneLetterCode = self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][0]
+                            srcResNam = self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][1]
+                        #
+                        break
+                    #
+                #
+                try:
+                    seq = self._getSequenceByPackLabelFromDataStore(editInfoTuple[1])
+                    self._seqAlignList[int(resLabel.getAlignmentIndex())][int(editInfoTuple[2])][5] = seq[int(srcSeqPos)][2]
+                except:
+                    pass
+                #
+            else:
+                self._seqAlignList[int(resLabel.getAlignmentIndex())][int(editInfoTuple[2])][5] = ""
+            #
+        #
         self._seqAlignList[int(resLabel.getAlignmentIndex())][int(editInfoTuple[2])][0] = oneLetterCode
         self._seqAlignList[int(resLabel.getAlignmentIndex())][int(editInfoTuple[2])][1] = srcResNam
         self._seqAlignList[int(resLabel.getAlignmentIndex())][int(editInfoTuple[2])][2] = srcSeqNum
         self._seqAlignList[int(resLabel.getAlignmentIndex())][int(editInfoTuple[2])][3] = srcSeqPos
         #
         self.__updateEditingHistory(editInfoTuple[3].getEditType(), editInfoTuple[0], editInfoTuple[1])
+        #
+        if (srcResNam != self._gapSymbol) and (editInfoTuple[0] == "auth"):
+            for labelId,tupleIndex in self._xyzAlignLabelIndices.items():
+                self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][6] = 0
+                self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][7] = ""
+                if labelId.startswith("xyz"):
+                    if self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][1] == self._gapSymbol:
+                        continue
+                    #
+                    if self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][1] != srcResNam:
+                        self.__updateEditingHistory(editInfoTuple[3].getEditType(), "xyz", labelId)
+                    #
+                #
+                self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][0] = oneLetterCode
+                self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][1] = srcResNam
+            #
+        #
 
     def _update_insert(self, resLabel, editInfoTuple):
         """ Insert residue(s): editInfoTuple ( 0: seqType, 1: seqLabelId, 2: alignTupleIndex, 3: editObj )

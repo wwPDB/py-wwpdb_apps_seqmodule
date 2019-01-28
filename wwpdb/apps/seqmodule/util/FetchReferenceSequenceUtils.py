@@ -29,15 +29,23 @@ class FetchReferenceSequenceUtils(object):
         if not self.__srd:
             self.__srd = SequenceReferenceData(self.__verbose, self.__lfh)
         #
+        self.__accCode = ""
+        self.__refInfoD = {}
 
     def fetchReferenceSequence(self, dbName, dbAccession, dbIsoform, polyTypeCode="AA", refSeqBeg=None, refSeqEnd=None):
         """ return error message, sequence feature dictionary, sequence list
         """
-        accCode,refInfoD = self.__getRefInfo(dbName, dbAccession, dbIsoform)
-        if (not refInfoD) or ("sequence" not in refInfoD):
-            return "Fetch reference sequence [ dbName=" + dbName + ", Accession=" + accCode + "] failed.",{},[]
+        if not self.__refInfoD:
+            self.__accCode,self.__refInfoD = self.__getRefInfo(dbName, dbAccession, dbIsoform)
         #
-        seqLength = len(refInfoD["sequence"])
+        if (not self.__refInfoD) or ("sequence" not in self.__refInfoD):
+            error = "Fetch reference sequence [ dbName=" + dbName + ", Accession=" + self.__accCode + "] failed."
+            self.__accCode = ""
+            self.__refInfoD = {}
+            #
+            return error,{},[]
+        #
+        seqLength = len(self.__refInfoD["sequence"])
         #
         try:
             refSeqBeg = int(str(refSeqBeg))
@@ -60,7 +68,7 @@ class FetchReferenceSequenceUtils(object):
             if errorMessage:
                 errorMessage += "\n"
             #
-            errorMessage += "Invalid SEQ END number: " + str(refSeqEnd) + " > " + str(seqLength) + " ( sequence length of " + accCode + " )."
+            errorMessage += "Invalid SEQ END number: " + str(refSeqEnd) + " > " + str(seqLength) + " ( sequence length of " + self.__accCode + " )."
         #
         if errorMessage:
             return errorMessage,{},[]
@@ -71,10 +79,10 @@ class FetchReferenceSequenceUtils(object):
         if refSeqEnd is None:
             refSeqEnd = len(sequence)
         #
-        refInfoD["db_length"] = seqLength
-        refInfoD["hitFrom"] = refSeqBeg
-        refInfoD["hitTo"] = refSeqEnd
-        return "",refInfoD,self.__getReferenceList(refInfoD["sequence"], polyTypeCode, refSeqBeg, refSeqEnd)
+        self.__refInfoD["db_length"] = seqLength
+        self.__refInfoD["hitFrom"] = refSeqBeg
+        self.__refInfoD["hitTo"] = refSeqEnd
+        return "",self.__refInfoD,self.__getReferenceList(self.__refInfoD["sequence"], polyTypeCode, refSeqBeg, refSeqEnd)
 
     def __getRefInfo(self, dbName, dbAccession, dbIsoform):
         """ Fetch sequence data from Uniprot or GeneBank database

@@ -48,6 +48,8 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         self.__orderAlignIndexList = []
         self.__orderAlignRefIndexList = []
         self.__misMatchTypes = []
+        self.__alignmentBlock = []
+        self.__pdbChainIdList = []
         self.__warningMsg = ""
 
     def doRender(self):
@@ -263,6 +265,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 self.__polymerTypeCodeAuth = polymerTypeCode
             else:
                 label = seqType.upper() + " Chain: " + seqInstId + " V:" + str(seqVersion)
+                self.__pdbChainIdList.append(seqInstId)
             #
             self.__orderAlignIndexList.append((orderedAlignIdTup[0], seqType, seqInstId, seqPartId, seqAltId, seqVersion, label, polymerTypeCode))
             if seqType == "ref":
@@ -292,6 +295,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         alignmentLine = 0
         ibeg = 0
         resPerLine = 60
+        self.__alignmentBlock = []
         #
         cssClassPickable = "pickable"
         cssClassTerminalResidue = "trmnlrsdue"
@@ -319,6 +323,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 cssClassBg = "whitebg"
             #
             fp.write('<div id="AL%s" class="%s">\n' % (str(alignmentLine), cssClassBg))
+            self.__alignmentBlock.append(str(alignmentLine))
             #
             for (alignIdx, seqType, seqInstId, seqPartId, seqAltId, seqVersion, label, polymerTypeCode) in self.__orderAlignIndexList:
                 idL = seqType + "_" +  seqInstId + "_" + str(alignmentLine)
@@ -584,6 +589,8 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         else:
             myD["selectids"] = ",".join(self.__selectedIdList)
         #
+        myD["alignmentblocklist"] = ",".join(self.__alignmentBlock)
+        myD["blockedithtml"] = self.__getBlockEditFormHtml()
         if not self.__misMatchTypes:
             myD["gedittype"] = "no-mismatch"
         elif len(self.__misMatchTypes) == 1:
@@ -750,3 +757,31 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         cL.append('<td><span id="%s_D" class="%s">%s</span></td>' % (idRef, cssEditDetails, details))
         cL.append('</tr>\n')
         return cL
+
+    def __getBlockEditFormHtml(self):
+        """
+        """
+        form_template = '''
+            <input type="hidden" id="chainids" name="chainids" value="%(chainids)s" />
+            <input type="hidden" name="identifier" value="%(identifier)s" />
+            <input type="hidden" name="aligntag" value="%(entityid)s" />
+            <input type="hidden" name="sessionid" value="%(sessionid)s" />
+            <table>
+            <tr><th>XYZ Chain ID</th><th>Start Position</th><th>End Posotion</th><th>Move to Position</th></tr>
+            %(table_row)s
+            </table>
+        '''
+        #
+        myD = {}
+        myD["chainids"] = ",".join(self.__pdbChainIdList)
+        myD["identifier"] = self._dataSetId
+        myD["entityid"] = self._entityId
+        myD["sessionid"] = self.__sessionId
+        myD["table_row"] = ""
+        for chainID in self.__pdbChainIdList:
+            myD["table_row"] += "<tr><td>" + chainID + "</td>"
+            myD["table_row"] += '<td><input type="text" id="start_position_' + chainID + '" name="start_position_' + chainID + '" value="" + size="20" /></td>'
+            myD["table_row"] += '<td><input type="text" id="end_position_' + chainID + '" name="end_position_' + chainID + '" value="" + size="20" /></td>'
+            myD["table_row"] += '<td><input type="text" id="move_to_' + chainID + '" name="move_to_' + chainID + '" value="" + size="20" /></td></tr>\n'
+        #
+        return form_template % myD

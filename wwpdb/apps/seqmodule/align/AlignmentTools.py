@@ -11,10 +11,10 @@ __email__ = "zfeng@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.09"
 
-import os, sys, traceback
+import copy, os, sys, traceback
 
 from wwpdb.utils.config.ConfigInfo import ConfigInfo
-from wwpdb.apps.seqmodule.align.AlignmentToolUtils import getSeqAlignment,mergeSeqAlignment,decodeIndex,assignConflict
+from wwpdb.apps.seqmodule.align.AlignmentToolUtils import getSeqAlignment,mergeSeqAlignment,codeSeqIndex,decodeIndex,assignConflict
 from wwpdb.apps.seqmodule.io.AlignmentDataStore import AlignmentDataStore
 from wwpdb.utils.align.alignlib import PseudoMultiAlign
 from wwpdb.io.file.mmCIFUtil  import mmCIFUtil
@@ -143,6 +143,51 @@ class AlignmentTools(AlignmentDataStore):
             self._addErrorMessage(traceback.format_exc())
         #
 
+    def getAlignRefSeqRange(self, authSeqId="", partId=0, refSeqs=[]):
+        """ 
+        """
+        if len(refSeqs) == 0:
+            return None,None
+        #
+        authSeqs = self.__getSequenceFromDataStore(authSeqId)
+        if not authSeqs:
+            return None,None
+        #
+        self.__checkPartInfoDict(authSeqId)
+        if not partId in self.__partInfoDict:
+            return None,None
+        #
+        alignIndexList,alignLength,numMatch,numMatchGaps = self.__getAuthRefAlignIndexList(authSeqs, refSeqs, self.__partInfoDict[partId][0] - 1, \
+                                                                                           self.__partInfoDict[partId][1] - 1)
+        #
+        alignStart = -1
+        alignEnd = -1
+        for rowIdx,alignIdx in enumerate(alignIndexList):
+            if alignIdx[0] < 0:
+                continue
+            #
+            if alignStart < 0:
+                alignStart = rowIdx
+            #
+            alignEnd = rowIdx
+        #
+        if (alignStart >= 0) and (alignEnd >= 0):
+            refSeqBeg = None
+            refSeqEnd = None
+            for idx in range(alignStart, alignEnd + 1):
+                if alignIndexList[idx][1] < 0:
+                    continue
+                #
+                if refSeqBeg is None:
+                    refSeqBeg = alignIndexList[idx][1] + 1
+                #
+                refSeqEnd = alignIndexList[idx][1] + 1
+            #
+            self._lfh.write("refSeqBeg=%r refSeqEnd=%r\n" % (refSeqBeg, refSeqEnd))
+            return refSeqBeg,refSeqEnd
+        #
+        return None,None
+
     def addRefAlignIndices(self, authSeqId="", refSeqId="", partId=0):
         """ Add new ref sequence alignmet index
         """
@@ -181,40 +226,97 @@ class AlignmentTools(AlignmentDataStore):
     def checkResidueNameReplaceCompatibility(self, alignIndex, origResName, resLabelIndex, newResName):
         """ Check if residue name replacement is allowed based on the aligned coordiante residue(s) 
         """
-        if alignIndex >= len(self._seqAlignList):
+        if (alignIndex < 0) or (alignIndex >= len(self._seqAlignList)):
             return "Compatibility checking for residue name replacement failed.<br />\n"
         #
-        alignTup = self._seqAlignList[alignIndex]
-        #
-        error = ""
-        for idx in range(0, len(alignTup)):
-            if idx not in self._reverseSeqAlignLabelIndices:
-                continue
-            #
-            (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(self._reverseSeqAlignLabelIndices[idx])
-            if seqType != "xyz":
-                continue
-            #
-            if (alignTup[idx][1] == ".") and (alignTup[idx][2] == ""):
-                continue
-            elif newResName == alignTup[idx][1]:
-                continue
-            elif (len(alignTup[idx][5]) > 0) and self._isCompatible(alignTup[idx][5], newResName):
-                continue
-            elif (newResName == "ASP") and (alignTup[idx][1] == "ASN"):
-                continue
-            elif (newResName == "GLU") and (alignTup[idx][1] == "GLN"):
-                continue
-            elif (newResName == "MSE") and ((alignTup[idx][1] == "MSE") or (alignTup[idx][1] == "MET")):
-                continue
-            #
-            error += "Residue '" + seqInstId + " " + alignTup[idx][1] + " " + alignTup[idx][2] + "' can not be changed to '" + newResName + "'.<br />\n"
-        #
+        error = self.__isAuthResidueNameCompatible(alignIndex, newResName)
         errorMsg = ""
         if error:
             errorMsg = "'" + origResName + " " + resLabelIndex + "' can not be replaced by '" + newResName + "':<br /><br />\n\n" + error
         #
         return errorMsg
+
+    def checkResidueMovingCompatibility(self, srcResidueId, dstResidueId):
+        """ Check if a residue moving is allowed based on the aligned coordiante residue(s)
+        """
+        srcResidueLabel = copy.deepcopy(self._getResLabelFromResLabelId(srcResidueId))
+        dstResidueLabel = copy.deepcopy(self._getResLabelFromResLabelId(dstResidueId))
+        #
+        srcAlignPos = srcResidueLabel.getAlignmentIndex()
+        dstAlignPos = dstResidueLabel.getAlignmentIndex()
+        if (srcAlignPos < 0) or (srcAlignPos >= len(self._seqAlignList)) or (dstAlignPos< 0) or (dstAlignPos >= len(self._seqAlignList)):
+            return "Compatibility checking for residue moving failed.<br />\n"
+        #
+        seqType = srcResidueLabel.getSequenceType()
+        instId  = srcResidueLabel.getSequenceInstId()
+        ResName = srcResidueLabel.getResidueCode3()
+        ResNum  = srcResidueLabel.getResidueLabelIndex()
+        #
+        error = ""
+        if seqType == "auth":
+            error = self.__isAuthResidueNameCompatible(dstAlignPos, ResName)
+        elif seqType == "xyz":
+            error = self.__isXyzResidueNameCompatible(instId, srcAlignPos, dstAlignPos)
+        #
+        errorMsg = ""
+        if error:
+            errorMsg = "'" + ResName + " " + ResNum + "' can not be moved to position '" + str(dstAlignPos) + "':<br /><br />\n\n" + error
+        #
+        return errorMsg
+
+    def getGlobalEditList(self):
+        """ Generate editlist for global input form
+        """
+        editList = []
+        unCompatibleList = []
+        chainIdList = str(self._reqObj.getValue("chainids")).split(",")
+        for chainId in chainIdList:
+            chainIdx = -1
+            chainSeqId = ""
+            for seqId,idx in self._seqAlignLabelIndices.items():
+                tL = str(seqId).strip().split("_")
+                if len(tL) < 3:
+                    continue
+                #
+                if (tL[0] == "xyz") and (tL[1] == chainId):
+                    chainIdx = idx
+                    chainSeqId = str(seqId).strip()
+                    break
+                #
+            #
+            if chainIdx < 0:
+                continue
+            #
+            start_position = str(self._reqObj.getValue("start_position_" + chainId))
+            if not start_position:
+                continue
+            #
+            end_position = str(self._reqObj.getValue("end_position_" + chainId))
+            if not end_position:
+                continue
+            #
+            move_to = str(self._reqObj.getValue("move_to_" + chainId))
+            if not move_to:
+                continue
+            #
+            start = int(start_position) - 1
+            end = int(end_position) - 1
+            target = int(move_to) - 1
+            pairList,gapList = self.__getPairAndGapList(start, end, target)
+            edPairList,unPairList = self.__getPairEditList(self._seqAlignLabelIndices[self._authLabel], chainIdx, chainSeqId, pairList)
+            if len(edPairList) > 0:
+                editList.extend(edPairList)
+            #
+            if len(unPairList) > 0:
+                unCompatibleList.extend(unPairList)
+                continue
+            #
+            edGapList = self.__getGapEditList(chainIdx, chainSeqId, gapList)
+            if len(edGapList) > 0:
+                editList.extend(edGapList)
+            #
+        #
+        return editList,unCompatibleList
 
     def _checkAndUpdateAlignment(self, inputIdList, selectedIdList):
         """ Check if input alignIds match the default selected alignIds saved in alignment pickle file and
@@ -234,10 +336,10 @@ class AlignmentTools(AlignmentDataStore):
                 self.__alignFlag = False
                 return retInputIdList,retSelectedIdList
             #
-            self._copyXyzAlignmentToSeqAlignment()
+        #
+        self._copyXyzAlignmentToSeqAlignment()
         #
         if (len(refIdList) > 0) and self.__getRefLabelDictFromRefIdList(refIdList):
-            self._copyXyzAlignmentToSeqAlignment()
             self.__checkPartInfoDict(self.__local_authLabel)
             self.__getCurrentAuthRefAlignment()
         #
@@ -1024,3 +1126,178 @@ class AlignmentTools(AlignmentDataStore):
             #
         #
         return False
+
+    def __isAuthResidueNameCompatible(self, alignIndex, ResName):
+        """
+        """
+        alignTup = self._seqAlignList[alignIndex]
+        #
+        error = ""
+        for idx in range(0, len(alignTup)):
+            if idx not in self._reverseSeqAlignLabelIndices:
+                continue
+            #
+            (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(self._reverseSeqAlignLabelIndices[idx])
+            if seqType != "xyz":
+                continue
+            #
+            if self.__isCompatible(alignTup[idx], ResName):
+                continue
+            #
+            error += "Residue '" + seqInstId + " " + alignTup[idx][1] + " " + alignTup[idx][2] + "' can not be changed to '" + ResName + "'.<br />\n"
+        #
+        return error
+
+    def __isXyzResidueNameCompatible(self, chainId, srcAlignPos, dstAlignPos):
+        """
+        """
+        chainIdx = -1
+        for seqId,idx in self._seqAlignLabelIndices.items():
+            tL = str(seqId).strip().split("_")
+            if len(tL) < 3:
+                continue
+            #
+            if (tL[0] == "xyz") and (tL[1] == chainId):
+                chainIdx = idx
+                break
+            #
+        #
+        if chainIdx < 0:
+            return ""
+        #
+        srcRecord = self._seqAlignList[srcAlignPos][chainIdx]
+        authRecord = self._seqAlignList[dstAlignPos][self._seqAlignLabelIndices[self._authLabel]]
+        if not self.__isCompatible(srcRecord, authRecord[1]):
+            return "Residue '" + chainId + " " + srcRecord[1] + " " + srcRecord[2] + "' can not be moved to position '" + str(dstAlignPos + 1) + \
+                   "' where it is '" + authRecord[1] + "' in the auth sequence.<br/>\n"
+        #
+        return ""
+
+    def __isCompatible(self, alignRecord, authResName):
+        """ Verify the coordinate residue side-chain pattern defined in comment is compatible with new residue name
+        """
+        if ((authResName == "") or (authResName == ".")) and (alignRecord[1] != "") and (alignRecord[1] != "."):
+            return False
+        #
+        if (alignRecord[1] == ".") and (alignRecord[2] == ""):
+            return True
+        elif authResName == alignRecord[1]:
+            return True
+        elif (len(alignRecord[5]) > 0) and self._isCompatible(alignRecord[5], authResName):
+            return True
+        elif (authResName == "ASP") and (alignRecord[1] == "ASN"):
+            return True
+        elif (authResName == "GLU") and (alignRecord[1] == "GLN"):
+            return True
+        elif (authResName == "MSE") and ((alignRecord[1] == "MSE") or (alignRecord[1] == "MET")):
+            return True
+        #
+        return False
+
+    def __getPairAndGapList(self, start, end, target):
+        """ Get moving pair list and leaving gap list
+        """
+        pairList = []
+        gapList = []
+        if target > end:
+            i = end
+            j = target
+            while (i >= start):
+                pairList.append((i, j))
+                i -= 1
+                j -= 1
+            #
+            gapEnd = end
+            if j < gapEnd:
+                gapEnd = j
+            #
+            i = gapEnd
+            while (i >= start):
+                gapList.append(i)
+                i -= 1
+            #
+        else:
+            i = start
+            j = target
+            while (i <= end):
+                pairList.append((i, j))
+                i += 1
+                j += 1
+            #
+            gapStart = start
+            if j > gapStart:
+                gapStart = j
+            #
+            i = gapStart
+            while (i <= end):
+                gapList.append(i)
+                i += 1
+            #
+        #
+        return pairList,gapList
+
+    def __getPairEditList(self, authIdx, chainIdx, chainSeqId, pairList):
+        """ Get paired block editlist or un-compatible list
+        """
+        if not pairList:
+            return [],[]
+        #
+        (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(chainSeqId)
+        featureD = self.getFeature(seqType, seqInstId, seqPartId, seqAltId, seqVersion)
+        #
+        polymerTypeCode = "AA"
+        if "POLYMER_TYPE" in featureD:
+            polymerTypeCode = featureD["POLYMER_TYPE"]
+        #
+        editList = []
+        unCompatibleList = []
+        for pairTup in pairList:
+            srcRecord = self._seqAlignList[pairTup[0]][chainIdx]
+            tgtRecord = self._seqAlignList[pairTup[1]][chainIdx]
+            authRecord = self._seqAlignList[pairTup[1]][authIdx]
+            #
+            currId = self._getResLabelId(seqType=seqType, seqInstId=seqInstId, seqAltId=seqAltId, seqVersion=seqVersion, \
+                        residueCode3=tgtRecord[1], residueLabelIndex=tgtRecord[2], alignIndex=pairTup[1], \
+                        seqIndex=codeSeqIndex(tgtRecord[3]), residueType=polymerTypeCode, seqPartId=seqPartId)
+            #
+            if self.__isCompatible(srcRecord, authRecord[1]):
+                newId = self._getResLabelId(seqType=seqType, seqInstId=seqInstId, seqAltId=seqAltId, seqVersion=seqVersion, \
+                            residueCode3=srcRecord[1], residueLabelIndex=srcRecord[2], alignIndex=pairTup[1], \
+                            seqIndex=codeSeqIndex(srcRecord[3]), residueType=polymerTypeCode, seqPartId=seqPartId)
+                #
+                editList.append( ( currId, srcRecord[0], srcRecord[1], tgtRecord[0], newId ) )
+            else:
+                unCompatibleList.append( ( currId, srcRecord[0], seqInstId, srcRecord[1], srcRecord[2], authRecord[1], str(pairTup[1] + 1) ) )
+            #
+        #
+        return editList,unCompatibleList
+
+    def __getGapEditList(self, chainIdx, chainSeqId, gapList):
+        """ Get gap block editlist
+        """
+        if not gapList:
+            return []
+        #
+        (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(chainSeqId)
+        featureD = self.getFeature(seqType, seqInstId, seqPartId, seqAltId, seqVersion)
+        #
+        polymerTypeCode = "AA"
+        if "POLYMER_TYPE" in featureD:
+            polymerTypeCode = featureD["POLYMER_TYPE"]
+        #
+        editList = []
+        for alignPos in gapList:
+            self._lfh.flush()
+            xyzRecord = self._seqAlignList[alignPos][chainIdx]
+            #
+            currId = self._getResLabelId(seqType=seqType, seqInstId=seqInstId, seqAltId=seqAltId, seqVersion=seqVersion, \
+                        residueCode3=xyzRecord[1], residueLabelIndex=xyzRecord[2], alignIndex=alignPos, \
+                        seqIndex=codeSeqIndex(xyzRecord[3]), residueType=polymerTypeCode, seqPartId=seqPartId)
+            #
+            newId = self._getResLabelId(seqType=seqType, seqInstId=seqInstId, seqAltId=seqAltId, seqVersion=seqVersion, \
+                        residueCode3=self._gapSymbol, residueLabelIndex="", alignIndex=alignPos, seqIndex="", \
+                        residueType=polymerTypeCode, seqPartId=seqPartId)
+            #
+            editList.append( ( currId, self._gapSymbol, self._gapSymbol, xyzRecord[0], newId ) )
+        #
+        return editList

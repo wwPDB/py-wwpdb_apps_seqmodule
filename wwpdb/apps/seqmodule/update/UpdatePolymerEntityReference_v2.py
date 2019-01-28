@@ -139,26 +139,25 @@ class UpdatePolymerEntityReference(UpdateSequenceDataStoreUtils):
             entityId = self._reqObj.getValue("entityid")
             dbName = self._reqObj.getValue("dbname")
             dbAccession = self._reqObj.getValue("dbaccession")
-
-            dbSeqBegin = self._reqObj.getValue("dbseqbegin")
-            dbSeqEnd = self._reqObj.getValue("dbseqend")
             if ((dbName == self.__placeHolderValue) or (dbAccession == self.__placeHolderValue)):
                 return packedSeqLabel
-            if dbSeqBegin == self.__placeHolderValue:
+            #
+            dbSeqBegin = self._reqObj.getValue("dbseqbegin")
+            dbSeqEnd = self._reqObj.getValue("dbseqend")
+            if (dbSeqBegin == self.__placeHolderValue) or (dbSeqEnd == self.__placeHolderValue):
                 dbSeqBegin = None
+                dbSeqEnd = None
             else:
                 try:
                     dbSeqBegin = int(str(dbSeqBegin))
                 except:
                     dbSeqBegin = None
+                    dbSeqEnd = None
                 #
-            #
-            if dbSeqEnd == self.__placeHolderValue:
-                dbSeqEnd = None
-            else:
                 try:
                     dbSeqEnd = int(str(dbSeqEnd))
                 except:
+                    dbSeqBegin = None
                     dbSeqEnd = None
                 #
             #
@@ -185,6 +184,18 @@ class UpdatePolymerEntityReference(UpdateSequenceDataStoreUtils):
             if errMsg:
                 return errMsg,""
             #
+            alignTool = AlignmentTools(reqObj=self._reqObj, entityId=entityId, seqDataStore=self.getSequenceDataStoreObj(), \
+                                       verbose=self._verbose, log=self._lfh)
+            #
+            if dbSeqBegin is None:
+                dbSeqBegin,dbSeqEnd = alignTool.getAlignRefSeqRange(authSeqId=selectedAuthId, partId=partId, refSeqs=refSeqList)
+                errMsg,refFeatureDict,refSeqList = fetchUtil.fetchReferenceSequence(dbName, dbAccession, dbIsoform, polyTypeCode=polyTypeCode, \
+                                                                                    refSeqBeg=dbSeqBegin, refSeqEnd=dbSeqEnd)
+                #
+                if errMsg:
+                    return errMsg,""
+                #
+            # 
             nextAltId = self.getNextAlternativeNumber("ref", entityId, partId)
             self.setSequence(refSeqList, "ref", entityId, seqPartId=partId, seqAltId=nextAltId)
             self.setFeature(self.getRefFeatureObj(polyTypeCode, int(partId), authFeatureDict["AUTH_SEQ_NUM_BEGIN"], authFeatureDict["AUTH_SEQ_NUM_END"], \
@@ -195,8 +206,6 @@ class UpdatePolymerEntityReference(UpdateSequenceDataStoreUtils):
             nextRefLabel = sL.pack()
             self._reqObj.setNewRefId(nextRefLabel)
             #
-            alignTool = AlignmentTools(reqObj=self._reqObj, entityId=entityId, seqDataStore=self.getSequenceDataStoreObj(), \
-                                       verbose=self._verbose, log=self._lfh)
             alignTool.addRefAlignIndices(authSeqId=selectedAuthId, refSeqId=nextRefLabel, partId=partId)
             #
             self.saveSequenceDataStore()
