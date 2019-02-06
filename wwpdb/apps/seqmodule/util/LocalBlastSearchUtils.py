@@ -565,7 +565,7 @@ class LocalBlastSearchUtils(object):
             sortScoreList.append(scoreD)
         #
         #sortScoreList.sort(key=itemgetter('taxid_match', 'code_score', 'identity_score', 'code_score', 'db_score'),reverse=True)
-        sortScoreList.sort(key=itemgetter('taxid_match', 'code_score', 'identity_score', 'code_score', 'db_score'))
+        sortScoreList.sort(key=itemgetter('identity_score', 'code_score', 'taxid_match', 'db_score'))
         #
         finalList = []
         for i,scoreD in enumerate(sortScoreList, start=1):
@@ -574,7 +574,7 @@ class LocalBlastSearchUtils(object):
             finalList.append(hitList[scoreD["idx"]])
         #
         if len(finalList) > self.__maxHitsSave:
-            return finalList[:self.__maxHitsSave]
+            return finalList[(len(finalList) - self.__maxHitsSave):]
         else:
             return finalList
         #

@@ -97,16 +97,12 @@ class AlignmentExport(AlignmentTools):
                 featureD = self.getFeature(seqTypeT, seqInstIdT, seqPartIdT, seqAltIdT, seqVersionT)
                 break
             #
-            irow = len(rptRefL) + 1
-            rptRefL.append([str(irow), str(self._entityId), entity_mon_id, entity_seq_num, str(self._entityId), str(tstCompId), \
-                            str(tstSeqNum), str(tstPartId)])
-            #
             if len(alignTup[authIdx][5]) > 0:
                 cType,comment = self._decodeComment(alignTup[authIdx][5])
                 if sourceType.strip().upper() == "NAT":
-                    for cType in ( "engineered mutation", "expression tag", "linker" ):
-                        if comment.find(cType) != -1:
-                            eelCommentL.append(cType)
+                    for ccType in ( "engineered mutation", "expression tag", "linker" ):
+                        if comment.find(ccType) != -1:
+                            eelCommentL.append(ccType)
                         #
                     #
                 #
@@ -124,7 +120,7 @@ class AlignmentExport(AlignmentTools):
                         end = len(self._seqAlignList)
                     #
                     for idx1 in range(start, end):
-                        cType,comment1 = self._decodeComment(self._seqAlignList[idx1][authIdx][5])
+                        cType1,comment1 = self._decodeComment(self._seqAlignList[idx1][authIdx][5])
                         if (comment1 == "chromophore") and str(self._seqAlignList[idx1][authIdx][1]) and \
                            (str(self._seqAlignList[idx1][authIdx][1]) != ".") and str(self._seqAlignList[idx1][authIdx][2]) and \
                            (str(self._seqAlignList[idx1][authIdx][2]) != "."):
@@ -144,6 +140,10 @@ class AlignmentExport(AlignmentTools):
                     rptDeleteL.append([str(irow), str(self._entityId), str(tstPartId), self._srd.convertDbNameToResource(featureD["DB_NAME"]), \
                                       featureD["DB_ACCESSION"], featureD["DB_ISOFORM"], tstCompId, tstSeqNum])
                 #
+            #
+            irow = len(rptRefL) + 1
+            rptRefL.append([str(irow), str(self._entityId), entity_mon_id, entity_seq_num, str(self._entityId), str(tstCompId), \
+                            str(tstSeqNum), str(tstPartId)])
             #
         #
         return rptRefL,rptCommentL,rptCommentModL,rptDeleteL,self._getNaturalSourceWarningMessage(sourceType, eelCommentL)
