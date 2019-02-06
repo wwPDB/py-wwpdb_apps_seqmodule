@@ -456,7 +456,9 @@ class UpdateSequenceDataStoreUtils(object):
         """
         self.__seqFeature.clear()
         # disambiguate the organism and strain data -
-        if rD["db_name"] in ["SP", "TR", "UNP"]:
+        if ("strain" in rD) and (len(rD["strain"]) > 0):
+            self.__seqFeature.setSource(organism=rD["source_scientific"], strain=rD["strain"], taxid=rD["taxonomy_id"], commonName=rD["source_common"])
+        elif rD["db_name"] in ["SP", "TR", "UNP"]:
             org, strain = self.__seqFeature.decodeUniProtSourceOrganism(rD["source_scientific"])
             self.__seqFeature.setSource(organism=org, strain=strain, taxid=rD["taxonomy_id"], commonName=rD["source_common"])
         else:

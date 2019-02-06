@@ -1077,14 +1077,19 @@ class AlignmentTools(AlignmentDataStore):
     def __consolidateConflict(self, defaultComment, authComment, refComment):
         """ Consolidate default & annotated conflicts
         """
+        aType,aComment = self._decodeComment(authComment)
+        if aComment == "chromophore":
+            return authComment
+        #
+        rType,rComment = self._decodeComment(refComment)
+        if rComment == "chromophore":
+            return refComment
+        #
         if len(defaultComment) < 1:
             return ""
         #
         if (defaultComment == "insertion") or (defaultComment == "modified residue") or ((len(authComment) < 1) and (len(refComment) < 1)):
             return "DEFAULT:" + defaultComment
-        #
-        aType,aComment = self._decodeComment(authComment)
-        rType,rComment = self._decodeComment(refComment)
         #
         if defaultComment in ( "engineered mutation", "conflict", "variant" ):
             if aComment in ( "engineered mutation", "conflict", "variant" ):
