@@ -284,7 +284,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         #
         alignIdx = self._seqAlignLabelIndices[seqLabelId]
         posPartIdDict = {}
-        if (alignIdx == authIdx) and (("delete" in editTypeList) or ("insert" in editTypeList)):
+        if (alignIdx == authIdx) and (("delete" in editTypeList) or ("insert" in editTypeList) or ("replace" in editTypeList)):
             for partId,posRange in self._partPosDict.items():
                 for pos in range(posRange[0], posRange[1] + 1):
                     posPartIdDict[pos] = partId
@@ -314,6 +314,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
             seqIdx = len(newSeqList)
             comment = ""
             if seqType == "auth":
+                alignTup[alignIdx][2] = str(seqIdx + 1)
                 intIdx,comment = decodeIndex(alignTup[alignIdx][3])
                 if intIdx >= 0:
                     newSeqList.append(( alignTup[alignIdx][1], alignTup[alignIdx][2], orgSeqList[intIdx][2], seqIdx + 1, alignTup[alignIdx][0], \
@@ -322,7 +323,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
                     newSeqList.append(( alignTup[alignIdx][1], alignTup[alignIdx][2], "", seqIdx + 1, alignTup[alignIdx][0], \
                                         alignTup[alignIdx][1]))
                 #
-                if (alignIdx == authIdx) and (("delete" in editTypeList) or ("insert" in editTypeList)):
+                if (alignIdx == authIdx) and (("delete" in editTypeList) or ("insert" in editTypeList) or ("replace" in editTypeList)):
                     if idx in posPartIdDict:
                         partId = posPartIdDict[idx]
                         if partId in self.__newPartInfoDict:
