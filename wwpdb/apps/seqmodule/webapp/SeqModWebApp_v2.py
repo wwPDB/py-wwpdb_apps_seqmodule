@@ -1074,7 +1074,7 @@ class SeqModWebAppWorker(object):
                 else:
                     rC.addDictionaryItems({ "gedittype" : "no-mismatch" })
                 #
-                for item in ( "alignids", "selectids", "alignmentblocklist", "blockedithtml" ):
+                for item in ( "alignids", "selectids", "alignmentblocklist", "missingauthseqmap", "blockedithtml" ):
                     if item in miscD:
                         rC.addDictionaryItems({ item : miscD[item] })
                     #

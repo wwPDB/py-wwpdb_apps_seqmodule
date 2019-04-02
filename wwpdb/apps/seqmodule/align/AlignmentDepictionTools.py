@@ -50,6 +50,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         self.__misMatchTypes = []
         self.__alignmentBlock = []
         self.__pdbChainIdList = []
+        self.__missingAuthSeqMap = {}
         self.__warningMsg = ""
 
     def doRender(self):
@@ -590,6 +591,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             myD["selectids"] = ",".join(self.__selectedIdList)
         #
         myD["alignmentblocklist"] = ",".join(self.__alignmentBlock)
+        myD["missingauthseqmap"] = self.__missingAuthSeqMap
         myD["blockedithtml"] = self.__getBlockEditFormHtml()
         if not self.__misMatchTypes:
             myD["gedittype"] = "no-mismatch"
@@ -709,6 +711,13 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 inPart = True
                 #
                 if alignTup[authIdx][1] != alignTup[alignIdx][1]:
+                    if alignTup[authIdx][1] == self._gapSymbol:
+                        if alignTup[alignIdx][0] == "X":
+                            self.__missingAuthSeqMap[str(alPos)] = "(" + alignTup[alignIdx][1] + ")"
+                        else:
+                            self.__missingAuthSeqMap[str(alPos)] = alignTup[alignIdx][0]
+                        #
+                    #
                     idRef = self._getResLabelId(seqType=seqType, seqInstId=seqInstId, seqAltId=seqAltId, seqVersion=seqVersion, \
                                  residueCode3=alignTup[alignIdx][1], residueLabelIndex=alignTup[alignIdx][2], alignIndex=alPos, \
                                  seqIndex=codeSeqIndex(alignTup[alignIdx][3]), residueType=polymerTypeCode, seqPartId=seqPartId)
