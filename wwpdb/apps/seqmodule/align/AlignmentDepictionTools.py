@@ -349,7 +349,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                         cssClassType = " bgcoldna "
                     elif (polymerTypeCode == "XNA"):
                         cssClassType = " bgcolrna "
-                        if self._srd.isDNA(rT[1]):
+                        if self._srd.isDNA(self._seqAlignList[sPos][alignIdx][1]):
                             cssClassType = " bgcoldna "
                         #
                     #

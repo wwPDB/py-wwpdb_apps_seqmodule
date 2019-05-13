@@ -57,6 +57,13 @@ class FetchReferenceSequenceUtils(object):
         except:
             refSeqEnd = seqLength
         #
+        # Added reverse order seqeunce case: DAOTHER-4455
+        #
+        reverseOrder = False
+        if refSeqEnd < refSeqBeg:
+            reverseOrder = True
+            refSeqBeg,refSeqEnd = refSeqEnd,refSeqBeg
+        #
         errorMessage = ""
         if (refSeqBeg is not None) and (refSeqBeg < 1):
             if errorMessage:
@@ -80,9 +87,14 @@ class FetchReferenceSequenceUtils(object):
             refSeqEnd = len(sequence)
         #
         self.__refInfoD["db_length"] = seqLength
-        self.__refInfoD["hitFrom"] = refSeqBeg
-        self.__refInfoD["hitTo"] = refSeqEnd
-        return "",self.__refInfoD,self.__getReferenceList(self.__refInfoD["sequence"], polyTypeCode, refSeqBeg, refSeqEnd)
+        if reverseOrder:
+            self.__refInfoD["hitFrom"] = refSeqEnd
+            self.__refInfoD["hitTo"] = refSeqBeg
+        else:
+            self.__refInfoD["hitFrom"] = refSeqBeg
+            self.__refInfoD["hitTo"] = refSeqEnd
+        #
+        return "",self.__refInfoD,self.__getReferenceList(self.__refInfoD["sequence"], polyTypeCode, refSeqBeg, refSeqEnd, reverseOrder)
 
     def __getRefInfo(self, dbName, dbAccession, dbIsoform):
         """ Fetch sequence data from Uniprot or GeneBank database
@@ -121,11 +133,15 @@ class FetchReferenceSequenceUtils(object):
         #
         return dbAccession,{}
 
-    def __getReferenceList(self, sequence, polyTypeCode, refSeqBeg, refSeqEnd):
+    def __getReferenceList(self, sequence, polyTypeCode, refSeqBeg, refSeqEnd, reverseOrder):
         """  Convert the one-letter code sequence from the reference resource to internal indexed list 
              format seqIdx=[(3-letter-code, ref-db-index, comment, position in sequence (1-length), 1-letter code]
         """
-        return self.__srd.cnv1To3ListIdx(sequence[refSeqBeg-1:refSeqEnd], refSeqBeg, polyTypeCode)
+        if reverseOrder:
+            return self.__srd.cnv1To3ListIdx(sequence[refSeqBeg-1:refSeqEnd][::-1], refSeqEnd, polyTypeCode, indexStep=-1)
+        else:
+            return self.__srd.cnv1To3ListIdx(sequence[refSeqBeg-1:refSeqEnd], refSeqBeg, polyTypeCode)
+        #
 
     def __addingMissingKey(self, myD):
         """
