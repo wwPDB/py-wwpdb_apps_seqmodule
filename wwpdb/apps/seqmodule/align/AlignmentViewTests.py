@@ -24,7 +24,7 @@ import sys, unittest, shutil, traceback
 from wwpdb.apps.seqmodule.align.AlignmentView          import AlignmentView
 from wwpdb.apps.seqmodule.align.AlignmentViewDepiction import AlignmentViewDepiction
 from wwpdb.apps.seqmodule.align.AlignmentStatistics    import AlignmentStatistics
-from wwpdb.apps.seqmodule.control.SequenceDataAssemble import SequenceDataAssemble
+from wwpdb.apps.seqmodule.control.SequenceDataAssemble_v2 import SequenceDataAssemble
 #
 from wwpdb.io.misc.FormatOut                     import FormatOut
 from wwpdb.io.locator.PathInfo                      import PathInfo
