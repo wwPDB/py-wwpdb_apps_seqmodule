@@ -376,7 +376,8 @@ class GetSameSeqAnnotation(object):
         elif len(gbIdList) > 0:
             gbIdList = list(set(gbIdList))
             for idCode in gbIdList:
-                gbD[idCode] = fetchNcbiGi(idCode)
+                # XXXXX Should rate limit here
+                gbD[idCode] = fetchNcbiGi(idCode, siteId=self.__siteId)
             #
         #
         for partId,infoDic in dbRefMap.items():

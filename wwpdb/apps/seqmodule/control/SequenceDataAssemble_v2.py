@@ -43,6 +43,8 @@ from wwpdb.apps.seqmodule.link.PolymerLinkageDepict import PolymerLinkageDepict
 from wwpdb.apps.seqmodule.util.SeqReferenceSearchUtils import SeqReferenceSearchUtils
 from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel
 from wwpdb.apps.seqmodule.util.UpdateSequenceDataStoreUtils import UpdateSequenceDataStoreUtils
+from wwpdb.apps.seqmodule.util.MultiProcLimit import MultiProcLimit
+from wwpdb.utils.config.ConfigInfo import ConfigInfo
 from rcsb.utils.multiproc.MultiProcUtil import MultiProcUtil
 from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
@@ -69,6 +71,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         self.__sessionObj = self._reqObj.getSessionObj()
         self.__sessionPath = self.__sessionObj.getPath()
         self.__siteId = self._reqObj.getValue("WWPDB_SITE_ID")
+        self.__cI = ConfigInfo(self.__siteId)
         self.__pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self._verbose, log=self._lfh)
         #
         self.__dataSetId = str(self._reqObj.getValue("identifier")).upper()
@@ -548,6 +551,22 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             mpu = MultiProcUtil(verbose = True)
             mpu.set(workerObj = self, workerMethod = "runMultiReferenceSearches")
             mpu.setWorkingDir(self.__sessionPath)
+
+            # Setup limits for NCBI requets
+
+            apikey = self.__cI.get('NCBI_API_KEY')  
+            apirate = self.__cI.get('NCBI_API_RATE') 
+            if apikey:
+                if apirate:
+                    rate = int(apirate)
+                else:
+                    rate = 5
+            else:
+                rate = 1
+            mpl = MultiProcLimit(rate)
+            mpu.setOptions({'ncbilock':mpl})
+
+
             ok,failList,retLists,diagList = mpu.runMulti(dataList = entityDicList, numProc = numProc, numResults = 1)
             #
             refD = {}
@@ -581,11 +600,13 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         return {},{},{}
 
     def runMultiReferenceSearches(self, dataList, procName, optionsD, workingDir):
-        """ Miltiple reference sequence search processing API
+        """ Multiple reference sequence search processing API
         """
+        self._lfh.write("+SequenceDataAssemble.runMultiReferenceSearches() starting %s\n" % optionsD)  
+        ncbilock = optionsD.get('ncbilock', None)
         rList = []
         for tupL in dataList:
-            seqSearchUtil = SeqReferenceSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, verbose=self._verbose, log=self._lfh)
+            seqSearchUtil = SeqReferenceSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, verbose=self._verbose, log=self._lfh, ncbilock=ncbilock)
             eRefD,selfRefD,sameSeqRefD = seqSearchUtil.run(self.__dataSetId, tupL[1], self.__doRefSearchFlag, self.__forceBlastSearchFlag)
             rList.append((tupL[0], eRefD, selfRefD, sameSeqRefD))
             #
