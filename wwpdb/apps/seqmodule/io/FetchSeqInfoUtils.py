@@ -30,6 +30,7 @@ __version__ = "V0.09"
 import os, sys
 from wwpdb.utils.seqdb_v2.FetchNcbiXml import FetchFullNcbiXml, FetchNcbiXml
 from wwpdb.utils.seqdb_v2.FetchUniProtEntry import FetchUniProtEntry
+from wwpdb.utils.config.ConfigInfo import ConfigInfo
 
 def fetchUniProt(siteId=None, verbose=False, log=sys.stderr, idCodeList=None, filePath=None):
     """
@@ -77,19 +78,23 @@ def fetchUniProt(siteId=None, verbose=False, log=sys.stderr, idCodeList=None, fi
     #
     return d
 
-def fetchNcbiGi(giIdCode, xmlPath=None):
+def fetchNcbiGi(giIdCode, xmlPath=None, siteId=None):
     """
     """
-    fetchobj = FetchFullNcbiXml(giIdCode, 'Nucleotide')
+    cI = ConfigInfo(siteId)
+    apikey = cI.get('NCBI_API_KEY', None)  
+    fetchobj = FetchFullNcbiXml(giIdCode, 'Nucleotide', apikey=apikey)
     if xmlPath is not None:
         fetchobj.WriteNcbiXml(filename=xmlPath)
     #
     return fetchobj.ParseNcbiXmlData()
 
-def fetchNcbiSummary(giIdCode, xmlPath=None):
+def fetchNcbiSummary(giIdCode, xmlPath=None, siteId=None):
     """
     """
-    fetchobj = FetchNcbiXml(giIdCode, 'Nucleotide')
+    cI = ConfigInfo(siteId)
+    apikey = cI.get('NCBI_API_KEY', None)  
+    fetchobj = FetchNcbiXml(giIdCode, 'Nucleotide', apikey=apikey)
     if (xmlPath is not None):
         fetchobj.WriteNcbiXml(filename=xmlPath)
     #
