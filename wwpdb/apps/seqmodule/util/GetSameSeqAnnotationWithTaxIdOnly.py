@@ -376,7 +376,7 @@ class GetSameSeqAnnotation(object):
         elif len(gbIdList) > 0:
             gbIdList = list(set(gbIdList))
             for idCode in gbIdList:
-                # XXXXX Should rate limit here
+                # No need to rate limit here as this fetches the whole entry - is likely a genome and takes seconds.
                 gbD[idCode] = fetchNcbiGi(idCode, siteId=self.__siteId)
             #
         #
