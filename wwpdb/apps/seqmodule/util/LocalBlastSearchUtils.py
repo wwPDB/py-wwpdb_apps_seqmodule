@@ -388,6 +388,8 @@ class LocalBlastSearchUtils(object):
         """
         hitList = []
         bpr = BlastPlusReader(verbose=self.__verbose, log=self.__lfh)
+        if self.__seqType == 'polyribonucleotide':
+            bpr.setSequenceType(self.__seqType)
         searchHitList = bpr.readFile(filePath=blastResultXmlPath)
         #
         if self.__seqType in ['polypeptide(L)', 'polypeptide(D)', 'polypeptide']:
