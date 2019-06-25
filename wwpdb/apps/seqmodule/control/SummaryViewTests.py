@@ -19,9 +19,9 @@ __version__   = "V0.07"
 import sys, unittest, shutil, traceback
 import time, os, os.path
 
-from wwpdb.apps.seqmodule.control.SequenceDataAssemble  import SequenceDataAssemble
+from wwpdb.apps.seqmodule.control.SequenceDataAssemble_v2  import SequenceDataAssemble
 from wwpdb.apps.seqmodule.align.AlignmentStatistics     import AlignmentStatistics
-from wwpdb.apps.seqmodule.control.SummaryView           import SummaryView
+from wwpdb.apps.seqmodule.control.SummaryView_v2        import SummaryView
 from wwpdb.apps.seqmodule.control.SummaryViewDepiction  import SummaryViewDepiction
 
 from wwpdb.io.misc.FormatOut                         import FormatOut

@@ -16,7 +16,6 @@
 
 from xml.dom import minidom
 import sys, math, getopt,  traceback
-#from wwpdb.utils.seqdb_v2.FetchNcbiXml import FetchNcbiXml
 
 class BlastPlusReader:
     """Read Blast+ result file (xml format)  and return the list of dictionaries containing the following -- 

@@ -22,7 +22,7 @@ from wwpdb.apps.seqmodule.util.SearchEntityPolySeqs import SearchEntityPolySeqs
 class SeqReferenceSearchUtils(object):
     """
     """
-    def __init__(self, siteId=None, sessionPath=None, searchUtil=None, pathInfo=None, verbose=False, log=sys.stderr):
+    def __init__(self, siteId=None, sessionPath=None, searchUtil=None, pathInfo=None, verbose=False, log=sys.stderr, ncbilock=None):
         """
         """
         self.__siteId = siteId
@@ -31,6 +31,7 @@ class SeqReferenceSearchUtils(object):
         self.__pI = pathInfo
         self.__verbose = verbose
         self.__lfh = log
+        self.__ncbilock = ncbilock
 
     def run(self, dataSetId, eD, refRefSearchFlag, forceBlastSearchFlag):
         """
@@ -41,8 +42,12 @@ class SeqReferenceSearchUtils(object):
         #
         eRefD = {}
         if (len(selfRefD) == 0) or forceBlastSearchFlag:
-            lbsUtil = LocalBlastSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, doRefSearchFlag=refRefSearchFlag, \
-                                            verbose=self.__verbose, log=self.__lfh)
+            lbsUtil = LocalBlastSearchUtils(siteId=self.__siteId, 
+                                            sessionPath=self.__sessionPath, 
+                                            pathInfo=self.__pI, 
+                                            doRefSearchFlag=refRefSearchFlag, 
+                                            verbose=self.__verbose, log=self.__lfh,
+                                            ncbilock=self.__ncbilock)
             eRefD = lbsUtil.searchSeqReference(dataSetId=dataSetId, entityD=eD)
         #
         return eRefD,selfRefD,sameSeqRefD

@@ -49,13 +49,15 @@ class LocalBlastSearchUtils(object):
     """ Execute search service and assemble reference sequence data.
     """
 
-    def __init__(self, siteId="WWPDB_DEPLOY_TEST", sessionPath=".", pathInfo=None, doRefSearchFlag=False, verbose=False, log=sys.stderr):
+    def __init__(self, siteId="WWPDB_DEPLOY_TEST", sessionPath=".", pathInfo=None, doRefSearchFlag=False, verbose=False, log=sys.stderr,
+                ncbilock=None):
         self.__verbose = verbose
         self.__lfh = log
         self.__siteId = siteId
         self.__sessionPath = sessionPath
         self.__pI = pathInfo
         self.__doRefSearchFlag = doRefSearchFlag
+        self.__ncbilock = ncbilock
         #
         self.__minRnaSequenceSearchLength = 50
         self.__maxHitsSearch = 100
@@ -211,6 +213,7 @@ class LocalBlastSearchUtils(object):
             mpu = MultiProcUtil(verbose = True)
             mpu.set(workerObj = self, workerMethod = "runMultiLocalBlasts")
             mpu.setWorkingDir(self.__sessionPath)
+            mpu.setOptions({'ncbilock' : self.__ncbilock})
             ok,failList,retLists,diagList = mpu.runMulti(dataList = partList, numProc = numProc, numResults = 1)
 
             id_count = 1
@@ -320,13 +323,15 @@ class LocalBlastSearchUtils(object):
         #
 
     def runMultiLocalBlasts(self, dataList, procName, optionsD, workingDir):
-        """ Miltiple blast search processing API
+        """ Multiple blast search processing API
         """
         rList = []
+        ncbilock = optionsD.get('ncbilock', None)
         for tupL in dataList:
             if self.__verbose:
                 self.__lfh.write("\n+LocalBlastSearchUtils.runMultiLocalBlasts() starting database search for entityId %r partId %r range begin %r end %r taxId %r sequence length = %d\n" \
                               % (self.__entityId, tupL[0], tupL[2], tupL[3], tupL[4], len(tupL[1])))
+                self.__lfh.write("+LocalBlastSearchUtils.runMultiLocalBlasts() ncbilock %s\n" % ncbilock)
             #
             self.__runSingleLocalBlast(oneLetterCodeSeq=tupL[1], blastResultXmlPath=tupL[5], partNum=tupL[0], taxId=tupL[4])
             rList.append(tupL[0])
@@ -383,6 +388,8 @@ class LocalBlastSearchUtils(object):
         """
         hitList = []
         bpr = BlastPlusReader(verbose=self.__verbose, log=self.__lfh)
+        if self.__seqType == 'polyribonucleotide':
+            bpr.setSequenceType(self.__seqType)
         searchHitList = bpr.readFile(filePath=blastResultXmlPath)
         #
         if self.__seqType in ['polypeptide(L)', 'polypeptide(D)', 'polypeptide']:
@@ -445,7 +452,11 @@ class LocalBlastSearchUtils(object):
             if len(idCodeList) > 0:
                 giD = {}
                 for idCode in idCodeList:
-                    giD[idCode] = fetchNcbiSummary(idCode)
+                    # Ensure do not max out request rate
+                    if self.__ncbilock:
+                        self.__ncbilock.waitnext()
+
+                    giD[idCode] = fetchNcbiSummary(idCode, siteId=self.__siteId)
                 #
                 for hit in hitList:
                     if 'db_accession' in hit:
