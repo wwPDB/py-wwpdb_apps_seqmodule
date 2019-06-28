@@ -547,7 +547,10 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 #
                 return {},{},{}
             #
-            numProc = multiprocessing.cpu_count() / 2
+            if self.__cI.get('USE_COMPUTE_CLUSTER'):
+                numProc = len(entityDicList)
+            else:
+                numProc = multiprocessing.cpu_count() / 2
             mpu = MultiProcUtil(verbose = True)
             mpu.set(workerObj = self, workerMethod = "runMultiReferenceSearches")
             mpu.setWorkingDir(self.__sessionPath)
