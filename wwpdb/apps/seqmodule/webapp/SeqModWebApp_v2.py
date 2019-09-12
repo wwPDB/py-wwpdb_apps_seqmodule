@@ -1198,17 +1198,17 @@ class SeqModWebAppWorker(object):
         if fileSource in ['archive', 'wf-archive']:
             # copy session files back to the archive directory -- independent of close mode --
             dI = DataImporter(reqObj=self.__reqObj, fileSource=fileSource, verbose=self.__verbose, log=self.__lfh)
-            ok = dI.copyFilesOnClose()
+            ok = dI.copyFilesOnClose(includeSeqAssignFile=True)
 
         if fileSource in ['wf-instance']:
             # Copy session files back to the invoking instance directory -
             dI = DataImporter(reqObj=self.__reqObj, fileSource=fileSource, verbose=self.__verbose, log=self.__lfh)
-            ok = dI.copyFilesOnClose(includePolyLinkFile=True)
+            ok = dI.copyFilesOnClose(includePolyLinkFile=True,includeSeqAssignFile=True)
             # And if we are done then also copy back to the archive --
             ok1 = True
             if mode in ['completed']:
-                ok1 = dI.copyFiles(inputFileSource="session",outputFileSource='wf-archive',includeModelFile=True,versionIndex=4, \
-                                   messageHead="DataImporter.copyFilesOnClose()")
+                ok1 = dI.copyFiles(inputFileSource="session",outputFileSource='wf-archive',versionIndex=4,includeModelFile=True, \
+                                   includeSeqAssignFile=True,messageHead="DataImporter.copyFilesOnClose()")
             #
             ok = ok and ok1
 

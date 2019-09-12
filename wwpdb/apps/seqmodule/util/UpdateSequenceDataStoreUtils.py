@@ -248,6 +248,12 @@ class UpdateSequenceDataStoreUtils(object):
         self.__checkSequenceDataStore()
         self.__sds.setDepositorReferenceAssignments(assignD=depSeqAssign)
 
+    def getDepositorSeqAssign(self):
+        """
+        """
+        self.__checkSequenceDataStore()
+        return self.__sds.getDepositorReferenceAssignments()
+
     def setArchiveSeqAssign(self, seqAssign):
         """
         """
@@ -368,16 +374,21 @@ class UpdateSequenceDataStoreUtils(object):
         sId = eD["ENTITY_ID"]
         for (partNo, pD) in enumerate(eD["PART_LIST"], start=1):
             rList = []
+            selfRefFlag = False
             if (eId in eRefD) and eRefD[eId] and (str(partNo) in eRefD[eId]) and eRefD[eId][str(partNo)]:
                 rList = eRefD[eId][str(partNo)]
             #
-            if (eId in eSSRefD) and eSSRefD[eId] and (str(partNo) in eSSRefD[eId]) and eSSRefD[eId][str(partNo)]:
+            if (eId in eSSRefD) and eSSRefD[eId] and (str(partNo) in eSSRefD[eId]) and eSSRefD[eId][str(partNo)] and ("selfref" not in eSSRefD[eId][str(partNo)]):
                 rList.append(eSSRefD[eId][str(partNo)])
             #
             if (eId in ownRefD) and ownRefD[eId] and (str(partNo) in ownRefD[eId]) and ownRefD[eId][str(partNo)]:
-                rList.append(ownRefD[eId][str(partNo)])
+                if ("selfref" in ownRefD[eId][str(partNo)]) and ownRefD[eId][str(partNo)]["selfref"]:
+                    selfRefFlag = True
+                else:
+                    rList.append(ownRefD[eId][str(partNo)])
+                #
             #
-            if len(rList) > 0:
+            if (len(rList) > 0) and (not selfRefFlag):
                 self.__seqLabel.set(seqType="ref", seqInstId=sId, seqPartId=partNo, seqAltId=len(rList), seqVersion=1)
                 self.__defSelList.append(self.__seqLabel.pack())
                 ref_label[partNo] = [ self.__seqLabel.pack() ]
@@ -385,7 +396,9 @@ class UpdateSequenceDataStoreUtils(object):
             else:
                 self.__defSelList.append("selfref_" + str(sId) + "_" + str(partNo))
                 self._entityAlignInfoMap[sId]["alignids"].append("selfref_" + str(sId) + "_" + str(partNo))
-                continue
+                if not rList:
+                    continue
+                #
             #
             for (altId, rD) in enumerate(rList, start=1):
                 if "alignment" in rD:

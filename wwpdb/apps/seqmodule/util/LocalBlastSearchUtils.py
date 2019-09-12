@@ -63,10 +63,11 @@ class LocalBlastSearchUtils(object):
         self.__maxHitsSearch = 100
         self.__maxHitsSave = 50
         self.__cleanUp = True
-        self.__debug = False
+        self.__debug = True
         #
         self.__dataSetId = ''
         self.__entityD = {}
+        self.__authRefList = []
         self.__fullOneLetterSeq = []
         self.__seqType = ''
         self.__entityId = ''
@@ -86,12 +87,14 @@ class LocalBlastSearchUtils(object):
                                             'db_length', 'db_description', 'db_isoform_description']
         #
 
-    def searchSeqReference(self, dataSetId=None, entityD=None):
+    def searchSeqReference(self, dataSetId=None, entityD=None, authRefList=[]):
         """ Reference sequence search process for the entity described in the input dictionary.
             Return a list of hitLists for matching reference sequences extracted from the BLAST search results
         """
         self.__dataSetId = dataSetId
         self.__entityD = entityD
+        self.__authRefList = authRefList
+        #
         if (not self.__dataSetId) or (not self.__entityD):
             return {}
         #
@@ -141,9 +144,23 @@ class LocalBlastSearchUtils(object):
             if (self.__verbose):
                 self.__lfh.write("+LocalBlastSearchUtils.__getExistingSearchResult() using previous search result for entity id %s\n" % self.__entityId)
             #
-            return pickleObj['ref_data']
+            return self.__getReSortHitInfo(pickleObj['ref_data'])
         #
         return {}
+
+    def __getReSortHitInfo(self, inD):
+        """
+        """
+        outD = {}
+        for partNum, fD in enumerate(self.__entityD['PART_LIST'], start=1):
+            partId = str(partNum)
+            if partId not in inD:
+                continue
+            #
+            start_index,hitList = self.__sortHitList(inD[partId], fD['SOURCE_TAXID'], False)
+            outD[partId] = hitList
+        #
+        return outD
 
     def __runBlastSearch(self):
         """ Perform sequence search for each entity part in the input feature list described in the input dictionary.
@@ -215,7 +232,6 @@ class LocalBlastSearchUtils(object):
             mpu.setWorkingDir(self.__sessionPath)
             mpu.setOptions({'ncbilock' : self.__ncbilock})
             ok,failList,retLists,diagList = mpu.runMulti(dataList = partList, numProc = numProc, numResults = 1)
-
             id_count = 1
             for partTup in partList:
                 if not os.access(partTup[5], os.F_OK):
@@ -489,9 +505,26 @@ class LocalBlastSearchUtils(object):
             hit['end_seq_num'] = seqNumEnd
             hit['fragment_id'] = seqPartId
         #
-        return self.__sortHitList(hitList, authTaxId=authTaxId)
+        return self.__getHitList(hitList, authTaxId)
 
-    def __sortHitList(self, hitList, authTaxId=None, authAccessionCode=None):
+    def __getHitList(self, hitList, authTaxId):
+        """
+        """
+        if not hitList:
+            return []
+        #
+        start_index,finalList = self.__sortHitList(hitList, authTaxId, True)
+        cutoff_length = len(finalList) - start_index
+        if cutoff_length > self.__maxHitsSave:
+            cutoff_length = self.__maxHitsSave
+        #
+        if len(finalList) > cutoff_length:
+            return finalList[(len(finalList) - cutoff_length):]
+        else:
+            return finalList
+        #
+
+    def __sortHitList(self, hitList, authTaxId, fullScoreFlag):
         """ Add a sorting index to the dictionary of sequence correspondence hitLists obtained from
             the BLAST search.   The sort index is based on heurestic which includes sequence matching
             metrics and taxonomy data.
@@ -500,30 +533,33 @@ class LocalBlastSearchUtils(object):
                                      ordered by increasing (better matchint) score.
 
         """
-        if not hitList:
-            return []
-        #
         authAncestorD = self.__taxUtils.getAncestors(authTaxId)
         if (self.__debug):
             self.__lfh.write("+LocalBlastSearchUtils.__sortHitList() length %d authTaxId %s authAncestorD %r\n" % (len(hitList), authTaxId, authAncestorD.items()))
         #
-        scoreList = []
-        highest_identity_score = 0
+        highest_identity_score_with_taxid_match = 0
+        lowest_identity_score_with_taxid_match = 101
+        lowest_identity_score_with_refid_match = 101
         for i, hit in enumerate(hitList):
-            identity_score = (float(hit['identity']) - float(hit['gaps'])) * 100.0 / float(hit['query_length'])
-            if self.__debug:
-                self.__lfh.write("+ReferencSequenceUtils.__sortHitList() i %r  identity %r gaps %r query_length %r  score %r\n" % \
-                                 (i, hit['identity'], hit['gaps'], hit['query_length'], identity_score))
+            if fullScoreFlag or ("identity_score" not in hit):
+                hit['identity_score'] = (float(hit['identity']) - float(hit['gaps'])) * 100.0 / float(hit['query_length'])
+                if self.__debug:
+                    self.__lfh.write("+ReferencSequenceUtils.__sortHitList() i %r  identity %r gaps %r query_length %r  score %r\n" % \
+                                     (i, hit['identity'], hit['gaps'], hit['query_length'], hit['identity_score']))
+                    #
+                if hit['db_name'] == 'SP':
+                    hit['db_score'] = 1
+                else:
+                    hit['db_score'] = 0
                 #
-            if hit['db_name'] == 'SP':
-                sp_score = 1
-            else:
-                sp_score = 0
             #
-            if authAccessionCode and (hit['db_code'] == authAccessionCode or hit['db_accession'] == authAccessionCode):
-                db_code_score = 1
+            if self.__authRefList and ((hit['db_code'].strip().upper() in self.__authRefList) or (hit['db_accession'].strip().upper() in self.__authRefList)):
+                if hit['identity_score'] < lowest_identity_score_with_refid_match:
+                    lowest_identity_score_with_refid_match = hit['identity_score']
+                #
+                hit['code_score'] = 1
             else:
-                db_code_score = 0
+                hit['code_score'] = 0
             #
             targetAncestorD = {}
             taxonomy_id = ''
@@ -545,50 +581,55 @@ class LocalBlastSearchUtils(object):
                     taxidMatch = 1
                 #
             #
-            if (i >= self.__maxHitsSave) and taxidMatch == 0:
-                continue
-            #
-            if taxidMatch == 3:
-                if identity_score > highest_identity_score:
-                    highest_identity_score = identity_score
+            hit['taxid_match'] = taxidMatch
+            if fullScoreFlag and (taxidMatch == 3):
+                if hit['identity_score'] > highest_identity_score_with_taxid_match:
+                    highest_identity_score_with_taxid_match = hit['identity_score']
+                #
+                if hit['identity_score'] < lowest_identity_score_with_taxid_match:
+                    lowest_identity_score_with_taxid_match = hit['identity_score']
                 #
             #
-            final_score = (identity_score + db_code_score) * 4 + taxidMatch + sp_score
-            scoreList.append( { "idx" : i, "identity_score" : identity_score, "sort_metric" : final_score, "taxid_match" : taxidMatch, \
-                                "code_score" : db_code_score, "db_score" : sp_score } )
+            hit['sort_metric'] = (hit['identity_score'] + hit['code_score']) * 4 + taxidMatch + hit['db_score']
             #
             if self.__debug:
                 self.__lfh.write("+ReferencSequenceUtils.__sortHitList() hit i=%d db_code=%s authTaxId=%s taxonomy_id=%s taxidMatch=%d sp_score=%d score=%.2f\n" % \
-                        (i, hit['db_code'], authTaxId, taxonomy_id, taxidMatch, sp_score, final_score))
+                        (i, hit['db_code'], authTaxId, taxonomy_id, taxidMatch, hit['db_score'], hit['sort_metric']))
                 if authAncestorD and targetAncestorD and 'id' in authAncestorD and 'id' in targetAncestorD:
                     self.__lfh.write("+ReferencSequenceUtils.__sortHitList() taxidMatch %d  authAncestorD[id] %s targetAncestorD[id] %s final score %r\n" % \
-                                     (taxidMatch, authAncestorD['id'], targetAncestorD['id'], final_score))
+                                     (taxidMatch, authAncestorD['id'], targetAncestorD['id'], hit['sort_metric']))
                 #
             #
         #
-        sortScoreList = []
-        for scoreD in scoreList:
-            if highest_identity_score > 0:
-                if (scoreD["taxid_match"] == 0) or (scoreD["identity_score"] < (0.85 * highest_identity_score)):
-                    continue
-                #
+        start_index = 0
+        cutoff_identity_score = 0
+        if highest_identity_score_with_taxid_match > 0:
+            cutoff_identity_score = 0.85 * highest_identity_score_with_taxid_match
+            if lowest_identity_score_with_taxid_match < cutoff_identity_score:
+                cutoff_identity_score = lowest_identity_score_with_taxid_match
             #
-            sortScoreList.append(scoreD)
+            if lowest_identity_score_with_taxid_match < cutoff_identity_score:
+                cutoff_identity_score = lowest_identity_score_with_taxid_match
+            #
         #
-        #sortScoreList.sort(key=itemgetter('taxid_match', 'code_score', 'identity_score', 'code_score', 'db_score'),reverse=True)
-        sortScoreList.sort(key=itemgetter('identity_score', 'code_score', 'taxid_match', 'db_score'))
+        hitList.sort(key=itemgetter('identity_score', 'taxid_match', 'code_score', 'db_score'))
         #
-        finalList = []
-        for i,scoreD in enumerate(sortScoreList, start=1):
-            hitList[scoreD["idx"]]["sort_metric"] = scoreD["sort_metric"]
-            hitList[scoreD["idx"]]["sort_order"] = str(i)
-            finalList.append(hitList[scoreD["idx"]])
+        first = True
+        for i, hit in enumerate(hitList):
+            hit["sort_order"] = str(i + 1)
+            if first and (hit['identity_score'] > cutoff_identity_score):
+                start_index = i
+                first = False
+            #
         #
-        if len(finalList) > self.__maxHitsSave:
-            return finalList[(len(finalList) - self.__maxHitsSave):]
-        else:
-            return finalList
+        if self.__debug:
+            self.__lfh.write("ReferencSequenceUtils.__sortHitList() hitList=%d maxHitsSave=%d\n" % (len(hitList), self.__maxHitsSave))
+            for hit in hitList:
+                self.__lfh.write("+ReferencSequenceUtils.__sortHitList() final hit sort_order=%r sort_metric=%r db_code=%r authTaxId=%r taxonomy_id=%r\n" \
+                                 % (hit["sort_order"], hit["sort_metric"], hit["db_code"], authTaxId, hit["taxonomy_id"]))
+            #
         #
+        return start_index,hitList
 
     def __getRefSeqAlignments(self, hitList):
         """ Get Auth/Ref sequence alignments

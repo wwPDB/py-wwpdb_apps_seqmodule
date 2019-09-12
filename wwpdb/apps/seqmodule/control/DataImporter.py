@@ -79,15 +79,16 @@ class DataImporter(object):
         self.__fileTypeList_wf_instance = [ [ 'model', 'pdbx', 'model', '1', 'next', True ], \
                                 [ 'seq-data-stats', 'pic', 'seq stats', 'latest', 'next',  True ], \
                                 [ 'polymer-linkage-report', 'html', 'link report', 'latest', 'next', True ], \
-                                [ 'mismatch-warning', 'pic', 'mismatch warning', 'latest', 'latest', False ], \
-                                [ 'seq-assign', 'pdbx', 'seq assign', 'latest', 'next', False ] ]
+                                [ 'mismatch-warning', 'pic', 'mismatch warning', 'latest', 'latest', False ] ] #, \
+                              # [ 'seq-assign', 'pdbx', 'seq assign', 'latest', 'next', False ] ]
         self.__fileTypeList_archive = [ [ 'model', 'pdbx', 'model', '1', 'next', True ], \
                                 [ 'seq-data-stats', 'pic', 'seq stats', 'latest', 'next',  False ], \
-                                [ 'polymer-linkage-report', 'html', 'link report', 'latest', 'next', False ], \
-                                [ 'seq-assign', 'pdbx', 'seq assign', 'latest', 'next', False ] ]
+                                [ 'polymer-linkage-report', 'html', 'link report', 'latest', 'next', False ] ] #, \
+                              # [ 'seq-assign', 'pdbx', 'seq assign', 'latest', 'next', False ] ]
         self.__seqFileTypeList = [ [ 'seq-align-data', 'pic', 'seq align', 'latest', 'next', False ], \
                                    [ 'seqdb-match', 'pic', 'seqdb match', 'latest', 'latest', False ] ]
         self.__polyLinkType = [ 'polymer-linkage-distances', 'pdbx', 'polymer linkage', 'latest', 'latest', False ]
+        self.__seqAssignType = [ 'seq-assign', 'pdbx', 'seq assign', 'latest', 'next', False ]
         #
         if (self.__verbose):
             self.__lfh.write("+DataImporter.__setup() session path    %s\n" % self.__sessionPath)
@@ -99,7 +100,7 @@ class DataImporter(object):
             self.__lfh.write("+DataImporter.__setup() UploadFileName  %s\n" % self.__uploadFileName)
         #
 
-    def copyFilesOnStart(self, includePolyLinkFile=False):
+    def copyFilesOnStart(self, includePolyLinkFile=False, includeSeqAssignFile=False):
         """ Manage moving selected data files from archive or instance storage to session storage
         
             fileSource         is the target destination (archive|wf-instance)
@@ -107,14 +108,15 @@ class DataImporter(object):
             Return: True on success or False otherwise
         """
         ok = self.copyFiles(inputFileSource=self.__fileSource, inputWfInstanceId=self.__instance, includeModelFile=True, \
-                            includePolyLinkFile=includePolyLinkFile, checkFileAvailability=True, messageHead="DataImporter.copyFilesOnStart()")
+                            includePolyLinkFile=includePolyLinkFile, includeSeqAssignFile=includeSeqAssignFile, \
+                            checkFileAvailability=True, messageHead="DataImporter.copyFilesOnStart()")
         #
         pdbxModelFilePath = self.__pI.getModelPdbxFilePath(self.__identifier, fileSource='session', versionId="1")
         self.__copyJMolFile(pdbxModelFilePath)
         #
         return ok
 
-    def copyFilesOnClose(self, includePolyLinkFile=False):
+    def copyFilesOnClose(self, includePolyLinkFile=False, includeSeqAssignFile=False):
         """ Manage moving selected data files from the current session to archive or instance storage.
         
             fileSource         is the target destination (archive|wf-instance)
@@ -123,22 +125,22 @@ class DataImporter(object):
 
         """
         return self.copyFiles(inputFileSource="session", outputFileSource=self.__fileSource, outputWfInstanceId=self.__instance, includeModelFile=True, \
-                              includePolyLinkFile=includePolyLinkFile, versionIndex=4, messageHead="DataImporter.copyFilesOnClose()")
+                              includePolyLinkFile=includePolyLinkFile, includeSeqAssignFile=includeSeqAssignFile, versionIndex=4, \
+                              messageHead="DataImporter.copyFilesOnClose()")
 
     def copyFiles(self, inputFileSource="archive", inputWfInstanceId=None, outputFileSource="session", outputWfInstanceId=None, versionIndex=3, \
-                  includeModelFile=False, includePolyLinkFile=False, checkFileAvailability=False, entityIdList=[], messageHead="DataImporter.copyFiles()"):
+                  includeModelFile=False, includePolyLinkFile=False, includeSeqAssignFile=False, checkFileAvailability=False, entityIdList=[], \
+                  messageHead="DataImporter.copyFiles()"):
         """
         """
+        startIndex = 1
+        if includeModelFile:
+            startIndex = 0
+        #
         if (inputFileSource == "wf-instance") or (outputFileSource == "wf-instance"):
-            fileTypeList = self.__fileTypeList_wf_instance[1:]
-            if includeModelFile:
-                fileTypeList = self.__fileTypeList_wf_instance
-            #
+            fileTypeList = self.__fileTypeList_wf_instance[startIndex:]
         else:
-            fileTypeList = self.__fileTypeList_archive[1:]
-            if includeModelFile:
-                fileTypeList = self.__fileTypeList_archive
-            #
+            fileTypeList = self.__fileTypeList_archive[startIndex:]
         #
         returnOk = True
         afpL = []
@@ -166,6 +168,15 @@ class DataImporter(object):
                 outputFilePath = self.__pI.getFilePath(self.__identifier, wfInstanceId=outputWfInstanceId, contentType=self.__polyLinkType[0], \
                                  formatType=self.__polyLinkType[1], fileSource=outputFileSource, versionId=self.__polyLinkType[versionIndex])
                 afpL.append( ( inputFilePath, outputFilePath, self.__polyLinkType[2] ) )
+            #
+        #
+        if includeSeqAssignFile:
+            inputFilePath = self.__pI.getFilePath(self.__identifier, wfInstanceId=inputWfInstanceId, contentType=self.__seqAssignType[0], \
+                                                  formatType=self.__seqAssignType[1], fileSource=inputFileSource)
+            if os.access(inputFilePath, os.R_OK):
+                outputFilePath = self.__pI.getFilePath(self.__identifier, wfInstanceId=outputWfInstanceId, contentType=self.__seqAssignType[0], \
+                                 formatType=self.__seqAssignType[1], fileSource=outputFileSource, versionId=self.__seqAssignType[versionIndex])
+                afpL.append( ( inputFilePath, outputFilePath, self.__seqAssignType[2] ) )
             #
         #
         if entityIdList:
@@ -351,9 +362,10 @@ class DataImporter(object):
             return False
         #
 
-    def loadSeqDataAssemble(self, calPolyLink=True, doRefSearch=False):
+    def loadSeqDataAssemble(self, calPolyLink=True, doRefSearch=False, doAutoProcess=False):
         if (self.__verbose):
-            self.__lfh.write("\n+DataImporter.loadSeqDataAssemble() RECALCULATING INITIAL DATA STATE\n")
+            self.__lfh.write("\n+DataImporter.loadSeqDataAssemble() RECALCULATING INITIAL DATA STATE calPolyLink=%r doRefSearch=%r doAutoProcess=%r\n" % \
+                            (calPolyLink, doRefSearch, doAutoProcess))
         #
         try:
             if (self.__verbose):
@@ -363,7 +375,7 @@ class DataImporter(object):
             self.__lfh.flush()
 
             sda=SequenceDataAssemble(reqObj=self.__reqObj,verbose=self.__verbose,log=self.__lfh)
-            sda.doAssemble(calPolyLink=calPolyLink, doRefSearch=doRefSearch)
+            sda.doAssemble(calPolyLink=calPolyLink, doRefSearch=doRefSearch, doAutoProcess=doAutoProcess)
             #
             return sda.getEntityIdList(),True
         except:

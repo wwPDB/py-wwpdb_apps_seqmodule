@@ -62,6 +62,10 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         self.__buildAlignIndexOrder()
         self._clearAllConflicts(authIdx)
         totalSeqCoodConflict = self._assignAllConflicts(self._authLabel, self.__selectedIdList)
+        if len(self.__alignIdList) > len(self.__selectedIdList):
+            self._clearAllConflicts(authIdx)
+            numSeqCoodConflict = self._assignAllConflicts(self._authLabel, self.__alignIdList)
+        #
         self.__renderAlignment()
         self.__renderConflictTable(authIdx)
         self.__renderAnnotations()

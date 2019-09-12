@@ -33,7 +33,7 @@ class SeqReferenceSearchUtils(object):
         self.__lfh = log
         self.__ncbilock = ncbilock
 
-    def run(self, dataSetId, eD, refRefSearchFlag, forceBlastSearchFlag):
+    def run(self, dataSetId, eD, authDefinedRefList, refRefSearchFlag, forceBlastSearchFlag):
         """
         """
         sasUtil = SeqAnnotationSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, searchUtil=self.__sepsUtil, pathInfo=self.__pI, \
@@ -42,13 +42,9 @@ class SeqReferenceSearchUtils(object):
         #
         eRefD = {}
         if (len(selfRefD) == 0) or forceBlastSearchFlag:
-            lbsUtil = LocalBlastSearchUtils(siteId=self.__siteId, 
-                                            sessionPath=self.__sessionPath, 
-                                            pathInfo=self.__pI, 
-                                            doRefSearchFlag=refRefSearchFlag, 
-                                            verbose=self.__verbose, log=self.__lfh,
-                                            ncbilock=self.__ncbilock)
-            eRefD = lbsUtil.searchSeqReference(dataSetId=dataSetId, entityD=eD)
+            lbsUtil = LocalBlastSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, doRefSearchFlag=refRefSearchFlag, \
+                                            verbose=self.__verbose, log=self.__lfh, ncbilock=self.__ncbilock)
+            eRefD = lbsUtil.searchSeqReference(dataSetId=dataSetId, entityD=eD, authRefList=authDefinedRefList)
         #
         return eRefD,selfRefD,sameSeqRefD
 
@@ -89,7 +85,7 @@ class SeqAnnotationSearchUtils(object):
                 annObj = GetSameSeqAnnotation(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, verbose=self.__verbose, log=self.__lfh)
                 annObj.setEntitySeq(seq=eD["SEQ_ENTITY_1"], polyTypeCode=eD["POLYMER_TYPE_CODE"])
                 if len(selfList) > 0:
-                    selfInfoMap = annObj.getSeqAnnotationFromAssignFile(retList=selfList, TaxIdList=taxIdList)
+                    selfInfoMap = annObj.getSeqAnnotationFromAssignFile(retList=selfList, TaxIdList=taxIdList, includeSelfRef=True)
                 #
                 if len(sameSeqEntryList) > 0:
                     sameSeqInfoMap = annObj.getSeqAnnotationFromAssignFile(retList=sameSeqEntryList, TaxIdList=taxIdList)

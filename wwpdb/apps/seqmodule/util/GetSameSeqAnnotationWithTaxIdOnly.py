@@ -54,7 +54,7 @@ class GetSameSeqAnnotation(object):
         #
         self.__threeLetterCodeSeqList = self.__srd.cnv1To3List(seq, polyTypeCode)
 
-    def getSeqAnnotationFromAssignFile(self, retList=None, TaxIdList=None):
+    def getSeqAnnotationFromAssignFile(self, retList=None, TaxIdList=None, includeSelfRef=False):
         """ retList[][0]: depID, retList[][1]: entityID, retList[][2]: pdbID, retList[][3]: AnnInitial, retList[][4]: statusCode,
             retList[][5]: date_begin_processing
         """
@@ -82,7 +82,7 @@ class GetSameSeqAnnotation(object):
             assignFileList.sort(key=itemgetter(7), reverse=True)
         #
         for entityTup in assignFileList:
-            annInfoMap = self.__getSeqAnnotationFromAssignFile(entityTup, TaxIdList)
+            annInfoMap = self.__getSeqAnnotationFromAssignFile(entityTup, TaxIdList, includeSelfRef)
             if annInfoMap:
                 return annInfoMap
             #
@@ -125,7 +125,7 @@ class GetSameSeqAnnotation(object):
             #
         #
 
-    def __getSeqAnnotationFromAssignFile(self, entityInfo, TaxIdList):
+    def __getSeqAnnotationFromAssignFile(self, entityInfo, TaxIdList, includeSelfRef):
         """
         """
         try:
@@ -135,11 +135,16 @@ class GetSameSeqAnnotation(object):
                 return seqAnntationInfoMap
             #
             alignmentMap = self.__getAlignmentMap(cifObj, entityInfo[1], partsTaxIdInfo)
-            if not alignmentMap:
-                return {}
-            #
+#           if not alignmentMap:
+#               return {}
+#           #
             dbRefMap = self.__getDbRefMap(cifObj, entityInfo[1])
+            selfRefmap = self.__getSelfRefmap(cifObj, entityInfo[1], includeSelfRef)
             for partId,infoD in seqAnntationInfoMap.items():
+                if partId in selfRefmap:
+                    infoD["selfref"] = True
+                    continue
+                #
                 if partId not in dbRefMap:
                     return {}
                 #
@@ -418,6 +423,23 @@ class GetSameSeqAnnotation(object):
             #
         #
         return dbRefMap
+
+    def __getSelfRefmap(self, cifObj, entityId, includeSelfRef):
+        """
+        """
+        selfRefmap = {}
+        #
+        if not includeSelfRef:
+            return selfRefmap
+        #
+        retList = cifObj.GetValue("pdbx_seqtool_self_ref")
+        for retDic in retList:
+            if (not "entity_id" in retDic) or (retDic["entity_id"] != entityId) or (not "entity_part_id" in retDic) or (not retDic["entity_part_id"]):
+                continue
+            #
+            selfRefmap[retDic["entity_part_id"]] = True
+        #
+        return selfRefmap
 
     def __getAuthRefAlignmentMap(self, matchList, partsTaxIdInfo):
         """
