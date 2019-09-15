@@ -27,7 +27,7 @@ import os.path
 
 from wwpdb.apps.seqmodule.control.SequenceDataAssemble_v2 import SequenceDataAssemble
 from wwpdb.apps.seqmodule.align.AlignmentStatistics import AlignmentStatistics
-from wwpdb.apps.seqmodule.align.MultiAlignPseudo import MultiAlignPseudo
+#from wwpdb.apps.seqmodule.align.MultiAlignPseudo import MultiAlignPseudo
 from wwpdb.apps.seqmodule.control.SummaryView_v2 import SummaryView
 from wwpdb.apps.seqmodule.control.SummaryViewDepiction import SummaryViewDepiction
 from wwpdb.apps.seqmodule.control.DataImporter import DataImporter
@@ -311,40 +311,40 @@ class SequenceDataPrepTests(unittest.TestCase):
                                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
                                                                        endTime - startTime))
 
-    def testSearchAndAssembleFromArchive(self):
-        """ Test search each entity sequence against appropriate reference sequence database
-            service storing the matching sequences.
-
-            Using archive file source.
-        """
-        startTime = time.clock()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
-                                                       sys._getframe().f_code.co_name,
-                                                       time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
-        try:
-            self.__setup(sessionId=None)
-            for dsId in self.__dsList:
-                self.__reqObj.setValue("identifier", dsId)
-                #
-                sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                sda.doAssemble(fileSource='archive')
-                alstat = AlignmentStatistics(reqObj=self.__reqObj, maxRefAlign=self.__maxRefAlign, verbose=self.__verbose, log=self.__lfh)
-                alstat.doUpdate()
-                map = MultiAlignPseudo(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                map.runSelected(identifier=dsId)
-                #
-                dI = DataImporter(reqObj=self.__reqObj, fileSource='wf-archive', verbose=self.__verbose, log=self.__lfh)
-                ok = dI.copyFilesOnClose()
-
-        except:
-            traceback.print_exc(file=self.__lfh)
-            self.fail()
-
-        endTime = time.clock()
-        self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
-                                                                       sys._getframe().f_code.co_name,
-                                                                       time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
-                                                                       endTime - startTime))
+#    def testSearchAndAssembleFromArchive(self):
+#        """ Test search each entity sequence against appropriate reference sequence database
+#            service storing the matching sequences.
+#
+#            Using archive file source.
+#        """
+#        startTime = time.clock()
+#        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
+#                                                       sys._getframe().f_code.co_name,
+#                                                       time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+#        try:
+#            self.__setup(sessionId=None)
+#            for dsId in self.__dsList:
+#                self.__reqObj.setValue("identifier", dsId)
+#                #
+#                sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
+#                sda.doAssemble(fileSource='archive')
+#                alstat = AlignmentStatistics(reqObj=self.__reqObj, maxRefAlign=self.__maxRefAlign, verbose=self.__verbose, log=self.__lfh)
+#                alstat.doUpdate()
+#                map = MultiAlignPseudo(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
+#                map.runSelected(identifier=dsId)
+#                #
+#                dI = DataImporter(reqObj=self.__reqObj, fileSource='wf-archive', verbose=self.__verbose, log=self.__lfh)
+#                ok = dI.copyFilesOnClose()
+#
+#        except:
+#            traceback.print_exc(file=self.__lfh)
+#            self.fail()
+#
+#        endTime = time.clock()
+#        self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
+#                                                                       sys._getframe().f_code.co_name,
+#                                                                       time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
+#                                                                       endTime - startTime))
 
     def testSummaryView(self):
         """ Test construction of a summary view from a sequence data store containing pairwise alignment stats.
