@@ -292,9 +292,10 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
             return ( "", "", 1, 1, 1 )
         #
 
-    def _getSeqLabelId(self, (seqType, seqInstId, seqPartId, seqAltId, seqVersion)):
+    def _getSeqLabelId(self, tup):
         """ SequenceLabel Id
         """
+        seqType, seqInstId, seqPartId, seqAltId, seqVersion = tup
         self.__seqLabel.set(seqType=seqType, seqInstId=seqInstId, seqPartId=seqPartId, seqAltId=seqAltId, seqVersion=seqVersion)
         return self.__seqLabel.pack()
 

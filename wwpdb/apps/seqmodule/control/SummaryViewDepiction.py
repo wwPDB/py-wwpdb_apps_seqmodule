@@ -74,7 +74,7 @@ class SummaryViewDepiction(object):
 
         """
         oL = []
-        gIdList = summaryDataObj.keys()
+        gIdList = list(summaryDataObj.keys())
 
         gIdList.sort(lambda x, y: int(x) - int(y))
         gId0 = activeGroupId if activeGroupId in gIdList else gIdList[0]

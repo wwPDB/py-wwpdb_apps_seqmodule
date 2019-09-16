@@ -211,8 +211,8 @@ class SequenceReferenceData(object):
             if not inP:
                 r1L.append(s)
 
-        aaL=SequenceReferenceData._monDict1.keys()
-        naL=SequenceReferenceData._monDictDNA1.keys()
+        aaL=list(SequenceReferenceData._monDict1.keys())
+        naL=list(SequenceReferenceData._monDictDNA1.keys())
 
         #if (self.__verbose):
         #    self.__lfh.write("Sequence list : %r\n" % r1L)            

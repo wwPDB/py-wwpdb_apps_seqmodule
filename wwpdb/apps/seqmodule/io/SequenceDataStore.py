@@ -306,7 +306,7 @@ class SequenceDataStore(object):
 
     def getSequenceTypes(self, dataType='sequence'):
         try:
-            return(self.__I[dataType].keys())
+            return(list(self.__I[dataType].keys()))
         except:
             return []
 
@@ -336,13 +336,13 @@ class SequenceDataStore(object):
 
     def getDataTypes(self):
         try:
-            return(self.__I.keys())
+            return(list(self.__I.keys()))
         except:
             return []
 
     def getIds(self, dataType="sequence", seqType="ref"):
         try:
-            return(self.__I[dataType][seqType].keys())
+            return(list(self.__I[dataType][seqType].keys()))
         except:
             return []
 
@@ -362,7 +362,7 @@ class SequenceDataStore(object):
         """
         try:
             pL = []
-            tpL = self.__I[dataType][seqType][seqId].keys()
+            tpL = list(self.__I[dataType][seqType][seqId].keys())
             for p in tpL:
                 if int(version) in self.__I[dataType][seqType][seqId][int(p)][int(altId)]:
                     pL.append(p)
@@ -397,7 +397,7 @@ class SequenceDataStore(object):
         """ Return the list of alternative ids in "descending" order (largest id  first).
         """
         try:
-            aL = self.__I[dataType][seqType][seqId][int(partId)].keys()
+            aL = list(self.__I[dataType][seqType][seqId][int(partId)].keys())
             aL.sort(reverse=True)
             return(aL)
         except:
@@ -407,7 +407,7 @@ class SequenceDataStore(object):
         """ Return the list of version ids in "descending" order (highest version first).
         """
         try:
-            vers = self.__I[dataType][seqType][seqId][int(partId)][int(altId)].keys()
+            vers = list(self.__I[dataType][seqType][seqId][int(partId)][int(altId)].keys())
             vers.sort(reverse=True)
             return(vers)
         except:
@@ -439,7 +439,7 @@ class SequenceDataStore(object):
 
     def getGroupIds(self):
         try:
-            keys = self.__G.keys()
+            keys = list(self.__G.keys())
             keys.sort(lambda x, y: int(x) - int(y))
             return(keys)
         except:
@@ -631,7 +631,6 @@ class SequenceDataStore(object):
         ofh.write("\n+END++END++END++END++END++END++END++END++END++END+ SequenceDataStore.dump() +END++END++END++END++END++END++END++END+\n\n")
 
     def dumpData(self, ofh, seqId, seqType, dataType="sequence", partId=1):
-        altIds = self.__I[dataType][seqType][seqId][partId].keys()
         for altId, vOb in self.__I[dataType][seqType][seqId][partId].items():
             for ver, ival in vOb.items():
                 id = self.__makeId(dataType=dataType, seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=ver)

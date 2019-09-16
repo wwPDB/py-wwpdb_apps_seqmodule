@@ -355,9 +355,9 @@ class ReferenceSequenceAssign(object):
 
     def getSequence(self):
         try:
-            if self.__D.has_key('seq_one_letter_code'):
+            if 'seq_one_letter_code' in self.__D:
                 return self.__D['seq_one_letter_code']
-            elif self.__D.has_key('full_seq_one_letter_code'):
+            elif 'full_seq_one_letter_code' in self.__D:
                 return self.__D['full_seq_one_letter_code'][self.__D['db_align_beg']-1:self.__D['db_align_end']]
             else:
                 return ''
@@ -434,7 +434,7 @@ class SequenceAssignDepositor(object):
 
         # for each entity
         #
-        entityList=self.__fD.keys()
+        entityList=list(self.__fD.keys())
         if len(entityList) < 1:
             return 
 
@@ -442,14 +442,14 @@ class SequenceAssignDepositor(object):
 
         for eId in entityList:
             d=self.__fD[eId]
-            if d.has_key('ref_list'):
+            if 'ref_list' in d:
                 log.write("+SequenceAssignDepositor.printIt() Depositor reference list for entity %r\n" % eId)
                 for ii,rfD in enumerate(d['ref_list']):
                     log.write(" +Reference %d\n" % (ii+1))
                     for k,v in rfD.items():
                         log.write("     Key=%20s  : %s\n" % (k,v))                        
                         
-            if d.has_key('ref_dif_dict'):
+            if 'ref_dif_dict' in d:
                 log.write("\n+SequenceAssignDepositor.printIt() Depositor reference alignment difference dictionary for entity %r \n" % eId)
                 rfD =d['ref_dif_dict']
                 for k,vL in rfD.items():
@@ -528,26 +528,26 @@ class SequenceAssignArchive(object):
                 #
                 refD={}
                 for k,v in td.items():
-                    if self.__attribMapA.has_key(k):
+                    if k in self.__attribMapA:
                         refD[ self.__attribMapA[k] ] = v
                 
                 # 
                 # Add the details from the first alignment if this exists.
                 #
                 refId=refD['ref_id']
-                if self.__fD[entityId]['ref_align_dict'].has_key(refId):
+                if refId in self.__fD[entityId]['ref_align_dict']:
                     aL=self.__fD[entityId]['ref_align_dict'][refId]
                     if len(aL) > 0:
                         aD=aL[0]
                         for k,v in aD.items():
-                            if self.__attribMapB.has_key(k):
+                            if k in self.__attribMapB:
                                 refD[ self.__attribMapB[k] ] = v
                 else:
                     if (self.__verbose):
                         self.__lfh.write("+SequenceAssignArchive.getReferenceList() no alignment data for ref_id %s\n"  % refId)
 
                 if (self.__verbose):
-                    self.__lfh.write("+SequenceAssignArchive.getReferenceList() refId %s  reference dictionary %r\n"  % (refId, refD.items()))                
+                    self.__lfh.write("+SequenceAssignArchive.getReferenceList() refId %s  reference dictionary %r\n"  % (refId, list(refD.items())))                
                 sdm=ReferenceSequenceAssign()
                 sdm.set(refD)
                 retL.append(sdm)
@@ -566,7 +566,7 @@ class SequenceAssignArchive(object):
 
         # for each entity
         #
-        entityList=self.__fD.keys()
+        entityList=list(self.__fD.keys())
         if len(entityList) < 1:
             return 
 
@@ -574,14 +574,14 @@ class SequenceAssignArchive(object):
 
         for eId in entityList:
             d=self.__fD[eId]
-            if d.has_key('ref_list'):
+            if 'ref_list' in d:
                 log.write("+SequenceAssignArchive.printIt() Archive reference list for entity %s\n" % eId)
                 for ii,rfD in enumerate(d['ref_list']):
                     log.write(" +Reference %s\n" % rfD['id'])
                     for k,v in rfD.items():
                         log.write("     Key=%20s  : %s\n" % (k,v))                        
                         
-            if d.has_key('ref_align_dict'):
+            if 'ref_align_dict' in d:
                 log.write("\n+SequenceAssignArchive.printIt() Archive reference alignment dictionary for entity %s \n" % eId)
                 rfD =d['ref_align_dict']
                 for k,vL in rfD.items():
@@ -590,7 +590,7 @@ class SequenceAssignArchive(object):
                         for k,v in tD.items():
                             log.write("      Key=%30s  : %s\n" % (k,v))                        
 
-            if d.has_key('ref_dif_dict'):
+            if 'ref_dif_dict' in d:
                 log.write("\n+SequenceAssignArchive.printIt() Archive reference alignment difference dictionary for entity %s \n" % eId)
                 rfD =d['ref_dif_dict']
                 for k,vL in rfD.items():

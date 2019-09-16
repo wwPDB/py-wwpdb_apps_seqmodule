@@ -160,11 +160,11 @@ if __name__ == "__main__":
     fetchUtil = FetchReferenceSequenceUtils(siteId=os.getenv("WWPDB_SITE_ID"), verbose=True)
     err,myD,myList=fetchUtil.fetchReferenceSequence("UNP", "A0A2X2RSX5", None)
     if err:
-        print err
+        print(err)
     #
     for k,v in myD.items():
-        print k + ' = ' + str(v)
+        print(k + ' = ' + str(v))
     #
     for myTuple in myList:
-        print myTuple
+        print(myTuple)
     #

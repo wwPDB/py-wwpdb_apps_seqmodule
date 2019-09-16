@@ -106,12 +106,12 @@ class GetSameSeqAnnotation(object):
                 self.__lfh.write("alignmentMap.partId=%r\n" % partId)
                 self.__lfh.write("alignmentMap.alignment:\n")
                 for alignTup in alignmentTup[0]:
-                    print alignTup
+                    print(alignTup)
                 #
-                print alignmentTup[1]
+                print(alignmentTup[1])
                 self.__lfh.write("alignmentMap.seq_tup_list:\n")
                 for seqTup in alignmentTup[2]:
-                    print seqTup
+                    print(seqTup)
                 #
             #
             dbRefMap = self.__getDbRefMap(cifObj, entityId)

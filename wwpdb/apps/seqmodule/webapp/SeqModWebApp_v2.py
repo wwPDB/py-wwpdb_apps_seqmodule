@@ -135,7 +135,7 @@ class SeqModWebApp(object):
         # The path containing the sessions directory (i.e. <top_sessions_path>/sessions )
         self.__topSessionPath = self.__cI.get('SITE_WEB_APPS_TOP_SESSIONS_PATH')
 
-        if isinstance(parameterDict, types.DictType):
+        if isinstance(parameterDict, dict):
             self.__myParameterDict = parameterDict
         else:
             self.__myParameterDict = {}

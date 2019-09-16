@@ -138,7 +138,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         if newOldEntityIdMap:
             self.__doRefSearchFlag = False
         #
-        self.__entityIdList = entityD.keys()
+        self.__entityIdList = list(entityD.keys())
         searchEntityIdList = []
         for entityId in self.__entityIdList:
             if entityId in newOldEntityIdMap:
@@ -164,7 +164,8 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         except:
             sortedEntityIdList = self.__entityIdList
         #
-        self.__createSeqMatchFileAndMisMatchPickleFile(sortedEntityIdList, entityD, ownRefD, eSSRefD, newOldEntityIdMap.keys(), misMatchList, notFoundMatchList)
+        self.__createSeqMatchFileAndMisMatchPickleFile(sortedEntityIdList, entityD, ownRefD, eSSRefD, list(newOldEntityIdMap.keys()),
+                                                       misMatchList, notFoundMatchList)
         #
         self.__updateUtilDataStore(pdbxFilePath)
         #
@@ -178,7 +179,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 skipInstanceIdList.extend(eD["INSTANCE_LIST"])
             #
             groupDict[eId] = eD["INSTANCE_LIST"]
-            groupPartD[eId] = range(1, len(eD["PART_LIST"]) + 1)
+            groupPartD[eId] = list(range(1, len(eD["PART_LIST"]) + 1))
             if self._verbose:
                 self._lfh.write("+SequenceDataAssemble.doAssemble() entity %s PART_LIST %r\n" % (eId, eD["PART_LIST"]))
                 self._lfh.write("+SequenceDataAssemble.doAssemble() entity %s numParts %d groupPartD  %r\n" %
@@ -202,8 +203,8 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         self.setDepositorSeqAssign(depSeqAssign)
         self.setArchiveSeqAssign(seqAssign)
         self.setCoordinateInstanceInfo(instanceD, statisticsMap, skipList=skipInstanceIdList)
-        self.setMultipleEntitiesSequenceInfo(entityD, skipList=newOldEntityIdMap.keys())
-        self.setMultipleEntitiesRefSequenceInfo(entityD, eRefD, ownRefD, eSSRefD, skipList=newOldEntityIdMap.keys())
+        self.setMultipleEntitiesSequenceInfo(entityD, skipList=list(newOldEntityIdMap.keys()))
+        self.setMultipleEntitiesRefSequenceInfo(entityD, eRefD, ownRefD, eSSRefD, skipList=list(newOldEntityIdMap.keys()))
         self.setGroup(groupDict)
         self.setGroupParts(groupPartD)
         self.setEntryDetail(entryD)
@@ -1036,7 +1037,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 self.__setEntityAlignInfoMap(authLabel, eD)
             #
         #
-        eRefD,ownRefD,eSSRefD = self.__doReferenceSearch(entityD, entityD.keys())
+        eRefD,ownRefD,eSSRefD = self.__doReferenceSearch(entityD, list(entityD.keys()))
         self.setMultipleEntitiesRefSequenceInfo(entityD, eRefD, ownRefD, eSSRefD)
         #
         self.__resetAlignmentFlag = True
