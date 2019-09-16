@@ -284,13 +284,13 @@ class UpdatePolymerEntityPartitions(object):
             updatePartitionFlag = False
             for partId in range(1, numParts + 8):
                 #if pOrgD[partId] != pD[partId] and partId <= numParts:
-                if partId in pOrgD and partId in pD and pOrgD[partId] != pD[partId]:
+                if (partId in pOrgD) and (partId in pD) and pOrgD[partId] != pD[partId]:
                     self.__lfh.write("+UpdatePolymerEntityPartitions.polymerEntityPartEditFormResponder() source differs at partId %d current %r next %r\n"
                                      % (partId, pOrgD[partId], pD[partId]))
                     updatePartitionFlag = True
                     break
                 #elif pD[partId][1] != self.__placeHolderValue and partId > numParts:
-                elif (partId in pD and (partId not in pOrgD)) or ((partId not in pD) and partId in pOrgD):
+                elif ((partId in pD) and (partId not in pOrgD)) or ((partId not in pD) and (partId in pOrgD)):
                     updatePartitionFlag = True
                     break
                 #

@@ -383,7 +383,7 @@ class UpdatePolymerEntitySourceDetails(object):
             db_name_class = "greyedout"
             db_name_value_select = '[{"value":"","label":"","selected":true},{"value":"NOR","label":"NOR","selected":false}]'
             db_name_value_curr = self.__placeHolderValue
-            if 'ANNO_EDIT_DB_NAME' in authFD and authFD['ANNO_EDIT_DB_NAME'].upper() == 'NOR':
+            if ('ANNO_EDIT_DB_NAME' in authFD) and authFD['ANNO_EDIT_DB_NAME'].upper() == 'NOR':
                 db_name_class = ""
                 db_name_value_select = '[{"value":"","label":"","selected":false},{"value":"NOR","label":"NOR","selected":true}]'
                 db_name_value_curr = authFD['ANNO_EDIT_DB_NAME'].upper()
@@ -395,7 +395,7 @@ class UpdatePolymerEntitySourceDetails(object):
             for items in ( ( 'db_code', 'ANNO_EDIT_DB_CODE' ), ( 'db_accession', 'ANNO_EDIT_DB_ACCESSION' ) ):
                 styleClass = "greyedout"
                 value = self.__placeHolderValue
-                if items[1] in authFD and authFD[items[1]]:
+                if (items[1] in authFD) and authFD[items[1]]:
                     styleClass = ""
                     value = authFD[items[1]]
                 #
@@ -414,7 +414,7 @@ class UpdatePolymerEntitySourceDetails(object):
             for items in ( ( 'DB Align Begin', 'ANNO_EDIT_DB_ALIGN_BEGIN' ), ( 'DB Align End', 'ANNO_EDIT_DB_ALIGN_END' ) ):
                 styleClass = "greyedout"
                 value = self.__placeHolderValue
-                if items[1] in authFD and authFD[items[1]]:
+                if (items[1] in authFD) and authFD[items[1]]:
                     styleClass = ""
                     value = authFD[items[1]]
                 #

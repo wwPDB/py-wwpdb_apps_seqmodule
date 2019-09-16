@@ -242,7 +242,7 @@ class SequenceDataExport(object):
                     partId = str(tup[2]).strip()
                     self.__selfReferenceEntityList.append((seqId, partId))
                     foundAnnInputRefInfo = False
-                    if seqId in self.__I["auth"] and int(partId) in self.__I["auth"][seqId]:
+                    if (seqId in self.__I["auth"]) and (int(partId) in self.__I["auth"][seqId]):
                         altId = self.__I["auth"][seqId][int(partId)][0]
                         verId = self.__I["auth"][seqId][int(partId)][1]
                         seqAuthFD = self.__sds.getFeature(seqId=seqId, seqType="auth", partId=int(partId), altId=altId, version=verId)
@@ -250,7 +250,7 @@ class SequenceDataExport(object):
                         row.append(len(self.__annoRefDbL) + 1)
                         row.append(seqId)
                         for item in ( "ANNO_EDIT_DB_NAME", "ANNO_EDIT_DB_CODE", "ANNO_EDIT_DB_ACCESSION", "ANNO_EDIT_DB_ALIGN_BEGIN", "ANNO_EDIT_DB_ALIGN_END" ):
-                            if item in seqAuthFD and seqAuthFD[item]:
+                            if (item in seqAuthFD) and seqAuthFD[item]:
                                 row.append(seqAuthFD[item])
                             else:
                                 break
@@ -258,7 +258,7 @@ class SequenceDataExport(object):
                         #
                         if len(row) == 7:
                             seqAuthRefMap = []
-                            if seqId in self.__annoSeqAuthRefMap and self.__annoSeqAuthRefMap[seqId]:
+                            if (seqId in self.__annoSeqAuthRefMap) and self.__annoSeqAuthRefMap[seqId]:
                                 seqAuthRefMap = self.__annoSeqAuthRefMap[seqId]
                             else:
                                 seqAuthIdx = self.__sds.getSequence(seqId=seqId,seqType="auth",partId=int(partId),altId=altId,version=verId)
@@ -365,9 +365,9 @@ class SequenceDataExport(object):
                 #
                 for partId, (altId, ver) in self.__I["auth"][gId].items():
                     fD = self.__sds.getFeature(gId, seqType="auth", partId=partId, altId=altId, version=ver)
-                    if "SOURCE_METHOD" in fD and fD["SOURCE_METHOD"].upper() == "NAT":
+                    if ("SOURCE_METHOD" in fD) and fD["SOURCE_METHOD"].upper() == "NAT":
                         sourceInfo = "NAT"
-                        if "SOURCE_TAXID" in fD and fD["SOURCE_TAXID"]:
+                        if ("SOURCE_TAXID" in fD) and fD["SOURCE_TAXID"]:
                             if fD["SOURCE_TAXID"] in natureSourceTaxIds:
                                 if gId not in natureSourceTaxIds[fD["SOURCE_TAXID"]]:
                                     natureSourceTaxIds[fD["SOURCE_TAXID"]].append(gId)
