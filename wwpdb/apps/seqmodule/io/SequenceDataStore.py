@@ -440,7 +440,7 @@ class SequenceDataStore(object):
     def getGroupIds(self):
         try:
             keys = list(self.__G.keys())
-            keys.sort(lambda x, y: int(x) - int(y))
+            keys.sort(key=int)
             return(keys)
         except:
             return []

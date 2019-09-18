@@ -76,7 +76,7 @@ class SummaryViewDepiction(object):
         oL = []
         gIdList = list(summaryDataObj.keys())
 
-        gIdList.sort(lambda x, y: int(x) - int(y))
+        gIdList.sort(key=int)
         gId0 = activeGroupId if activeGroupId in gIdList else gIdList[0]
 
         oL.append('<span class="padtop6 fltlft"><b>Select Entity:</b></span>\n<div id="pagi" class="noprint fltlft"></div>\n<br class="clearfloat" />\n')

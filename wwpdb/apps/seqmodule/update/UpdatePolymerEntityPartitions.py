@@ -129,7 +129,7 @@ class UpdatePolymerEntityPartitions(object):
                 self.__lfh.write(" part %r  data:  %r\n" % (k, v))
 
         partIdList = list(partD.keys())
-        partIdList.sort(lambda x, y: int(x) - int(y))
+        partIdList.sort(key=int)
         #
         #
         oL = []
