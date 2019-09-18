@@ -667,7 +667,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             if self.__cI.get('USE_COMPUTE_CLUSTER'):
                 numProc = len(entityTupList)
             else:
-                numProc = multiprocessing.cpu_count() / 2
+                numProc = int(multiprocessing.cpu_count() / 2)
             mpu = MultiProcUtil(verbose = True)
             mpu.set(workerObj = self, workerMethod = "runMultiReferenceSearches")
             mpu.setWorkingDir(self.__sessionPath)
@@ -741,7 +741,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             if self.__cI.get('USE_COMPUTE_CLUSTER'):
                 numProc = len(entityTupList)
             else:
-                numProc = multiprocessing.cpu_count() / 2
+                numProc = int(multiprocessing.cpu_count() / 2)
             mpu = MultiProcUtil(verbose = True)
             mpu.set(workerObj = self, workerMethod = "runMultiSameSeqAnnotationSearches")
             mpu.setWorkingDir(self.__sessionPath)
@@ -794,7 +794,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             if self.__cI.get('USE_COMPUTE_CLUSTER'):
                 numProc = len(entityTupList)
             else:
-                numProc = multiprocessing.cpu_count() / 2
+                numProc = int(multiprocessing.cpu_count() / 2)
             mpu = MultiProcUtil(verbose = True)
             mpu.set(workerObj = self, workerMethod = "runMultiBlastReferenceSearches")
             mpu.setWorkingDir(self.__sessionPath)

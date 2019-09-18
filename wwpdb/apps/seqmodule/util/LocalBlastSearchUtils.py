@@ -226,7 +226,7 @@ class LocalBlastSearchUtils(object):
             return rD
         #
         try:
-            numProc = multiprocessing.cpu_count() / 2
+            numProc = int(multiprocessing.cpu_count() / 2)
             mpu = MultiProcUtil(verbose = True)
             mpu.set(workerObj = self, workerMethod = "runMultiLocalBlasts")
             mpu.setWorkingDir(self.__sessionPath)
@@ -627,6 +627,7 @@ class LocalBlastSearchUtils(object):
             for hit in hitList:
                 self.__lfh.write("+ReferencSequenceUtils.__sortHitList() final hit sort_order=%r sort_metric=%r db_code=%r authTaxId=%r taxonomy_id=%r\n" \
                                  % (hit["sort_order"], hit["sort_metric"], hit["db_code"], authTaxId, hit["taxonomy_id"]))
+            self.__lfh.flush()
             #
         #
         return start_index,hitList
@@ -636,7 +637,7 @@ class LocalBlastSearchUtils(object):
         """
         alignMap = {}
         try:
-            numProc = multiprocessing.cpu_count() / 2
+            numProc = int(multiprocessing.cpu_count() / 2)
             mpu = MultiProcUtil(verbose = True)
             mpu.set(workerObj = self, workerMethod = 'getMultiSeqAlignmentProcess')
             mpu.setWorkingDir(self.__sessionPath)
