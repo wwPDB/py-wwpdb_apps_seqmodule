@@ -63,7 +63,7 @@ class LocalBlastSearchUtils(object):
         self.__maxHitsSearch = 100
         self.__maxHitsSave = 50
         self.__cleanUp = True
-        self.__debug = True
+        self.__debug = False
         #
         self.__dataSetId = ''
         self.__entityD = {}
@@ -625,8 +625,16 @@ class LocalBlastSearchUtils(object):
         if self.__debug:
             self.__lfh.write("ReferencSequenceUtils.__sortHitList() hitList=%d maxHitsSave=%d\n" % (len(hitList), self.__maxHitsSave))
             for hit in hitList:
+                taxonomy_id = ""
+                if "taxonomy_id" in hit:
+                    taxonomy_id = hit["taxonomy_id"]
+                #
+                db_code = ""
+                if "db_code" in hit:
+                    db_code = hit["db_code"]
+                #
                 self.__lfh.write("+ReferencSequenceUtils.__sortHitList() final hit sort_order=%r sort_metric=%r db_code=%r authTaxId=%r taxonomy_id=%r\n" \
-                                 % (hit["sort_order"], hit["sort_metric"], hit["db_code"], authTaxId, hit["taxonomy_id"]))
+                                 % (hit["sort_order"], hit["sort_metric"], db_code, authTaxId, taxonomy_id))
             #
         #
         return start_index,hitList
