@@ -237,6 +237,59 @@ class SequenceReferenceData(object):
         else:
             return 'polyribonucleotide'
         
+    def __parseSequenceString(self, ss, codeDict3To1={}, defaultOneCode="", codeDict1To3={}, defaultThreeCode=""):
+        """ Parse a string like AAA(MOD)(MOD)AAA and convert
+            this to a list of 1- and 3-letter code residue lists.
+        """
+        r1L = []
+        r3L = []
+        if ss is None or len(ss) < 1:
+            return (r1L,r3L)
+        #
+        inP = False
+        r3 = ""
+        for s in ss:
+            if s in string.whitespace:
+                continue
+            #
+            if s == "(":
+                inP = True
+                r3 = ""
+                continue
+            #
+            if s == ")":
+                inP = False
+                #
+                if not r3:
+                    continue
+                #
+                r3L.append(r3)
+                #
+                if r3 in codeDict3To1:
+                    r1L.append(codeDict3To1[r3])
+                elif defaultOneCode:
+                    r1L.append(defaultOneCode)
+                else:
+                    r1L.append(r3)
+                #
+                r3 = ""
+                continue
+            #
+            if inP:
+                r3 += s
+            else:
+                if s in codeDict1To3:
+                    r3L.append(codeDict1To3[s])
+                elif defaultThreeCode:
+                    r3L.append(defaultThreeCode)
+                else:
+                    r3L.append(s)
+                #
+                r1L.append(s)
+            #
+        #
+        return (r1L,r3L)
+        
     def __parseSequenceAA(self,ss):
         """ Parse a string like AAA(MOD)(MOD)AAA and convert
             this to a list of 1- and 3-letter code residue lists.
@@ -439,53 +492,23 @@ class SequenceReferenceData(object):
 
 
     def cnv1To3List(self,s1S,polyTypeCode):
+        (s1L,s3L) = self.cnv1ListPlus3List(s1S, polyTypeCode)
+        return s3L
+
+    def cnv1ListPlus3List(self,s1S,polyTypeCode):
         if polyTypeCode == "AA":
-            return self.__cnv1To3ListAA(s1S)
+            return self.__parseSequenceString(s1S, codeDict1To3=SequenceReferenceData._monDict1)
         elif polyTypeCode == "RNA" or  polyTypeCode == "XNA":
-            return self.__cnv1To3ListRNA(s1S)
+            return self.__parseSequenceString(s1S, codeDict1To3=SequenceReferenceData._monDictRNA1)
         elif polyTypeCode == "DNA":
-            return self.__cnv1To3ListDNA(s1S)            
+            return self.__parseSequenceString(s1S, codeDict1To3=SequenceReferenceData._monDictDNA1)            
         else:
-            return self.__cnv1To3ListAA(s1S)
-
-
-    def __cnv1To3ListAA(self,s1S):
-        s1L=self.toList(s1S)
-        s3L=[]
-        for r1 in s1L:
-            if r1 in SequenceReferenceData._monDict1:
-                s3L.append(SequenceReferenceData._monDict1[r1])
-            else:
-                s3L.append('UNK')
-        return s3L
-
-    def __cnv1To3ListDNA(self,s1S):
-        s1L=self.toList(s1S)
-        s3L=[]
-        for r1 in s1L:
-            if r1 in SequenceReferenceData._monDictDNA1:
-                s3L.append(SequenceReferenceData._monDictDNA1[r1])
-            else:
-                s3L.append('UNK')
-        return s3L
-
-    def __cnv1To3ListRNA(self,s1S):
-        s1L=self.toList(s1S)
-        s3L=[]
-        for r1 in s1L:
-            if r1 in SequenceReferenceData._monDictRNA1:
-                s3L.append(SequenceReferenceData._monDictRNA1[r1])
-            else:
-                s3L.append('UNK')
-        return s3L
+            return self.__parseSequenceString(s1S, codeDict1To3=SequenceReferenceData._monDict1)
+        #
 
     def toList(self,strIn):
-        sL=[]
-        for ss in strIn:
-            if ss in string.whitespace:
-                continue
-            sL.append(ss)
-        return sL
+        (s1L,s3L) = self.__parseSequenceString(strIn)
+        return s1L
 
     def cnvList3to1(self,r3List):
         oL=[]

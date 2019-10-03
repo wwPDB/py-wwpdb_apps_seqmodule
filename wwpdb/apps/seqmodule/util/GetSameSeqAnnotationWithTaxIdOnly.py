@@ -38,6 +38,7 @@ class GetSameSeqAnnotation(object):
         self.__pI = pathInfo
         self.__verbose = verbose
         self.__lfh = log
+        self.__oneLetterCodeSeqList = []
         self.__threeLetterCodeSeqList = []
         #
         if not self.__pI:
@@ -52,7 +53,7 @@ class GetSameSeqAnnotation(object):
         if (not seq) or (len(seq) < 1):
             return
         #
-        self.__threeLetterCodeSeqList = self.__srd.cnv1To3List(seq, polyTypeCode)
+        (self.__oneLetterCodeSeqList,self.__threeLetterCodeSeqList) = self.__srd.cnv1ListPlus3List(seq, polyTypeCode)
 
     def getSeqAnnotationFromAssignFile(self, retList=None, TaxIdList=None, includeSelfRef=False):
         """ retList[][0]: depID, retList[][1]: entityID, retList[][2]: pdbID, retList[][3]: AnnInitial, retList[][4]: statusCode,
@@ -276,14 +277,16 @@ class GetSameSeqAnnotation(object):
                 refMap[alignTup[2] + "_" + alignTup[3] + "_" + alignTup[4]] = len(alignList)
             #
             alignList.append(alignTup)
-            threeLetterSeqList.append(alignTup[0])
+            threeLetterSeqList.append((alignTup[0], alignTup[6]))
         #
         if (not alignList) or (len(threeLetterSeqList) != len(self.__threeLetterCodeSeqList)):
             return {}
         #
         for i in range(0, len(threeLetterSeqList)):
-            if str(threeLetterSeqList[i]) != str(self.__threeLetterCodeSeqList[i]):
-                return {}
+            if str(threeLetterSeqList[i][0]) != str(self.__threeLetterCodeSeqList[i]):
+                if str(threeLetterSeqList[i][1]) != str(self.__oneLetterCodeSeqList[i]):
+                    return {}
+                #
             #
         #
         for partTup in partsTaxIdInfo:
@@ -439,6 +442,9 @@ class GetSameSeqAnnotation(object):
             #
             selfRefmap[retDic["entity_part_id"]] = True
         #
+        if selfRefmap and (not self.__checkSelfRefSeq(cifObj, entityId)):
+            return {}
+        #
         return selfRefmap
 
     def __getAuthRefAlignmentMap(self, matchList, partsTaxIdInfo):
@@ -484,6 +490,39 @@ class GetSameSeqAnnotation(object):
             alignmentMap[partTup[0]] = ( alignmentList, ( alignLength, float(numMatch)/float(alignLength), float(numMatchGaps)/float(alignLength) ), sTup3L )
         #
         return alignmentMap
+
+    def __checkSelfRefSeq(self, cifObj, entityId):
+        """
+        """
+        threeLetterSeqList = []
+        auth_asym_id = ""
+        #
+        # Read pdbx_seqtool_mapping_xyz category
+        #
+        retList = cifObj.GetValue("pdbx_seqtool_mapping_xyz")
+        for retDic in retList:
+            if (not "entity_id" in retDic) or (retDic["entity_id"] != entityId) or (not "entity_mon_id" in retDic) or (not "auth_asym_id" in retDic):
+                continue
+            #
+            if not auth_asym_id:
+                auth_asym_id = retDic["auth_asym_id"]
+            #
+            if auth_asym_id != retDic["auth_asym_id"]:
+                break
+            #
+            threeLetterSeqList.append((retDic["entity_mon_id"], self.__srd.cnv3To1(retDic["entity_mon_id"])))
+        #
+        if (not threeLetterSeqList) or (len(threeLetterSeqList) != len(self.__threeLetterCodeSeqList)):
+            return False
+        #
+        for i in range(0, len(threeLetterSeqList)):
+            if str(threeLetterSeqList[i][0]) != str(self.__threeLetterCodeSeqList[i]):
+                if str(threeLetterSeqList[i][1]) != str(self.__oneLetterCodeSeqList[i]):
+                    return False
+                #
+            #
+        #
+        return True
 
 if __name__ == "__main__":
     from wwpdb.utils.config.ConfigInfo import ConfigInfo
