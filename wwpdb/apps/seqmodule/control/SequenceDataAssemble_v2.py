@@ -41,6 +41,7 @@ from wwpdb.apps.seqmodule.align.AlignmentTools import AlignmentTools
 from wwpdb.apps.seqmodule.io.AlignmentDataStore import AlignmentDataStore
 from wwpdb.apps.seqmodule.io.SequenceDataExport_v2 import SequenceDataExport
 from wwpdb.apps.seqmodule.link.PolymerLinkageDepict import PolymerLinkageDepict
+from wwpdb.apps.seqmodule.update.UpdatePolymerEntitySourceDetails import UpdatePolymerEntitySourceDetails
 from wwpdb.apps.seqmodule.util.LocalBlastSearchUtils import LocalBlastSearchUtils
 from wwpdb.apps.seqmodule.util.SeqReferenceSearchUtils import SeqAnnotationSearchUtils
 from wwpdb.apps.seqmodule.util.SeqReferenceSearchUtils import SeqReferenceSearchUtils
@@ -219,6 +220,9 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         # Export the assignment file for auto-complete sequence processing
         if self.__autoProcessFlag:
             defaultSelectedIdList = self.getSelectedIds()
+            sdu = UpdatePolymerEntitySourceDetails(reqObj=self._reqObj, verbose=self._verbose, log=self._lfh)
+            sdu.updateAuthEntityDetails(selectIdList=defaultSelectedIdList)
+            #
             dataExport = SequenceDataExport(reqObj=self._reqObj, exportList=defaultSelectedIdList, verbose=self._verbose, log=self._lfh)
             ok, numConflicts, conflictList, warningMsg = dataExport.exportAssignments()
             if (not ok) or (numConflicts > 0):
