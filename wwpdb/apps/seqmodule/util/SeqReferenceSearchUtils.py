@@ -76,19 +76,21 @@ class SeqAnnotationSearchUtils(object):
             selfInfoMap = {}
             sameSeqInfoMap = {}
             if (len(selfList) > 0) or (len(sameSeqEntryList) > 0):
-                taxIdList = []
+                partsTaxIdInfoList = []
                 for (partNo, pD) in enumerate(eD["PART_LIST"], start=1):
-                    if ("SOURCE_TAXID" in pD) and pD["SOURCE_TAXID"] and (pD["SOURCE_TAXID"] not in taxIdList):
-                        taxIdList.append(pD["SOURCE_TAXID"])
+                    if ("SOURCE_TAXID" in pD) and pD["SOURCE_TAXID"] and ("SEQ_NUM_BEG" in pD) and pD["SEQ_NUM_BEG"] and ("SEQ_NUM_END" in pD) and pD["SEQ_NUM_END"]:
+                        partsTaxIdInfoList.append([ str(partNo), pD["SEQ_NUM_BEG"], pD["SEQ_NUM_END"], "", pD["SOURCE_TAXID"] ])
+                    elif (len(eD["PART_LIST"]) == 1) and ("SOURCE_TAXID" in pD) and pD["SOURCE_TAXID"]:
+                        partsTaxIdInfoList.append([ str(partNo), "", "", "", pD["SOURCE_TAXID"] ])
                     #
                 #
                 annObj = GetSameSeqAnnotation(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, verbose=self.__verbose, log=self.__lfh)
                 annObj.setEntitySeq(seq=eD["SEQ_ENTITY_1"], polyTypeCode=eD["POLYMER_TYPE_CODE"])
                 if len(selfList) > 0:
-                    selfInfoMap = annObj.getSeqAnnotationFromAssignFile(retList=selfList, TaxIdList=taxIdList, includeSelfRef=True)
+                    selfInfoMap = annObj.getSeqAnnotationFromAssignFile(retList=selfList, authPartsTaxIdInfoList=partsTaxIdInfoList, includeSelfRef=True)
                 #
                 if len(sameSeqEntryList) > 0:
-                    sameSeqInfoMap = annObj.getSeqAnnotationFromAssignFile(retList=sameSeqEntryList, TaxIdList=taxIdList)
+                    sameSeqInfoMap = annObj.getSeqAnnotationFromAssignFile(retList=sameSeqEntryList, authPartsTaxIdInfoList=partsTaxIdInfoList)
                 #
             #
             return selfInfoMap,sameSeqInfoMap

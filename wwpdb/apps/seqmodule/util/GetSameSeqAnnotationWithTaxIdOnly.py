@@ -55,13 +55,16 @@ class GetSameSeqAnnotation(object):
         #
         (self.__oneLetterCodeSeqList,self.__threeLetterCodeSeqList) = self.__srd.cnv1ListPlus3List(seq, polyTypeCode)
 
-    def getSeqAnnotationFromAssignFile(self, retList=None, TaxIdList=None, includeSelfRef=False):
+    def getSeqAnnotationFromAssignFile(self, retList=None, authPartsTaxIdInfoList=None, includeSelfRef=False):
         """ retList[][0]: depID, retList[][1]: entityID, retList[][2]: pdbID, retList[][3]: AnnInitial, retList[][4]: statusCode,
             retList[][5]: date_begin_processing
         """
-        if (not retList) or (not TaxIdList):
+        if (not retList) or (not authPartsTaxIdInfoList):
             return {}
         #
+        if len(authPartsTaxIdInfoList) == 1:
+            authPartsTaxIdInfoList[0][1] = "1"
+            authPartsTaxIdInfoList[0][2] = len(self.__threeLetterCodeSeqList)
         #
         assignFileList = []
         for entityTup in retList:
@@ -83,19 +86,19 @@ class GetSameSeqAnnotation(object):
             assignFileList.sort(key=itemgetter(7), reverse=True)
         #
         for entityTup in assignFileList:
-            annInfoMap = self.__getSeqAnnotationFromAssignFile(entityTup, TaxIdList, includeSelfRef)
+            annInfoMap = self.__getSeqAnnotationFromAssignFile(entityTup, authPartsTaxIdInfoList, includeSelfRef)
             if annInfoMap:
                 return annInfoMap
             #
         #
         return {}
 
-    def testGetSeqAnnotationFromAssignFile(self, assignFile, entityId, TaxIdList):
+    def testGetSeqAnnotationFromAssignFile(self, assignFile, entityId, authPartsTaxIdInfoList):
         """
         """
         try:
             cifObj = mmCIFUtil(filePath=assignFile)
-            seqAnntationInfoMap,partsTaxIdInfo = self.__getEntityDetailsMap(cifObj, entityId, TaxIdList)
+            seqAnntationInfoMap,partsTaxIdInfo = self.__getEntityDetailsMap(cifObj, entityId, authPartsTaxIdInfoList)
             self.__lfh.write("seqAnntationInfoMap=%d\n" % len(seqAnntationInfoMap))
             self.__lfh.write("partsTaxIdInfo=%d\n" % len(partsTaxIdInfo))
             for partId,infoD in seqAnntationInfoMap.items():
@@ -126,12 +129,12 @@ class GetSameSeqAnnotation(object):
             #
         #
 
-    def __getSeqAnnotationFromAssignFile(self, entityInfo, TaxIdList, includeSelfRef):
+    def __getSeqAnnotationFromAssignFile(self, entityInfo, authPartsTaxIdInfoList, includeSelfRef):
         """
         """
         try:
             cifObj = mmCIFUtil(filePath=entityInfo[6])
-            seqAnntationInfoMap,partsTaxIdInfo = self.__getEntityDetailsMap(cifObj, entityInfo[1], TaxIdList)
+            seqAnntationInfoMap,partsTaxIdInfo = self.__getEntityDetailsMap(cifObj, entityInfo[1], authPartsTaxIdInfoList)
             if not seqAnntationInfoMap:
                 return seqAnntationInfoMap
             #
@@ -175,7 +178,7 @@ class GetSameSeqAnnotation(object):
         #
         return {}
 
-    def __getEntityDetailsMap(self, cifObj, entityId, TaxIdList):
+    def __getEntityDetailsMap(self, cifObj, entityId, authPartsTaxIdInfoList):
         """
         """
         itemList = ( ( "seq_part_id", "SEQ_PART_ID" ), ( "seq_part_beg", "SEQ_NUM_BEG" ), ( "seq_part_end", "SEQ_NUM_END" ), \
@@ -187,7 +190,6 @@ class GetSameSeqAnnotation(object):
         #
         annInfoMap = {}
         partsTaxIdInfo = []
-        foundTaxIdMatch = False
         #
         retList = cifObj.GetValue("pdbx_seqtool_entity_details")
         for retDic in retList:
@@ -213,14 +215,17 @@ class GetSameSeqAnnotation(object):
                 partTaxIdTup.append(infoDic[partItem])
             #
             if len(partTaxIdTup) == len(partItemList):
-                if partTaxIdTup[4] in TaxIdList:
-                    foundTaxIdMatch = True
-                #
                 partsTaxIdInfo.append(partTaxIdTup)
             #
         #
-        if (len(annInfoMap) != len(partsTaxIdInfo)) or (not foundTaxIdMatch):
+        if (len(annInfoMap) != len(partsTaxIdInfo)) or (len(partsTaxIdInfo) != len(authPartsTaxIdInfoList)):
             return {},[]
+        #
+        for i in range(0, len(partsTaxIdInfo)):
+            if (str(partsTaxIdInfo[i][1]) != str(authPartsTaxIdInfoList[i][1])) or (str(partsTaxIdInfo[i][2]) != str(authPartsTaxIdInfoList[i][2])) or \
+               (str(partsTaxIdInfo[i][4]) != str(authPartsTaxIdInfoList[i][4])):
+                return {},[]
+            #
         #
         return annInfoMap,partsTaxIdInfo
 
