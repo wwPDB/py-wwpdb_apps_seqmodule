@@ -181,6 +181,8 @@ class SeqModInputRequest(InputRequest):
             return "global_edit_form"
         elif tV in ['global_edit']:
             return "global_edit"
+        elif tV in ['global_edit_auth_seq']:
+            return "global_edit_auth_seq"
         elif tV in ['global_edit_menu','globalmenuedit']:
             return "global_edit_menu"
         elif tV in ['move','edit_move']:

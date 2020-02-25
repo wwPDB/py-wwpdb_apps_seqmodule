@@ -460,14 +460,15 @@ class SummaryView(object):
                     rowIdList.append(seqRefId)
 
                     lengthRefSeq = seqFeature.getMatchLength()
-                    authSimWithGaps = seqFeature.getAuthRefSimWithGaps()
+                    #authSimWithGaps = seqFeature.getAuthRefSimWithGaps()
                     #
                     #
                     rowDataDict = {}
                     rowDataDict['ROW_ID_CODE'] = rowLabel
                     rowDataDict['ROW_VERSION'] = ver
                     rowDataDict['ROW_SEQ_LENGTH'] = lengthRefSeq
-                    rowDataDict['ROW_AUTH_REF_SIM'] = "%.3f" % authSimWithGaps
+                    #rowDataDict['ROW_AUTH_REF_SIM'] = "%.3f" % authSimWithGaps
+                    rowDataDict['ROW_AUTH_REF_SIM'] = sfd.markupReferenceSimilarttFeatures()
                     rowDataDict['ROW_DETAIL_STRING'] = detailString
                     rowDataDict['ROW_FEATURE_STRING'] = featureString
                     rowDataDict['ROW_IS_SELECTED'] = isSelected

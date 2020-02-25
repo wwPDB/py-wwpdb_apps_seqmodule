@@ -96,6 +96,49 @@ class FetchReferenceSequenceUtils(object):
         #
         return "",self.__refInfoD,self.__getReferenceList(self.__refInfoD["sequence"], polyTypeCode, refSeqBeg, refSeqEnd, reverseOrder)
 
+    def fetchReferenceSequenceWithSeqMatch(self, dbName, dbAccession, authSeqs):
+        """
+        """
+        self.__accCode = ""
+        self.__refInfoD = {}
+        #
+        dbIsoform = ""
+        if dbName in ["UNP", "SP", "TR"]:
+            tL = dbAccession.split("-")
+            if len(tL) > 1:
+                dbIsoform = dbAccession
+                dbAccession = tL[0]
+            #
+        #
+        self.__accCode,self.__refInfoD = self.__getRefInfo(dbName, dbAccession, dbIsoform)
+        #
+        if (not self.__refInfoD) or ("sequence" not in self.__refInfoD):
+            return {}
+        #
+        idx = self.__refInfoD["sequence"].find(authSeqs)
+        if idx == -1:
+            return {}
+        #
+        refSeqBeg = idx + 1
+        refSeqEnd = refSeqBeg + len(authSeqs) - 1
+        self.__refInfoD["db_length"] = len(self.__refInfoD["sequence"])
+        self.__refInfoD["identity"] = len(authSeqs)
+        self.__refInfoD["positive"] = len(authSeqs)
+        self.__refInfoD["gaps"] = 0
+        self.__refInfoD["midline"] = authSeqs
+        self.__refInfoD["query"] = authSeqs
+        self.__refInfoD["queryFrom"] = 1
+        self.__refInfoD["queryTo"] = len(authSeqs)
+        self.__refInfoD["subject"] = authSeqs
+        self.__refInfoD["hitFrom"] = refSeqBeg
+        self.__refInfoD["hitTo"] = refSeqEnd
+        self.__refInfoD["alignLen"] = len(authSeqs)
+        self.__refInfoD["match_length"] = len(authSeqs)
+        self.__refInfoD["sort_metric"] = 404
+        self.__refInfoD["sort_order"] = 1
+        #
+        return self.__refInfoD
+
     def __getRefInfo(self, dbName, dbAccession, dbIsoform):
         """ Fetch sequence data from Uniprot or GeneBank database
         """
@@ -113,10 +156,14 @@ class FetchReferenceSequenceUtils(object):
                 infoD = dt[idCode]
             elif dbAccession in dt:
                 infoD = dt[dbAccession]
+            elif len(dt.values()) == 1:
+                if ("db_code" in dt.values()[0]) and (dt.values()[0]["db_code"] == dbAccession):
+                    infoD = dt.values()[0]
+                #
             #
-            if infoD and ("db_name" not in infoD):
+            if infoD and ("db_name" not in infoD) and ("db_accession" in infoD):
                 # guess --
-                if dbAccession[0] in ["P", "Q", "O"]:
+                if infoD["db_accession"][0] in ["P", "Q", "O"]:
                     infoD["db_name"] = "SP"
                 else:
                     infoD["db_name"] = "TR"
@@ -138,7 +185,12 @@ class FetchReferenceSequenceUtils(object):
              format seqIdx=[(3-letter-code, ref-db-index, comment, position in sequence (1-length), 1-letter code]
         """
         if reverseOrder:
-            return self.__srd.cnv1To3ListIdx(sequence[refSeqBeg-1:refSeqEnd][::-1], refSeqEnd, polyTypeCode, indexStep=-1)
+            if (polyTypeCode == "RNA") or (polyTypeCode == "XNA") or (polyTypeCode == "DNA"):
+                complimentSeq = self.__srd.compliment1NA(sequence[refSeqBeg-1:refSeqEnd][::-1], polyTypeCode)
+                return self.__srd.cnv1To3ListIdx(complimentSeq, refSeqEnd, polyTypeCode, indexStep=-1)
+            else:
+                return self.__srd.cnv1To3ListIdx(sequence[refSeqBeg-1:refSeqEnd][::-1], refSeqEnd, polyTypeCode, indexStep=-1)
+            #
         else:
             return self.__srd.cnv1To3ListIdx(sequence[refSeqBeg-1:refSeqEnd], refSeqBeg, polyTypeCode)
         #
@@ -158,6 +210,7 @@ class FetchReferenceSequenceUtils(object):
 if __name__ == "__main__":
     siteId = os.getenv("WWPDB_SITE_ID")
     fetchUtil = FetchReferenceSequenceUtils(siteId=os.getenv("WWPDB_SITE_ID"), verbose=True)
+    #myD=fetchUtil.fetchReferenceSequenceWithSeqMatch("UNP", "SYUA_HUMAN", "VVHGVATVAEKTK")
     err,myD,myList=fetchUtil.fetchReferenceSequence("UNP", "A0A2X2RSX5", None)
     if err:
         print(err)

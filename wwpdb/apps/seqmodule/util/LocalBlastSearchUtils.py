@@ -40,6 +40,7 @@ from operator import itemgetter
 from wwpdb.apps.seqmodule.io.BlastPlusReader import BlastPlusReader
 from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import fetchNcbiSummary,fetchUniProt
 from wwpdb.apps.seqmodule.io.TaxonomyUtils import TaxonomyUtils
+from wwpdb.apps.seqmodule.util.FetchReferenceSequenceUtils import FetchReferenceSequenceUtils
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
 from rcsb.utils.multiproc.MultiProcUtil import MultiProcUtil
 from wwpdb.io.locator.PathInfo import PathInfo
@@ -62,12 +63,14 @@ class LocalBlastSearchUtils(object):
         self.__minRnaSequenceSearchLength = 50
         self.__maxHitsSearch = 100
         self.__maxHitsSave = 50
+        self.__shortSequenceLengthLimit = 20
         self.__cleanUp = True
         self.__debug = False
         #
         self.__dataSetId = ''
         self.__entityD = {}
-        self.__authRefList = []
+        self.__authRefIdList = []
+        self.__authRefDataList = []
         self.__fullOneLetterSeq = []
         self.__seqType = ''
         self.__entityId = ''
@@ -87,13 +90,15 @@ class LocalBlastSearchUtils(object):
                                             'db_length', 'db_description', 'db_isoform_description']
         #
 
-    def searchSeqReference(self, dataSetId=None, entityD=None, authRefList=[]):
+    def searchSeqReference(self, dataSetId=None, entityD=None, authRefList=()):
         """ Reference sequence search process for the entity described in the input dictionary.
             Return a list of hitLists for matching reference sequences extracted from the BLAST search results
         """
         self.__dataSetId = dataSetId
         self.__entityD = entityD
-        self.__authRefList = authRefList
+        if authRefList:
+            self.__authRefIdList = authRefList[0]
+            self.__authRefDataList = authRefList[1]
         #
         if (not self.__dataSetId) or (not self.__entityD):
             return {}
@@ -172,10 +177,12 @@ class LocalBlastSearchUtils(object):
         if self.__verbose:
             self.__lfh.write("\n+LocalBlastSearchUtils.__runBlastSearch() STARTING with polymer type  %s sequence = %s\n" % (self.__seqType, oneLetterCodeSeq))
         #
+        authRefD = {}
         if not self.__checkPartRange(len(self.__fullOneLetterSeq), self.__entityD['PART_LIST']):
-            return {}
+            return authRefD
         #
-        partList = []
+        partIdList = []
+        partDataList = []
         for partNum, fD in enumerate(self.__entityD['PART_LIST'], start=1):
             seqPartType = fD['SEQ_PART_TYPE']
             seqPartId = fD['SEQ_PART_ID']
@@ -211,29 +218,37 @@ class LocalBlastSearchUtils(object):
                  #
                  continue
             #
+            partIdList.append(str(partNum))
             #
             taxId = fD['SOURCE_TAXID']
             sequence = oneLetterCodeSeq[(int(seqNumBeg) - 1):int(seqNumEnd)]
+            #
+            authHitList = self.__fetchAuthProvidedRefSequence(sequence, seqNumBeg, seqNumEnd, str(partNum))
+            if authHitList:
+                authRefD[str(partNum)] = authHitList
+                if len(sequence) <= self.__shortSequenceLengthLimit:
+                    continue
+                #
             #
             xmlFilePath = os.path.join(self.__sessionPath, self.__dataSetId + "_blast-match_E" + self.__entityId + "_P" + str(partNum) + ".xml")
             if os.access(xmlFilePath, os.F_OK):
                 os.remove(xmlFilePath)
             #
-            partList.append(( str(partNum), sequence, seqNumBeg, seqNumEnd, taxId, xmlFilePath ))
+            partDataList.append(( str(partNum), sequence, seqNumBeg, seqNumEnd, taxId, xmlFilePath ))
+        #
+        if not partDataList:
+            return authRefD
         #
         rD = {}
-        if not partList:
-            return rD
-        #
         try:
             numProc = int(multiprocessing.cpu_count() / 2)
             mpu = MultiProcUtil(verbose = True)
             mpu.set(workerObj = self, workerMethod = "runMultiLocalBlasts")
             mpu.setWorkingDir(self.__sessionPath)
             mpu.setOptions({'ncbilock' : self.__ncbilock})
-            ok,failList,retLists,diagList = mpu.runMulti(dataList = partList, numProc = numProc, numResults = 1)
+            ok,failList,retLists,diagList = mpu.runMulti(dataList = partDataList, numProc = numProc, numResults = 1)
             id_count = 1
-            for partTup in partList:
+            for partTup in partDataList:
                 if not os.access(partTup[5], os.F_OK):
                     continue
                 #
@@ -278,7 +293,44 @@ class LocalBlastSearchUtils(object):
                 self.__lfh.write("+LocalBlastSearchUtils.__runBlastSearch() search for entity %r failed\n" % self.__entityId)
             #
         #
+        # Merge author provided short sequence reference match result
+        #
+        for partId in partIdList:
+            if (partId in authRefD) and (partId not in rD):
+                rD[partId] = authRefD[partId]
+            #
+        #
         return rD
+
+    def __fetchAuthProvidedRefSequence(self, sequence, seqNumBeg, seqNumEnd, seqPartId):
+        """ Fetch reference sequence based on author provided ref IDs
+        """
+        if not self.__authRefDataList:
+            return []
+        #
+        fetchUtil = FetchReferenceSequenceUtils(siteId=self.__siteId, seqReferenceData=self.__srd, verbose=self.__verbose, log=self.__lfh)
+        #
+        for refIDList in self.__authRefDataList:
+            for accession in refIDList[1:]:
+                hitD = fetchUtil.fetchReferenceSequenceWithSeqMatch(refIDList[0], accession, sequence)
+                if not hitD:
+                    continue
+                #
+                hitD['beg_seq_num'] = seqNumBeg
+                hitD['end_seq_num'] = seqNumEnd
+                hitD['fragment_id'] = seqPartId
+                #
+                alignIndex,sTup3L,alignLength,seqSim,seqSimWithGaps,error = self.__getSeqAlignIndex(hitD)
+                if error:
+                    break
+                #
+                hitD['alignment'] = alignIndex
+                hitD['seq_tup_list'] = sTup3L
+                hitD['statistics'] = ( alignLength, seqSim, seqSimWithGaps )
+                return [ hitD ]
+            #
+        #
+        return []
 
     def __writeSearchResult(self, rD):
         """ Write out the current search result pickle file
@@ -553,7 +605,7 @@ class LocalBlastSearchUtils(object):
                     hit['db_score'] = 0
                 #
             #
-            if self.__authRefList and ((hit['db_code'].strip().upper() in self.__authRefList) or (hit['db_accession'].strip().upper() in self.__authRefList)):
+            if self.__authRefIdList and ((hit['db_code'].strip().upper() in self.__authRefIdList) or (hit['db_accession'].strip().upper() in self.__authRefIdList)):
                 if hit['identity_score'] < lowest_identity_score_with_refid_match:
                     lowest_identity_score_with_refid_match = hit['identity_score']
                 #

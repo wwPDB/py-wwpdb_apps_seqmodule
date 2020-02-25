@@ -90,6 +90,7 @@ class UpdatePolymerEntityPartitions(object):
             <br />
             <br />
             <table>
+            <tbody id="seq_partition_table">
             <tr>
                <th>Part Id</th>
                <th>Taxonomy Id</th>
@@ -100,6 +101,7 @@ class UpdatePolymerEntityPartitions(object):
         '''
         #
         bottom_form_template = '''
+            </tbody>
             </table>
         <br class="clearfloat" />
         <div class="width50 fltlft">Search Sequence Database: &nbsp;&nbsp; <input type="checkbox" name="seq_search_op" id="seq_search_op" /></div>
@@ -108,9 +110,10 @@ class UpdatePolymerEntityPartitions(object):
         <br />
 
         <div class="width50 fltlft"><input type="submit" name="submit" value="Submit edits" class="disableonclick submitparentform"  /></div>
+        <div class="fltrgt"><input type="button" id="add_row_button" name="add_row_button" value="Add rows"/></div>
         <br class="clearfloat" />
             <!-- <input type="reset" name="reset" value="Reset" /> -->
-            <input type="hidden" id="total_numparts" value="%s" />
+            <input type="hidden" name="total_numparts" id="total_numparts" value="%s" />
             <input type="hidden" id="seq_length" value="%d" />
         </form>
         </div>
@@ -118,7 +121,7 @@ class UpdatePolymerEntityPartitions(object):
         #
         #optList=['Biological sequence','Linker','N-terminal tag','C-terminal tag']
         optList = ['', 'Biological sequence']
-        optSel = ['false' for opt in optList]
+        #optSel = ['false' for opt in optList]
         #
         #
         seq_length, seq1, partD = self.__getEntityPartDetails(entityId)
@@ -138,7 +141,7 @@ class UpdatePolymerEntityPartitions(object):
         for partId in partIdList:
             pIdT, seqBeg, seqEnd, pType, taxIdT = partD[partId]
             oL.append('<tr>')
-            oL.append('<td><span id="p_%d_partid"   class="ief">%d</span></td>' % (partId, partId))
+            oL.append('<td><span id="p_%d_partid">%d</span><input type="hidden" name="p_%d_partid" value="%d" /></td>' % (partId, partId, partId, partId))
             if ((taxIdT is not None) and (len(taxIdT) > 0)):
                 taxId = taxIdT
                 oL.append('<td><span id="p_%d_taxid"    class="ief">%s</span></td>' % (partId, taxId))
@@ -151,82 +154,24 @@ class UpdatePolymerEntityPartitions(object):
             oL.append('<td><span id="p_%d_seqtype"  class="ief" data-ief-edittype="select" data-ief-selectvalues=\'%s\'>%s</span>' % (partId, jTxt, pType))
             oL.append('</tr>')
 
-        partId = int(partIdList[-1]) + 1
+        partId = int(partIdList[-1])
         taxId = self.__placeHolderValue
         seqBeg = self.__placeHolderValue
         seqEnd = self.__placeHolderValue
         pType = self.__placeHolderValue
 
-        oL.append('<tr>')
-        oL.append('<td><span id="p_%d_partid"   class="ief">%d</span></td>' % (partId, partId))
-        oL.append('<td><span id="p_%d_taxid"    class="ief greyedout">%s</span></td>' % (partId, taxId))
-        oL.append('<td><span id="p_%d_seqbegin" class="ief greyedout">%s</span></td>' % (partId, seqBeg))
-        oL.append('<td><span id="p_%d_seqend"   class="ief greyedout">%s</span></td>' % (partId, seqEnd))
-        jTxt = self.__formatSelectList(optList, pType)
-        oL.append('<td><span id="p_%d_seqtype"  class="ief greyedout" data-ief-edittype="select" data-ief-selectvalues=\'%s\'>%s</span></td>' % (partId, jTxt, pType))
-        oL.append('</tr>')
+        for i in range(1, 8):
+            partId += 1
+            oL.append('<tr>')
+            oL.append('<td><span id="p_%d_partid">%d</span><input type="hidden" name="p_%d_partid" value="%d" /></td>' % (partId, partId, partId, partId))
+            oL.append('<td><span id="p_%d_taxid"    class="ief greyedout">%s</span></td>' % (partId, taxId))
+            oL.append('<td><span id="p_%d_seqbegin" class="ief greyedout">%s</span></td>' % (partId, seqBeg))
+            oL.append('<td><span id="p_%d_seqend"   class="ief greyedout">%s</span></td>' % (partId, seqEnd))
+            jTxt = self.__formatSelectList(optList, pType)
+            oL.append('<td><span id="p_%d_seqtype"  class="ief greyedout" data-ief-edittype="select" data-ief-selectvalues=\'%s\'>%s</span></td>' % (partId, jTxt, pType))
+            oL.append('</tr>')
+        #
 
-        partId += 1
-        oL.append('<tr>')
-        oL.append('<td><span id="p_%d_partid"   class="ief">%d</span></td>' % (partId, partId))
-        oL.append('<td><span id="p_%d_taxid"    class="ief greyedout">%s</span></td>' % (partId, taxId))
-        oL.append('<td><span id="p_%d_seqbegin" class="ief greyedout">%s</span></td>' % (partId, seqBeg))
-        oL.append('<td><span id="p_%d_seqend"   class="ief greyedout">%s</span></td>' % (partId, seqEnd))
-        jTxt = self.__formatSelectList(optList, pType)
-        oL.append('<td><span id="p_%d_seqtype"  class="ief greyedout" data-ief-edittype="select" data-ief-selectvalues=\'%s\'>%s</span></td>' % (partId, jTxt, pType))
-        oL.append('</tr>')
-
-        partId += 1
-        oL.append('<tr>')
-        oL.append('<td><span id="p_%d_partid"   class="ief">%d</span></td>' % (partId, partId))
-        oL.append('<td><span id="p_%d_taxid"    class="ief greyedout">%s</span></td>' % (partId, taxId))
-        oL.append('<td><span id="p_%d_seqbegin" class="ief greyedout">%s</span></td>' % (partId, seqBeg))
-        oL.append('<td><span id="p_%d_seqend"   class="ief greyedout">%s</span></td>' % (partId, seqEnd))
-        jTxt = self.__formatSelectList(optList, pType)
-        oL.append('<td><span id="p_%d_seqtype"  class="ief greyedout" data-ief-edittype="select" data-ief-selectvalues=\'%s\'>%s</span></td>' % (partId, jTxt, pType))
-        oL.append('</tr>')
-
-        partId += 1
-        oL.append('<tr>')
-        oL.append('<td><span id="p_%d_partid"   class="ief">%d</span></td>' % (partId, partId))
-        oL.append('<td><span id="p_%d_taxid"    class="ief greyedout">%s</span></td>' % (partId, taxId))
-        oL.append('<td><span id="p_%d_seqbegin" class="ief greyedout">%s</span></td>' % (partId, seqBeg))
-        oL.append('<td><span id="p_%d_seqend"   class="ief greyedout">%s</span></td>' % (partId, seqEnd))
-        jTxt = self.__formatSelectList(optList, pType)
-        oL.append('<td><span id="p_%d_seqtype"  class="ief greyedout" data-ief-edittype="select" data-ief-selectvalues=\'%s\'>%s</span></td>' % (partId, jTxt, pType))
-        oL.append('</tr>')
-
-        partId += 1
-        oL.append('<tr>')
-        oL.append('<td><span id="p_%d_partid"   class="ief">%d</span></td>' % (partId, partId))
-        oL.append('<td><span id="p_%d_taxid"    class="ief greyedout">%s</span></td>' % (partId, taxId))
-        oL.append('<td><span id="p_%d_seqbegin" class="ief greyedout">%s</span></td>' % (partId, seqBeg))
-        oL.append('<td><span id="p_%d_seqend"   class="ief greyedout">%s</span></td>' % (partId, seqEnd))
-        jTxt = self.__formatSelectList(optList, pType)
-        oL.append('<td><span id="p_%d_seqtype"  class="ief greyedout" data-ief-edittype="select" data-ief-selectvalues=\'%s\'>%s</span></td>' % (partId, jTxt, pType))
-        oL.append('</tr>')
-
-        partId += 1
-        oL.append('<tr>')
-        oL.append('<td><span id="p_%d_partid"   class="ief">%d</span></td>' % (partId, partId))
-        oL.append('<td><span id="p_%d_taxid"    class="ief greyedout">%s</span></td>' % (partId, taxId))
-        oL.append('<td><span id="p_%d_seqbegin" class="ief greyedout">%s</span></td>' % (partId, seqBeg))
-        oL.append('<td><span id="p_%d_seqend"   class="ief greyedout">%s</span></td>' % (partId, seqEnd))
-        jTxt = self.__formatSelectList(optList, pType)
-        oL.append('<td><span id="p_%d_seqtype"  class="ief greyedout" data-ief-edittype="select" data-ief-selectvalues=\'%s\'>%s</span></td>' % (partId, jTxt, pType))
-        oL.append('</tr>')
-
-        partId += 1
-        oL.append('<tr>')
-        oL.append('<td><span id="p_%d_partid"   class="ief">%d</span></td>' % (partId, partId))
-        oL.append('<td><span id="p_%d_taxid"    class="ief greyedout">%s</span></td>' % (partId, taxId))
-        oL.append('<td><span id="p_%d_seqbegin" class="ief greyedout">%s</span></td>' % (partId, seqBeg))
-        oL.append('<td><span id="p_%d_seqend"   class="ief greyedout">%s</span></td>' % (partId, seqEnd))
-        jTxt = self.__formatSelectList(optList, pType)
-        oL.append('<td><span id="p_%d_seqtype"  class="ief greyedout" data-ief-edittype="select" data-ief-selectvalues=\'%s\'>%s</span></td>' % (partId, jTxt, pType))
-        oL.append('</tr>')
-
-        ##
         eIdList = self.__sds.getGroupIds()
         myList = []
         myList.append(self.__placeHolderValue)
@@ -244,6 +189,7 @@ class UpdatePolymerEntityPartitions(object):
         """
         try:
             numParts = int(str(self.__reqObj.getValue("numparts")))
+            totalNumParts = int(str(self.__reqObj.getValue("total_numparts")))
             entityId = self.__reqObj.getValue("entityid")
             seq1 = str(self.__reqObj.getValue("entity_seq_1")).upper().strip()
             #
@@ -254,7 +200,8 @@ class UpdatePolymerEntityPartitions(object):
 
             #
             pD = {}
-            for partId in range(1, numParts + 8):
+            #for partId in range(1, numParts + 8):
+            for partId in range(1, totalNumParts + 1):
                 taxId = self.__reqObj.getValue("p_%d_taxid" % partId)
                 seqBegin = self.__reqObj.getValue("p_%d_seqbegin" % partId)
                 seqEnd = self.__reqObj.getValue("p_%d_seqend" % partId)
@@ -270,7 +217,7 @@ class UpdatePolymerEntityPartitions(object):
                 #
             #
             self.__lfh.write("+UpdatePolymerEntityPartitions.polymerEntityPartEditFormResponder() pD=%d\n" % len(pD))
-            seq_length, seq1Org, pOrgD = self.__getEntityPartDetails(entityId=entityId, numExtra=7)
+            seq_length, seq1Org, pOrgD = self.__getEntityPartDetails(entityId=entityId, numExtra=(totalNumParts - numParts))
             #
             if seq1 != seq1Org:
                 self.__lfh.write("+UpdatePolymerEntityPartitions.polymerEntityPartEditFormResponder() sequence has changed\n")
@@ -282,7 +229,8 @@ class UpdatePolymerEntityPartitions(object):
                 self.__lfh.write("+UpdatePolymerEntityPartitions.polymerEntityPartEditFormResponder() sequence is unchanged\n")
             #
             updatePartitionFlag = False
-            for partId in range(1, numParts + 8):
+            #for partId in range(1, numParts + 8):
+            for partId in range(1, totalNumParts + 1):
                 #if pOrgD[partId] != pD[partId] and partId <= numParts:
                 if (partId in pOrgD) and (partId in pD) and pOrgD[partId] != pD[partId]:
                     self.__lfh.write("+UpdatePolymerEntityPartitions.polymerEntityPartEditFormResponder() source differs at partId %d current %r next %r\n"
