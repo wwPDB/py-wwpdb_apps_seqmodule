@@ -101,6 +101,7 @@ from wwpdb.apps.seqmodule.view3d.ModelViewer3D import ModelViewer3D
 
 from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest, SeqModResponseContent
 
+from wwpdb.utils.db.DBLoadUtil import DBLoadUtil
 from wwpdb.utils.detach.DetachUtils import DetachUtils
 from wwpdb.utils.session.WebUploadUtils import WebUploadUtils
 from wwpdb.utils.session.WebDownloadUtils import WebDownloadUtils
@@ -1220,6 +1221,14 @@ class SeqModWebAppWorker(object):
             if mode in ['completed']:
                 ok1 = dI.copyFiles(inputFileSource="session",outputFileSource='wf-archive',versionIndex=4,includeModelFile=True, \
                                    includeSeqAssignFile=True,messageHead="DataImporter.copyFilesOnClose()")
+                #
+                self.__getSession()
+                pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
+                sourceFilePath = pI.getFilePath(dataSetId=depId, contentType="model", formatType="pdbx", fileSource="session")
+                if os.access(sourceFilePath, os.R_OK):
+                    dbLoader = DBLoadUtil(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
+                    dbLoader.doLoading( [ sourceFilePath ] )
+                #
             #
             ok = ok and ok1
 

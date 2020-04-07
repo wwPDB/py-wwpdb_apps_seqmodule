@@ -404,6 +404,7 @@ class SummaryView(object):
         for partId in partIdList:
             #
             authVerList = self.__sds.getVersionIds(seqId=seqIdRef, partId=partId, altId=1, dataType="feature", seqType='auth')
+            TaxId = ""
             skipPart = False
             if (len(authVerList) > 0):
                 authFObj = self.__sds.getFeatureObj(seqIdRef, 'auth', partId=partId, altId=1, version=authVerList[0])
@@ -419,10 +420,11 @@ class SummaryView(object):
                 authPartId, authSeqBeg, authSeqEnd, authSeqPartType = authFObj.getAuthPartDetails()
                 partInfoList.append( ( authPartId, authSeqBeg, authSeqEnd ) )
                 skipPart = len(authSeqPartType) > 1 and authSeqPartType.lower() != 'biological sequence'
+            #
             if skipPart:
                 self.__lfh.write("+SummaryView.__buildReferenceSection() entity %s skipping part %s type %s\n" % (groupId, partId, authSeqPartType))
                 continue
-
+            #
             rowIdList = []
             rowDataList = []
             rowStatusList = []
@@ -448,7 +450,12 @@ class SummaryView(object):
                     seqFeature.set(seqRefFD)
                     seqLabel.set(seqType='ref', seqInstId=seqIdRef, seqPartId=partId, seqAltId=altId, seqVersion=ver)
                     seqRefId = seqLabel.pack()
-
+                    #
+                    taxIdWarningFlag = False
+                    RefTaxId = seqFeature.getSourceTaxId()
+                    if TaxId and RefTaxId and (TaxId != RefTaxId):
+                        taxIdWarningFlag = True
+                    #
                     isSelected = seqRefId in self.__summarySeqSelectList
                     isAligned = seqRefId in self.__summarySeqAlignList
                     rowStatusList.append((isSelected, isAligned))
@@ -473,7 +480,14 @@ class SummaryView(object):
                     rowDataDict['ROW_FEATURE_STRING'] = featureString
                     rowDataDict['ROW_IS_SELECTED'] = isSelected
                     rowDataDict['ROW_IS_ALIGNED'] = isAligned
-                    rowDataDict.update(seqRefFD)
+                    #rowDataDict.update(seqRefFD)
+                    for key,val in seqRefFD.items():
+                        if (key == "SOURCE_TAXID") and taxIdWarningFlag:
+                            rowDataDict[key] = '<span style="color:red">' + seqRefFD[key] + '</span>'
+                        else:
+                            rowDataDict[key] = seqRefFD[key]
+                        #
+                    #
                     rowDataDictList.append(rowDataDict)
             #
             dT = {}

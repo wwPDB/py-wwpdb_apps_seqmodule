@@ -36,7 +36,7 @@ class SearchEntityPolySeqs(object):
                     "and r.status_code in ( 'REL', 'AUTH', 'WAIT', 'HOLD', 'HPUB' ) and r.date_begin_processing is not null " + \
                     "and r.date_begin_processing != '0000-00-00' order by r.date_begin_processing desc", \
                     "SELECT_BY_SEQ": "select r.structure_id, r.pdb_id, r.rcsb_annotator, r.status_code, r.date_begin_processing, e.entity_id from " + \
-                    "rcsb_status as r, entity_poly as e where r.structure_id = e.structure_id and ( r.status_code in ( 'REL', 'AUTH', 'HOLD', 'HPUB' ) " + \
+                    "rcsb_status as r, entity_poly as e where r.structure_id = e.structure_id and ( r.status_code in ( 'REL', 'AUTH', 'HOLD', 'HPUB', 'WAIT', 'PROC' ) " + \
                     "or r.structure_id = '%s' ) and r.date_begin_processing is not null and r.date_begin_processing != '0000-00-00' and " + \
                     "replace(replace(replace(e.pdbx_seq_one_letter_code, '\n', ''), '\t', ''), ' ' ,'') = '%s' order by r.date_begin_processing desc" \
     }
