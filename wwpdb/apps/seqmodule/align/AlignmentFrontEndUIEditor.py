@@ -768,16 +768,16 @@ class AlignmentFrontEndUIEditor(object):
         ses = self.__openEditStore()                                                
         editOpLast = ses.getLastEditOp()
         editOpNext = int(editOpLast) + 1
-        editType="replaceid"
+        editType="replace"
         #
         rDDict = {}
         edList = []
         #
         for eTup in editList:
-            sE = self.__makeSequenceEdit(targetId=eTup[0], editType="replaceid", newValueList=[eTup[2]], priorValue=eTup[3], opId=editOpNext, newId=eTup[4])
+            sE = self.__makeSequenceEdit(targetId=eTup[0], editType="replace", newValueList=[eTup[2]], priorValue=eTup[3], opId=editOpNext, newId=None)
             edList.append(sE)
             #
-            rD = self.__makeResponseDict(id=eTup[0], val=eTup[1], val3=eTup[2], editType="replaceid", editOpId=editOpNext, newId=eTup[4])
+            rD = self.__makeResponseDict(id=eTup[0], val=eTup[1], val3=eTup[2], editType="replace", editOpId=editOpNext, newId=None)
             rDDict[eTup[0]] = rD
         #
         if (self.__verbose):
