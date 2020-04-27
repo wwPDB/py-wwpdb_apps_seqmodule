@@ -774,10 +774,10 @@ class AlignmentFrontEndUIEditor(object):
         edList = []
         #
         for eTup in editList:
-            sE = self.__makeSequenceEdit(targetId=eTup[0], editType="replace", newValueList=[eTup[2]], priorValue=eTup[3], opId=editOpNext, newId=None)
+            sE = self.__makeSequenceEdit(targetId=eTup[0], editType="replace", newValueList=[eTup[2]], priorValue=eTup[3], opId=editOpNext, newId=eTup[4])
             edList.append(sE)
             #
-            rD = self.__makeResponseDict(id=eTup[0], val=eTup[1], val3=eTup[2], editType="replace", editOpId=editOpNext, newId=None)
+            rD = self.__makeResponseDict(id=eTup[0], val=eTup[1], val3=eTup[2], editType="replace", editOpId=editOpNext, newId=eTup[4])
             rDDict[eTup[0]] = rD
         #
         if (self.__verbose):
