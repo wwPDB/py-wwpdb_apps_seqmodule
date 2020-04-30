@@ -183,7 +183,6 @@ class AlignmentTools(AlignmentDataStore):
                 #
                 refSeqEnd = alignIndexList[idx][1] + 1
             #
-            self._lfh.write("refSeqBeg=%r refSeqEnd=%r\n" % (refSeqBeg, refSeqEnd))
             return refSeqBeg,refSeqEnd
         #
         return None,None
@@ -317,6 +316,85 @@ class AlignmentTools(AlignmentDataStore):
             #
         #
         return editList,unCompatibleList
+
+    def getGlobalEditAuthSeqList(self):
+        """ Generate editlist for insertion missing author sequence part(s) based on reference sequence.
+        """
+        authIdx = -1
+        authSeqId = ""
+        refIdx = -1
+        for seqId,idx in self._seqAlignLabelIndices.items():
+            tL = str(seqId).strip().split("_")
+            if len(tL) < 3:
+                continue
+            #
+            if tL[0] == "auth":
+                authIdx = idx
+                authSeqId = str(seqId).strip()
+            elif tL[0] == "ref":
+                refIdx = idx
+            #
+        #
+        if (authIdx < 0) or (refIdx < 0):
+            return "Can not find correct sequence alignment.",[]
+        #
+        blockList = []
+        selected_blockid = str(self._reqObj.getValue("blockid"))
+        if selected_blockid == "all":
+            repblocknum = int(self._reqObj.getValue("repblocknum"))
+            for i in range(0, repblocknum):
+                blockList.append(i)
+            #
+        else:
+            blockList.append(int(selected_blockid))
+        #
+        (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(authSeqId)
+        featureD = self.getFeature(seqType, seqInstId, seqPartId, seqAltId, seqVersion)
+        #
+        polymerTypeCode = "AA"
+        if "POLYMER_TYPE" in featureD:
+            polymerTypeCode = featureD["POLYMER_TYPE"]
+        #
+        errMsg = ""
+        editList = []
+        for blockid in blockList:
+            start_position = str(self._reqObj.getValue("repstartposition_" + str(blockid)))
+            if not start_position:
+                continue
+            #
+            end_position = str(self._reqObj.getValue("rependposition_" + str(blockid)))
+            if not end_position:
+                continue
+            #
+            for i in range(int(start_position) - 1, int(end_position)):
+                if (i < 0) or (i >= len(self._seqAlignList)):
+                    continue
+                #
+                authRecord = self._seqAlignList[i][authIdx]
+                refRecord = self._seqAlignList[i][refIdx]
+                if (authRecord[1] != "") and (authRecord[1] != "."):
+                    if errMsg: errMsg += "\n"
+                    errMsg += "Author sequence already has residue '" + authRecord[1] + "' at position '" + str(i + 1) + "'."
+                    continue
+                elif (refRecord[1] == "") or (refRecord[1] == "."):
+                    if errMsg: errMsg += "\n"
+                    errMsg += "There is no residue in reference sequence at position '" + str(i + 1) + "'."
+                    continue
+                #
+                currId = self._getResLabelId(seqType=seqType, seqInstId=seqInstId, seqAltId=seqAltId, seqVersion=seqVersion, \
+                                             residueCode3=authRecord[1], residueLabelIndex=authRecord[2], alignIndex=i, \
+                                             seqIndex=codeSeqIndex(authRecord[3]), residueType=polymerTypeCode, seqPartId=seqPartId)
+                newId = self._getResLabelId(seqType=seqType, seqInstId=seqInstId, seqAltId=seqAltId, seqVersion=seqVersion, \
+                                             residueCode3=refRecord[1], residueLabelIndex=authRecord[2], alignIndex=i, \
+                                             seqIndex=codeSeqIndex(authRecord[3]), residueType=polymerTypeCode, seqPartId=seqPartId)
+                editList.append( ( currId, refRecord[0], refRecord[1], authRecord[0], newId ) )
+            #
+        #
+        if not editList:
+            if errMsg: return errMsg,[]
+            return "Can not find missing residue(s) in author sequence.",[]
+        #
+        return errMsg,editList
 
     def _checkAndUpdateAlignment(self, inputIdList, selectedIdList):
         """ Check if input alignIds match the default selected alignIds saved in alignment pickle file and

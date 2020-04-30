@@ -94,21 +94,24 @@ class AlignmentFrontEndUIEditor(object):
         return self.__alignmentTag
 
     def edit(self):
+        self.__lfh.write("+AlignmentFrontEndUIEditor __operation=%r\n" % self.__operation)
         if self.__operation == "edit":
             return self.__editAny()    
         elif self.__operation == "delete":
             return self.__delete()
         elif self.__operation == "undo":
             rD={}            
-            rD['editlist']=self.__undo()
+            rD["editlist"] = self.__undo()
             return rD
-        elif self.__operation =="global_edit":
+        elif self.__operation == "global_edit":
             return self.__global_edit()
-        elif self.__operation =="global_edit_menu":
+        elif self.__operation == "global_edit_auth_seq":
+            return self.__global_edit_auth_seq()
+        elif self.__operation == "global_edit_menu":
             rD={}
-            rD['editlist']=self.__global_edit_menu()        
+            rD["editlist"] = self.__global_edit_menu()        
             return rD
-        elif self.__operation =="move":
+        elif self.__operation == "move":
             return self.__editMove()        
         else:
             return {}
@@ -744,6 +747,41 @@ class AlignmentFrontEndUIEditor(object):
         #
         if (self.__verbose):
             self.__lfh.write("+Alignment.__global_edit()  Saving edit list of length %d\n" % len(edList))
+        #
+        ses.storeEditList(edList)
+        #
+        rDTop = {}
+        rDTop["editlist"] = rDDict
+        return rDTop
+
+    def __global_edit_auth_seq(self):
+        """ Perform to insert missing author sequence part(s) based on reference sequence.
+        """
+        aU = AlignmentTools(reqObj=self.__reqObj, entityId=self.__alignmentTag, verbose=self.__verbose, log=self.__lfh)
+        errMsg,editList = aU.getGlobalEditAuthSeqList()
+        if errMsg:
+            rD = {}
+            rD['errorflag'] = True
+            rD['errortext'] = errMsg
+            return rD
+        #
+        ses = self.__openEditStore()                                                
+        editOpLast = ses.getLastEditOp()
+        editOpNext = int(editOpLast) + 1
+        editType="replace"
+        #
+        rDDict = {}
+        edList = []
+        #
+        for eTup in editList:
+            sE = self.__makeSequenceEdit(targetId=eTup[0], editType="replace", newValueList=[eTup[2]], priorValue=eTup[3], opId=editOpNext, newId=eTup[4])
+            edList.append(sE)
+            #
+            rD = self.__makeResponseDict(id=eTup[0], val=eTup[1], val3=eTup[2], editType="replace", editOpId=editOpNext, newId=eTup[4])
+            rDDict[eTup[0]] = rD
+        #
+        if (self.__verbose):
+            self.__lfh.write("+Alignment.__global_edit_auth_seq()  Saving edit list of length %d\n" % len(edList))
         #
         ses.storeEditList(edList)
         #

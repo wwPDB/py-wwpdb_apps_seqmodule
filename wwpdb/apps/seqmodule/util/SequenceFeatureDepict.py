@@ -55,12 +55,28 @@ class SequenceFeatureDepict(object):
 
     def markupAuthorFeatures(self):
         return self.__markupAlignmentFeatures(dbSourceOrg=self.__fD['SOURCE_ORGANISM'],taxId=self.__fD['SOURCE_TAXID'])
+
+    def markupReferenceSimilarttFeatures(self):
+        return self.__markupSimilarttFeatures(seqSimWithGaps=self.__fD['AUTH_REF_SEQ_SIM_WITH_GAPS'], seqSim=self.__fD['AUTH_REF_SEQ_SIM'])
         
     def markupReferenceAlignmentFeatures(self):
         return self.__markupAlignmentFeatures(refSeqFullLength=self.__fD['FULL_LENGTH'],alignLength=self.__fD['ALIGN_LENGTH'],seqSim=self.__fD['AUTH_REF_SEQ_SIM'],
                                               seqSimWithGaps=self.__fD['AUTH_REF_SEQ_SIM_WITH_GAPS'],
                                               alignBegin=self.__fD['REF_MATCH_BEGIN'],alignEnd=self.__fD['REF_MATCH_END']
                                               )
+
+    def __markupSimilarttFeatures(self, seqSimWithGaps=0.0, seqSim=0.0):
+        dL=[]
+        #
+        if ( seqSimWithGaps > 0.001):
+            tS='<span class="detailkey">w/ gaps: </span><span class="detailvalue">%6.3f</span><br />' % float(seqSimWithGaps)
+            dL.append(tS)
+
+        if ( seqSim > 0.001):
+            tS='<span class="detailkey">w/o gaps: </span><span class="detailvalue">%6.3f</span>' % float(seqSim)
+            dL.append(tS)
+
+        return "\n".join(dL)
 
     def __markupAlignmentFeatures(self,refSeqFullLength=0, alignLength=0, seqSim=0.0, seqSimWithGaps=0.0, alignBegin=0, alignEnd=0):
         
@@ -70,13 +86,15 @@ class SequenceFeatureDepict(object):
             tS='<span class="detailkey">Full sequence length: </span><span class="detailvalue">%d</span><br />' % int(refSeqFullLength)
             dL.append(tS)
 
+        """
         if ( seqSim > 0.001):
             tS='<span class="detailkey">Identity (w/o gaps): </span><span class="detailvalue">%6.3f</span><br />' % float(seqSim)
             dL.append(tS)
 
-        """if ( seqSimWithGaps > 0.001):
+        if ( seqSimWithGaps > 0.001):
             tS='<span class="detailkey">Identity (w/ gaps): </span><span class="detailvalue">%6.3f</span><br />' % float(seqSimWithGaps)
-            dL.append(tS)"""
+            dL.append(tS)
+        """
 
         if ( alignLength > 0):
             tS='<span class="detailkey">Align length (w/ author sequence): </span><span class="detailvalue">%d</span><br />' % int(alignLength)

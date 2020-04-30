@@ -52,6 +52,9 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         self.__pdbChainIdList = []
         self.__missingAuthSeqMap = {}
         self.__warningMsg = ""
+        #
+        self.__refAlignIdx = -1
+        self.__authAlignIdx = -1
 
     def doRender(self):
         """ Render alignment, conflict table, annotations & warning 
@@ -238,6 +241,8 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         if not orderedAlignIdList:
             return
         #
+        num_refs = 0
+        num_auths = 0
         for orderedAlignIdTup in orderedAlignIdList:
             (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(orderedAlignIdTup[1])
             featureD = self.getFeature(seqType, seqInstId, seqPartId, seqAltId, seqVersion)
@@ -247,19 +252,32 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 polymerTypeCode = featureD["POLYMER_TYPE"]
             #
             if seqType == "ref":
+                num_refs += 1
+                self.__refAlignIdx = orderedAlignIdTup[0]
+                #
                 dbName = ""
                 if "DB_NAME" in featureD:
                     dbName = featureD["DB_NAME"]
                 #
                 displayCode = ""
+                uniprotCode = ""
                 if "DB_ACCESSION" in featureD:
                     displayCode = featureD["DB_ACCESSION"]
+                    if dbName in ("UNP", "TR", "SP"):
+                        uniprotCode = featureD["DB_ACCESSION"]
+                    #
                 #
                 if (dbName in ("UNP", "TR", "SP")) and ("DB_ISOFORM" in featureD) and (len(featureD["DB_ISOFORM"]) > 0):
                     displayCode = featureD["DB_ISOFORM"]
                 #
                 label = dbName + ":" + displayCode
+                if uniprotCode != "":
+                    label='<a href="http://www.uniprot.org/uniprot/%s" target="blank"><span class="nowrap">%s</span></a>'%(uniprotCode,dbName+":"+displayCode)
+                #
             elif seqType == "auth":
+                num_auths += 1
+                self.__authAlignIdx = orderedAlignIdTup[0]
+                #
                 label = seqType.upper() + " Entity: " + self._entityId + " V:" + str(seqVersion)
                 #
                 self.__seqTypeAuth = seqType
@@ -283,6 +301,10 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 self.__orderAlignRefIndexList.append((orderedAlignIdTup[0], seqType, seqInstId, seqPartId, seqAltId, seqVersion, label, \
                                                       polymerTypeCode, begPos, endPos))
             #
+        #
+        if (num_refs > 1) or (num_auths > 1):
+            self.__refAlignIdx = -1
+            self.__authAlignIdx = -1
         #
 
     def __renderAlignment(self):
@@ -597,6 +619,10 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         myD["alignmentblocklist"] = ",".join(self.__alignmentBlock)
         myD["missingauthseqmap"] = self.__missingAuthSeqMap
         myD["blockedithtml"] = self.__getBlockEditFormHtml()
+        repdelhtml = self.__getRepopulateDeletionFormHtml()
+        if repdelhtml:
+            myD["repdelhtml"] = repdelhtml
+        #
         if not self.__misMatchTypes:
             myD["gedittype"] = "no-mismatch"
         elif len(self.__misMatchTypes) == 1:
@@ -797,4 +823,71 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             myD["table_row"] += '<td><input type="text" id="end_position_' + chainID + '" name="end_position_' + chainID + '" value="" + size="20" /></td>'
             myD["table_row"] += '<td><input type="text" id="move_to_' + chainID + '" name="move_to_' + chainID + '" value="" + size="20" /></td></tr>\n'
         #
+        return form_template % myD
+
+    def __getRepopulateDeletionFormHtml(self):
+        """
+        """
+        if (self.__refAlignIdx < 0) or (self.__authAlignIdx < 0):
+            return ""
+        #
+        deleteList = []
+        start = -1
+        end = -1
+        for i in range(0, len(self._seqAlignList)):
+            if self._seqAlignList[i][self.__authAlignIdx][1] != self._gapSymbol:
+                if (start >= 0) and (end >= 0):
+                    deleteList.append(( start, end ))
+                #
+                start = -1
+                end = -1
+            elif self._seqAlignList[i][self.__refAlignIdx][1] != self._gapSymbol:
+                if start < 0:
+                    start = i + 1
+                #
+                end = i + 1
+            #
+        #
+        if (start >= 0) and (end >= 0):
+            deleteList.append(( start, end ))
+        #
+        if not deleteList:
+            return ""
+        #
+        form_template = '''
+            <input type="hidden" id="repblocknum" name="repblocknum" value="%(repblocknum)s" />
+            <input type="hidden" name="identifier" value="%(identifier)s" />
+            <input type="hidden" name="aligntag" value="%(entityid)s" />
+            <input type="hidden" name="sessionid" value="%(sessionid)s" />
+            <table>
+            <tr><th>Block #</th><th>Start Position</th><th>End Posotion</th><th>Action</th></tr>
+            %(table_row)s
+            </table>
+        '''
+        #
+        myD = {}
+        myD["repblocknum"] = str(len(deleteList))
+        myD["identifier"] = self._dataSetId
+        myD["entityid"] = self._entityId
+        myD["sessionid"] = self.__sessionId
+        myD["table_row"] = ""
+        #
+        row = 0
+        for delTup in deleteList:
+            myD["table_row"] += '<input type="hidden" id="actual_repstartposition_' + str(row) + '" value="' + str(delTup[0]) + '" />'
+            myD["table_row"] += '<input type="hidden" id="actual_rependposition_' + str(row) + '" value="' + str(delTup[1]) + '" />'
+            #
+            myD["table_row"] += "<tr><td>" + str(row + 1) + "</td>"
+            myD["table_row"] += '<td><input type="text" id="repstartposition_' + str(row) + '" name="repstartposition_' + str(row) \
+                              + '" value="' + str(delTup[0]) + '" size="20" /></td>'
+            myD["table_row"] += '<td><input type="text" id="rependposition_' + str(row) + '" name="rependposition_' + str(row) \
+                              + '" value="' + str(delTup[1]) + '" size="20" /></td>'
+            myD["table_row"] += '<td><input type="button" id="repsubmit_' + str(row) + '" name="repsubmit_' + str(row) \
+                              + '" class="submit_populatefrm" value="Update" /></td></tr>\n'
+            #
+            row += 1
+        #
+        myD["table_row"] += '<tr><td style="border-style:none"></td><td style="border-style:none"></td><td style="border-style:none"></td>' \
+                          + '<td style="border-style:none"><input type="button" id="repsubmit_all" name="repsubmit_all" value="Update All"' \
+                          + ' class="submit_populatefrm" /></td></tr>\n'
         return form_template % myD

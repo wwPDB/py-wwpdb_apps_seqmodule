@@ -148,7 +148,7 @@ class SummaryViewDepiction(object):
                     # rowDataNameList=["ROW_ID_CODE","ROW_VERSION","ROW_SEQ_LENGTH","SOURCE_ORGANISM","SOURCE_TAXID","ROW_AUTH_REF_SIM","ROW_DETAIL_STRING"]
                     # columnNameList = ["ID Code", "Version", "Length", "Molecular Details", "Tax ID", "Identity<br />(w/ gaps)", "Alignment Details"]
                     # rowDataNameList = ["ROW_ID_CODE", "ROW_VERSION", "ROW_SEQ_LENGTH", "ROW_FEATURE_STRING", "SOURCE_TAXID", "ROW_AUTH_REF_SIM", "ROW_DETAIL_STRING"]
-                    columnNameList = ["ID Code", "Version", "Molecular Details", "Tax ID", "Identity<br />(w/ gaps)", "Alignment Details"]
+                    columnNameList = ["ID Code", "Version", "Molecular Details", "Tax ID", "Identity", "Alignment Details"]
                     rowDataNameList = ["ROW_ID_CODE", "ROW_VERSION", "ROW_FEATURE_STRING", "SOURCE_TAXID", "ROW_AUTH_REF_SIM", "ROW_DETAIL_STRING"]                    #
                     oL.extend(self.formatTable(gId, 'ref', columnNameList, gD['ROW_IDS'], rowDataNameList, gD['ROW_STATUS'],
                                                gD['ROW_DATA_DICT'], selfRefFlag=gD['SELF_REFERENCE_FLAG'], partId=partId))

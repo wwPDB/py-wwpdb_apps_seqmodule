@@ -79,6 +79,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         self.__pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self._verbose, log=self._lfh)
         #
         self.__dataSetId = str(self._reqObj.getValue("identifier")).upper()
+        self.__reRunBlastSearchFlag = False
         self.__doRefSearchFlag = False
         self.__forceBlastSearchFlag = False
         self.__resetAlignmentFlag = False
@@ -115,12 +116,15 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         if not os.access(polyLinkPath, os.R_OK):
             return False
         #
-        ok,no_coord_issue,polymerLinkDistList,entryD,entityD,instanceD,statisticsMap,depSeqAssign,seqAssign = self.__readJsonObject(polyLinkPath)
+        ok,no_coord_issue,seqSimilarityInfoList,polymerLinkDistList,entryD,entityD,instanceD,statisticsMap,depSeqAssign,seqAssign = self.__readJsonObject(polyLinkPath)
         if not ok:
             return False
         #
         if doAutoProcess:
             self.__autoProcessFlag = no_coord_issue
+            if len(seqSimilarityInfoList) > 0:
+                self.__autoProcessFlag = False
+            #
         #
         self.__getAuthDefinedRefD(depSeqAssign)
         #
@@ -165,8 +169,8 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         except:
             sortedEntityIdList = self.__entityIdList
         #
-        self.__createSeqMatchFileAndMisMatchPickleFile(sortedEntityIdList, entityD, ownRefD, eSSRefD, list(newOldEntityIdMap.keys()),
-                                                       misMatchList, notFoundMatchList)
+        self.__createSeqMatchFileAndMisMatchPickleFile(sortedEntityIdList, entityD, ownRefD, eSSRefD, list(newOldEntityIdMap.keys()), \
+                                                       misMatchList, notFoundMatchList, seqSimilarityInfoList)
         #
         self.__updateUtilDataStore(pdbxFilePath)
         #
@@ -247,6 +251,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         if not selectedEntityIdList:
             return True
         #
+        self.__reRunBlastSearchFlag = True
         self._entityAlignInfoMap = {}
         self.__reRunSearch(selectedEntityIdList)
         self.__updateSelections(selectedEntityIdList)
@@ -311,6 +316,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         """
         try:
             no_coord_issue = True
+            seqSimilarityInfoList = []
             polymerLinkDistList = []
             entryD = {}
             entityD = {}
@@ -322,6 +328,9 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 jsonObj = json.load(DATA)
                 if ("HAS_SEQ_COOR_ISSUE" in jsonObj) and jsonObj["HAS_SEQ_COOR_ISSUE"]:
                     no_coord_issue = False
+                #
+                if ("SEQ_ITENTITY_INFO" in jsonObj) and jsonObj["SEQ_ITENTITY_INFO"]:
+                    seqSimilarityInfoList = jsonObj["SEQ_ITENTITY_INFO"]
                 #
                 if ("linkageL" in jsonObj) and jsonObj["linkageL"]:
                     polymerLinkDistList = jsonObj["linkageL"]
@@ -346,13 +355,13 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                     seqAssign = jsonObj["annSeqAssign"]
                 #
             #
-            return True,no_coord_issue,polymerLinkDistList,entryD,entityD,instanceD,statisticsMap,depSeqAssign,seqAssign
+            return True,no_coord_issue,seqSimilarityInfoList,polymerLinkDistList,entryD,entityD,instanceD,statisticsMap,depSeqAssign,seqAssign
         except:
             if (self._verbose):
                 traceback.print_exc(file=self._lfh)
             #
         #
-        return False,False,[],{},{},{},{},{},{}
+        return False,False,[],[],{},{},{},{},{},{}
 
     def __getAuthDefinedRefD(self, depSeqAssign):
         """ Get author provided reference information from pdbx_struct_ref_seq_depositor_info category
@@ -365,18 +374,31 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 continue
             #
             entity_id = key.strip()
+            codeList = []
+            refList = []
             for refD in valD["ref_list"]:
+                data = []
                 for item in ( "db_accession", "db_code" ):
                     if (item not in refD) or (not refD[item]):
                         continue
                     #
-                    code = refD[item].strip().upper()
-                    if entity_id in self.__authDefinedRefD:
-                        self.__authDefinedRefD[entity_id].append(code)
-                    else:
-                        self.__authDefinedRefD[entity_id] = [ code ]
+                    data.append(refD[item].strip().upper())
+                #
+                if not data:
+                    continue
+                #
+                for val in data:
+                    if val not in codeList:
+                        codeList.append(val)
                     #
                 #
+                if ("db_name" in refD) and refD["db_name"]:
+                    data.insert(0, refD["db_name"].strip().upper())
+                    refList.append(data)
+                #
+            #
+            if len(codeList) > 0:
+                self.__authDefinedRefD[entity_id] = ( codeList, refList )
             #
         #
 
@@ -446,7 +468,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         tmpPolyLinkPath = os.path.join(self.__sessionPath, self.__dataSetId + "-poly-link.json")
         self.__calcPolymerLinkages(pdbxFilePath=prevModelFilePath, polyLinkPath=tmpPolyLinkPath)
         #
-        ok,no_coord_issue,polymerLinkDistList,entryD,prevEntityD,prevInstanceD,statisticsMap,depSeqAssign,seqAssign = self.__readJsonObject(tmpPolyLinkPath)
+        ok,no_coord_issue,seqSimilarityInfoList,polymerLinkDistList,entryD,prevEntityD,prevInstanceD,statisticsMap,depSeqAssign,seqAssign = self.__readJsonObject(tmpPolyLinkPath)
         if not ok:
             return {},[],[]
         #
@@ -597,7 +619,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 if sId in self.__authDefinedRefD:
                     entityTupList.append(( sId, eD, self.__authDefinedRefD[sId], skip ))
                 else:
-                    entityTupList.append(( sId, eD, [], skip ))
+                    entityTupList.append(( sId, eD, (), skip ))
                 #
             #
             if not entityTupList:
@@ -614,40 +636,53 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             #
             blastList = []
             skipList = []
-            for entityTup in entityTupList:
-                hasOwnRef = False
-                if entityTup[0] in ownRefD:
-                    hasOwnRef = True
-                #
-                hasSameSeqRef = False
-                if entityTup[0] in otherRefD:
-                    hasSameSeqRef = True
-                #
-                if hasOwnRef:
-                    continue
-                elif hasSameSeqRef:
-                    if self.__forceBlastSearchFlag and (not entityTup[3]):
-                        blastList.append(entityTup)
+            if self.__reRunBlastSearchFlag:
+                blastList = entityTupList
+                self.__autoProcessFlag = False
+            else:
+                for entityTup in entityTupList:
+                    hasOwnRef = False
+                    if entityTup[0] in ownRefD:
+                        hasOwnRef = True
                     #
-                    continue
-                #
-                if entityTup[3]:
-                    skipList.append(entityTup)
-                else:
-                    blastList.append(entityTup)
-                    self.__autoProcessFlag = False
+                    hasSameSeqRef = False
+                    if entityTup[0] in otherRefD:
+                        hasSameSeqRef = True
+                    #
+                    if hasOwnRef:
+                        continue
+                    elif hasSameSeqRef:
+                        if self.__forceBlastSearchFlag and (not entityTup[3]):
+                            blastList.append(entityTup)
+                        #
+                        continue
+                    #
+                        
+                    if entityTup[3]:
+                        skipList.append(entityTup)
+                    #
+                    if (len(entityTup[2]) > 0) or (not entityTup[3]):
+                        blastList.append(entityTup)
+                        if not entityTup[3]:
+                            self.__autoProcessFlag = False
+                        #
+                    #
                 #
             #
             refD = {}
-            if self.__autoProcessFlag:
-                for entityTup in skipList:
-                    selfRefmap = {}
-                    selfRefmap["1"] = True
-                    ownRefD[entityTup[0]] = selfRefmap
-                #
-            elif blastList:
+            if blastList:
                 refD = self.__runSeqBlastSearch(blastList)
             #
+            if self.__autoProcessFlag:
+                for entityTup in skipList:
+                    if entityTup[0] in refD:
+                        continue
+                    #
+#                   selfRefmap = {}
+#                   selfRefmap["1"] = True
+#                   ownRefD[entityTup[0]] = selfRefmap
+                    ownRefD[entityTup[0]] = { "1" : { "selfref" : True } }
+                #
             if (self._verbose):
                 endTime = time.time()
                 self._lfh.write("+SequenceDataAssemble.__doReferenceSearch()  completed at %s (%.2f seconds)\n" % \
@@ -856,7 +891,8 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         return rList,rList,[]
 
-    def __createSeqMatchFileAndMisMatchPickleFile(self, sortedEntityIdList, entityD, ownRefD, eSSRefD, prevEntityIdList, prevMisMatchList, prevNotFoundMatchList):
+    def __createSeqMatchFileAndMisMatchPickleFile(self, sortedEntityIdList, entityD, ownRefD, eSSRefD, prevEntityIdList, prevMisMatchList, \
+                                                  prevNotFoundMatchList, seqSimilarityInfoList):
         """ Create D_xxxxxxxxxx_seqmatch_P1.cif.Vx file
         """
         annList = []
@@ -913,6 +949,9 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             annList.append(annTuple)
         #
         warningMsgMap = {}
+        if len(seqSimilarityInfoList) > 0:
+            warningMsgMap["seq_warning_info"] = "</br>\n".join(seqSimilarityInfoList)
+        #
         warningMsgMap["mismatch"] = misMatchList
         warningMsgMap["not_found_existing_match"] = notFoundMatchList
         #

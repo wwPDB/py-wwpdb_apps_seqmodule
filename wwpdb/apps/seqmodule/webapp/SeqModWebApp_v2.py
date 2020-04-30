@@ -101,6 +101,7 @@ from wwpdb.apps.seqmodule.view3d.ModelViewer3D import ModelViewer3D
 
 from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest, SeqModResponseContent
 
+from wwpdb.utils.db.DBLoadUtil import DBLoadUtil
 from wwpdb.utils.detach.DetachUtils import DetachUtils
 from wwpdb.utils.session.WebUploadUtils import WebUploadUtils
 from wwpdb.utils.session.WebDownloadUtils import WebDownloadUtils
@@ -250,6 +251,7 @@ class SeqModWebAppWorker(object):
                            '/service/sequence_editor/new_session/wf': '_newSessionWfOp',
                            '/service/sequence_editor/edit': '_editOp',
                            '/service/sequence_editor/global_edit': '_globalEditOp',
+                           '/service/sequence_editor/global_auth_seq_edit': '_globalAuthSeqEditOp',
                            '/service/sequence_editor/global_edit_menu': '_globalEditMenuOp',
                            '/service/sequence_editor/move': '_moveEditOp',
                            '/service/sequence_editor/undo_edit': '_undoEditOp',
@@ -438,6 +440,10 @@ class SeqModWebAppWorker(object):
 
     def _globalEditOp(self):
         self.__reqObj.setValue("operation", "global_edit")
+        return self.__editAlignment()
+
+    def _globalAuthSeqEditOp(self):
+        self.__reqObj.setValue("operation", "global_edit_auth_seq");
         return self.__editAlignment()
 
     def _globalEditMenuOp(self):
@@ -927,11 +933,17 @@ class SeqModWebAppWorker(object):
                 fb.close()
                 #
                 warningMsg = ""
+                if ("seq_warning_info" in warningD) and len(warningD["seq_warning_info"]) > 0:
+                    warningMsg = warningD["seq_warning_info"]
+                #
                 if ("mismatch" in warningD) and len(warningD["mismatch"]) > 0:
+                    if warningMsg:
+                        warningMsg += "</br>\n"
+                    #
                     if len(warningD["mismatch"]) > 1:
-                        warningMsg = "Sequence/coordinates mismatch in entities: " + ",".join(warningD["mismatch"])
+                        warningMsg += "Sequence/coordinates mismatch in entities: " + ",".join(warningD["mismatch"])
                     else:
-                        warningMsg = "Sequence/coordinates mismatch in entity: " + warningD["mismatch"][0]
+                        warningMsg += "Sequence/coordinates mismatch in entity: " + warningD["mismatch"][0]
                     #
                 #
                 if ("not_found_existing_match" in warningD) and len(warningD["not_found_existing_match"]) > 0:
@@ -1074,7 +1086,7 @@ class SeqModWebAppWorker(object):
                 else:
                     rC.addDictionaryItems({ "gedittype" : "no-mismatch" })
                 #
-                for item in ( "alignids", "selectids", "alignmentblocklist", "missingauthseqmap", "blockedithtml" ):
+                for item in ( "alignids", "selectids", "alignmentblocklist", "missingauthseqmap", "blockedithtml", "repdelhtml" ):
                     if item in miscD:
                         rC.addDictionaryItems({ item : miscD[item] })
                     #
@@ -1209,6 +1221,14 @@ class SeqModWebAppWorker(object):
             if mode in ['completed']:
                 ok1 = dI.copyFiles(inputFileSource="session",outputFileSource='wf-archive',versionIndex=4,includeModelFile=True, \
                                    includeSeqAssignFile=True,messageHead="DataImporter.copyFilesOnClose()")
+                #
+                self.__getSession()
+                pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
+                sourceFilePath = pI.getFilePath(dataSetId=depId, contentType="model", formatType="pdbx", fileSource="session")
+                if os.access(sourceFilePath, os.R_OK):
+                    dbLoader = DBLoadUtil(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
+                    dbLoader.doLoading( [ sourceFilePath ] )
+                #
             #
             ok = ok and ok1
 
