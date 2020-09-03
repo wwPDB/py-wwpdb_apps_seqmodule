@@ -934,14 +934,14 @@ class SeqModWebAppWorker(object):
                 #
                 warningMsg = ""
                 if ("seq_warning_info" in warningD) and len(warningD["seq_warning_info"]) > 0:
-                    warningMsg = warningD["seq_warning_info"]
+                    warningMsg = self.__reformatText(warningD["seq_warning_info"])
                 #
                 if ("mismatch" in warningD) and len(warningD["mismatch"]) > 0:
                     if warningMsg:
                         warningMsg += "</br>\n"
                     #
                     if len(warningD["mismatch"]) > 1:
-                        warningMsg += "Sequence/coordinates mismatch in entities: " + ",".join(warningD["mismatch"])
+                        warningMsg += self.__reformatText("Sequence/coordinates mismatch in entities: " + ",".join(warningD["mismatch"]))
                     else:
                         warningMsg += "Sequence/coordinates mismatch in entity: " + warningD["mismatch"][0]
                     #
@@ -951,7 +951,8 @@ class SeqModWebAppWorker(object):
                         warningMsg += "</br>\n"
                     #
                     if len(warningD["not_found_existing_match"]) > 1:
-                        warningMsg += "Sequences not matched to existing entries in entities: " + ",".join(warningD["not_found_existing_match"])
+                        warningMsg += self.__reformatText("Sequences not matched to existing entries in entities: " \
+                                    + ",".join(warningD["not_found_existing_match"]))
                     else:
                         warningMsg += "Sequences not matched to existing entries in entity: " + warningD["not_found_existing_match"][0]
                     #
@@ -971,6 +972,51 @@ class SeqModWebAppWorker(object):
                 traceback.print_exc(file=self.__lfh)
         #
         return rC
+
+    def __reformatText(self, inputText):
+        """
+        """
+        length = 150
+        if len(inputText) < length:
+            return inputText
+        #
+        break_index = []
+        for i in range(0, len(inputText)):
+            if (inputText[i] == " ") or (inputText[i] == ","):
+                break_index.append(i)
+            #
+        #
+        if len(break_index) == 0:
+            return inputText
+        #
+        rangeList = []
+        insertList = []
+        start = 0
+        prev_i = break_index[0]
+        for i in break_index:
+            if (i - start) > length:
+                rangeList.append((start, prev_i + 1)) 
+                insertList.append(prev_i)
+                start = prev_i + 1 
+                continue
+            #   
+            prev_i = i 
+        #
+        if (prev_i > start) and (prev_i < len(inputText)) and ((len(insertList) == 0) or (prev_i != insertList[-1])) and ((len(inputText) - start) > length):
+            rangeList.append((start, prev_i + 1)) 
+            start = prev_i + 1 
+        #
+        if start < len(inputText):
+            rangeList.append((start, len(inputText)))
+        #
+        outputText = ""
+        for rangeTup in rangeList:
+            if outputText:
+                outputText += "</br>\n"
+            #
+            outputText += inputText[rangeTup[0]:rangeTup[1]]
+        #
+        return outputText
 
     def __storeAlignmentStart(self):
         """ Launch a subprocess to compute, store and render the aligned input sequence list.

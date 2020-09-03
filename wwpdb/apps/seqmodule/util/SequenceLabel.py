@@ -35,6 +35,7 @@
 #  07-Sep-2017 zf  add ALIGN_LENGTH, ANNO_EDIT_DB_NAME, ANNO_EDIT_DB_CODE, ANNO_EDIT_DB_ACCESSION, ANNO_EDIT_DB_ALIGN_BEGIN,
 #                  ANNO_EDIT_DB_ALIGN_END
 #                  updated updateAuth() to keep original author's molecular name for DNA/RNA entities if existing
+#  02-Sep-2020 zf  Excluded 'Uncharacterized protein' molecule name from Uniprot
 ##
 """
 Containers for sequence and residue labels/features used as identifiers and classifiers
@@ -75,10 +76,26 @@ class SequenceFeatureMap(object):
                 self.__lfh.write('++++Before Mapping %30s : %-40r  %30s:  %r\n' % (mapTup[0], authFD[mapTup[0]], mapTup[1], refFD[mapTup[0]]))
         #
         for mapTup in mapTupList:
-            # Keep the original author provided name for DNA/RNA entities
-            if (mapTup[0] == 'ENTITY_DESCRIPTION') and ('DB_NAME' in refFD) and (refFD['DB_NAME'] in ['GB','DBJ','EMB','EMBL']):
-                if ((not mapTup[0] in authFD) or (not authFD[mapTup[0]])) and (mapTup[1] in refFD) and len(refFD[mapTup[1]]) > 1:
-                    authFD[mapTup[0]] = refFD[mapTup[1]]
+            if mapTup[0] == 'ENTITY_DESCRIPTION':
+                updateFlag = False
+                # Keep the original author provided name for DNA/RNA entities
+                if ('DB_NAME' in refFD) and (refFD['DB_NAME'] in ['GB','DBJ','EMB','EMBL']):
+                    if ((mapTup[0] not in authFD) or (not authFD[mapTup[0]])) and (mapTup[1] in refFD) and len(refFD[mapTup[1]]) > 1:
+                        authFD[mapTup[0]] = refFD[mapTup[1]]
+                        updateFlag = True
+                    #
+                elif refFD[mapTup[1]] is not None and len(refFD[mapTup[1]]) > 1:
+                    if refFD[mapTup[1]].strip().upper() != 'UNCHARACTERIZED PROTEIN':
+                        authFD[mapTup[0]] = refFD[mapTup[1]]
+                        updateFlag = True
+                    #
+                #
+                if not updateFlag:
+                    if (authFD['ENTITY_DESCRIPTION_ORIG'] is not None) and (len(authFD['ENTITY_DESCRIPTION_ORIG']) > 1):
+                        authFD[mapTup[0]] = authFD['ENTITY_DESCRIPTION_ORIG']
+                    else:
+                        authFD[mapTup[0]] = ''
+                    #
                 #
             elif refFD[mapTup[1]] is not None and len(refFD[mapTup[1]]) > 1:
                 authFD[mapTup[0]] = refFD[mapTup[1]]

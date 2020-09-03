@@ -296,7 +296,9 @@ class UpdateSequenceDataStoreUtils(object):
             self.__seqFeature.clear()
             self.__seqFeature.setId(dbName="PDB", dbCode=self.__pdbId, dbAccession=self.__pdbId)
             self.__seqFeature.setPolymerType(self.__polymerTypeCode[cId])
-            self.__seqFeature.setAuthXyzAlignRange(seqBegin=S3L[0][1], seqEnd=S3L[len(S3L)-1][1])
+            if len(S3L) > 0:
+                self.__seqFeature.setAuthXyzAlignRange(seqBegin=S3L[0][1], seqEnd=S3L[len(S3L)-1][1])
+            #
             if cId in statisticsMap:
                 self.__seqFeature.setAuthXyzAlignDetails(seqLen=len(S3L), alignLen=int(statisticsMap[cId][0]), seqSim=float(statisticsMap[cId][1]), \
                                                          seqSimWithGaps=float(statisticsMap[cId][2]))

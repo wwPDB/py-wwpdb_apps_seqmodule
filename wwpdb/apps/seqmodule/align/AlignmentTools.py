@@ -672,7 +672,7 @@ class AlignmentTools(AlignmentDataStore):
         if self._verbose:
             self._lfh.write("Instance '%r' sequence length=%d\n" % (idLabel, len(seq)))
         #
-        if not seq:
+        if (not seq) and idLabel.startswith("auth_"):
             self.__alignFlag = False
         #
         return seq
@@ -696,9 +696,6 @@ class AlignmentTools(AlignmentDataStore):
         #
         for label in self.__xyzLabel[1:]:
             seqs = self.__getSequenceFromDataStore(label)
-            if not seqs:
-                return False
-            #
             self._xyzAlignLabelIndices[label] = len(seqList)
             self._reverseXyzAlignLabelIndices[len(seqList)] = label
             seqList.append(seqs)
