@@ -171,6 +171,13 @@ class LocalBlastSearchUtils(object):
         """ Perform sequence search for each entity part in the input feature list described in the input dictionary.
         """
         oneLetterCodeSeq = str(self.__entityD['SEQ_ENTITY_1_CAN']).strip().upper()
+        #
+        if 'SEQ_ENTITY_1_SEARCH' in self.__entityD:
+            oneLetterSearchSeq = str(self.__entityD['SEQ_ENTITY_1_SEARCH']).strip().upper()
+        else:
+            # for backward compatible
+            oneLetterSearchSeq = oneLetterCodeSeq
+        #
         self.__fullOneLetterSeq = self.__srd.toList(oneLetterCodeSeq)
         self.__seqType = self.__entityD['POLYMER_LINKING_TYPE']
         #
@@ -222,6 +229,7 @@ class LocalBlastSearchUtils(object):
             #
             taxId = fD['SOURCE_TAXID']
             sequence = oneLetterCodeSeq[(int(seqNumBeg) - 1):int(seqNumEnd)]
+            searchSequence = oneLetterSearchSeq[(int(seqNumBeg) - 1):int(seqNumEnd)]
             #
             authHitList = self.__fetchAuthProvidedRefSequence(sequence, seqNumBeg, seqNumEnd, str(partNum))
             if authHitList:
@@ -234,7 +242,7 @@ class LocalBlastSearchUtils(object):
             if os.access(xmlFilePath, os.F_OK):
                 os.remove(xmlFilePath)
             #
-            partDataList.append(( str(partNum), sequence, seqNumBeg, seqNumEnd, taxId, xmlFilePath ))
+            partDataList.append(( str(partNum), searchSequence, seqNumBeg, seqNumEnd, taxId, xmlFilePath ))
         #
         if not partDataList:
             return authRefD
@@ -759,7 +767,7 @@ class LocalBlastSearchUtils(object):
             if (querySeq[i] == '-') and (refSeq[i] == '-'):
                 continue
             #
-            if (querySeq[i] != '-') and (querySeq[i] != self.__fullOneLetterSeq[qIndexBegin]):
+            if (querySeq[i] != '-') and (querySeq[i] != self.__fullOneLetterSeq[qIndexBegin]) and (self.__fullOneLetterSeq[qIndexBegin] != 'X'):
                 return [],[],0,0.0,0.0,'query sequence mismatch'
             #
             if (refSeq[i] != '-') and (refSeq[i] != sTup3L[hIndexBegin][4]):

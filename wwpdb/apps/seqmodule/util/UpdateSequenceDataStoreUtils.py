@@ -206,7 +206,9 @@ class UpdateSequenceDataStoreUtils(object):
         sTupL = self.getSequence("auth", entityId, 1, 1, verList[0])
         r1L = []
         r1L_CAN = []
+        r1L_SEARCH = []
         for sTup in sTupL:
+            r1L_CAN.append(sTup[4])
             if sTup[4] == "X":
                 r1L.append("(" + sTup[0] + ")")
                 #
@@ -218,13 +220,13 @@ class UpdateSequenceDataStoreUtils(object):
                     ccCode = cifObj.GetSingleValue("chem_comp", "one_letter_code")
                 #
                 if ccCode:
-                    r1L_CAN.append(ccCode)
+                    r1L_SEARCH.append(ccCode)
                 else:
-                    r1L_CAN.append(sTup[4])
+                    r1L_SEARCH.append(sTup[4])
                 #
             else:
                 r1L.append(sTup[4])
-                r1L_CAN.append(sTup[4])
+                r1L_SEARCH.append(sTup[4])
             #
         #
         self.__seqFeature.set(self.getFeature("auth", entityId, 1, 1, verList[0]))
@@ -234,6 +236,7 @@ class UpdateSequenceDataStoreUtils(object):
         entityD["ENTITY_DESCRIPTION"] = self.__seqFeature.getEntityDescription()
         entityD["SEQ_ENTITY_1"] = "".join(r1L)
         entityD["SEQ_ENTITY_1_CAN"] = "".join(r1L_CAN)
+        entityD["SEQ_ENTITY_1_SEARCH"] = "".join(r1L_SEARCH)
         entityD["ENTITY_ID"] = entityId
         entityD["PART_LIST"] = self.__getPartList(entityId=entityId)
         entityD["IDENTIFIER"] = entityId
