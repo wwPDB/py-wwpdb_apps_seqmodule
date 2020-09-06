@@ -17,6 +17,8 @@ import copy, os, sys, time, traceback
 
 from wwpdb.apps.seqmodule.io.SequenceDataStore import SequenceDataStore
 from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel, SequenceFeature
+from wwpdb.io.file.mmCIFUtil import mmCIFUtil
+from wwpdb.utils.config.ConfigInfo import ConfigInfo
 
 class UpdateSequenceDataStoreUtils(object):
     """
@@ -197,15 +199,32 @@ class UpdateSequenceDataStoreUtils(object):
         if len(verList) == 0:
             return "",entityD
         #
+        siteId = str(self._reqObj.getValue("WWPDB_SITE_ID"))
+        cI = ConfigInfo(siteId)
+        ccPath = os.path.join(cI.get("SITE_REFDATA_TOP_CVS_SB_PATH"), cI.get("SITE_REFDATA_PROJ_NAME_CC"))
+        #
         sTupL = self.getSequence("auth", entityId, 1, 1, verList[0])
         r1L = []
         r1L_CAN = []
         for sTup in sTupL:
-            r1L_CAN.append(sTup[4])
             if sTup[4] == "X":
                 r1L.append("(" + sTup[0] + ")")
+                #
+                ccCode = ""
+                ccId = sTup[0].upper()
+                ccFilePath = os.path.join(ccPath, ccId[0], ccId, ccId + ".cif")
+                if os.access(ccFilePath, os.F_OK):
+                    cifObj = mmCIFUtil(filePath=ccFilePath)
+                    ccCode = cifObj.GetSingleValue("chem_comp", "one_letter_code")
+                #
+                if ccCode:
+                    r1L_CAN.append(ccCode)
+                else:
+                    r1L_CAN.append(sTup[4])
+                #
             else:
                 r1L.append(sTup[4])
+                r1L_CAN.append(sTup[4])
             #
         #
         self.__seqFeature.set(self.getFeature("auth", entityId, 1, 1, verList[0]))
