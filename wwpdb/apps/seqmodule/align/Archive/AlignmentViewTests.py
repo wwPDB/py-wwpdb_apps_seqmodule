@@ -79,7 +79,7 @@ class AlignmentViewTests(unittest.TestCase):
 
             Using upload file source.
         """
-        startTime=time.clock()        
+        startTime=time.time()        
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -101,7 +101,7 @@ class AlignmentViewTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime=time.clock()
+        endTime=time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                      sys._getframe().f_code.co_name,
                                                                      time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
@@ -113,7 +113,7 @@ class AlignmentViewTests(unittest.TestCase):
 
             Using archive file source.
         """
-        startTime=time.clock()        
+        startTime=time.time()        
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -129,7 +129,7 @@ class AlignmentViewTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime=time.clock()
+        endTime=time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                      sys._getframe().f_code.co_name,
                                                                      time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
@@ -142,7 +142,7 @@ class AlignmentViewTests(unittest.TestCase):
 
             Using repository cache with 'session' file source.
         """
-        startTime=time.clock()        
+        startTime=time.time()        
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -158,7 +158,7 @@ class AlignmentViewTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime=time.clock()
+        endTime=time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                      sys._getframe().f_code.co_name,
                                                                      time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
@@ -204,7 +204,7 @@ class AlignmentViewTests(unittest.TestCase):
 
             Use example/test case setup from repository cache - 
         """
-        startTime=time.clock()        
+        startTime=time.time()        
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -236,7 +236,7 @@ class AlignmentViewTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime=time.clock()
+        endTime=time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                      sys._getframe().f_code.co_name,
                                                                      time.strftime("%Y %m %d %H:%M:%S", time.localtime()),

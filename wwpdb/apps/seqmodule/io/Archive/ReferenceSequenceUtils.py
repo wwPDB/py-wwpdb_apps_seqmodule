@@ -331,7 +331,7 @@ class ReferenceSequenceUtils(object):
             self.__lfh.write("+ReferenceSequenceUtils.__runBlastService() Launch search for %s sequence = %s\n" % (polyType, oneLetterCodeSeq))
             self.__lfh.flush()
         #
-        timeBegin = time.clock()
+        timeBegin = time.time()
         blast_match_result = []
 
         # run Uniprot BLAST service for protein sequences
@@ -362,7 +362,7 @@ class ReferenceSequenceUtils(object):
         else:
             self.__lfh.write("+ReferenceSequenceUtils.__runBlastService() Search failed for unknown type    = %s\n" % polyType)
 
-        timeEnd = time.clock()
+        timeEnd = time.time()
         if self.__verbose:
             self.__lfh.write("+ReferenceSequenceUtils.__runBlastService() Search processing completed in %d seconds\n" % (timeEnd - timeBegin))
             self.__lfh.write("+ReferenceSequenceUtils.__runBlastService() Hit list length       = %d\n" % len(blast_match_result))
@@ -379,7 +379,7 @@ class ReferenceSequenceUtils(object):
             self.__lfh.write("+ReferenceSequenceUtils.__runBlastLocal() Launch search for %s sequence = %s\n" % (polyType, oneLetterCodeSeq))
             self.__lfh.flush()
         #
-        timeBegin = time.clock()
+        timeBegin = time.time()
         hitList = []
 
         resultPath = blastResultPath
@@ -439,7 +439,7 @@ class ReferenceSequenceUtils(object):
         else:
             self.__lfh.write("+ReferenceSequenceUtils.__runBlastLocal() Search failed for unknown type = %s\n" % polyType)
 
-        timeEnd = time.clock()
+        timeEnd = time.time()
         if self.__verbose:
             self.__lfh.write("+ReferenceSequenceUtils.__runBlastLocal() Search processing completed in %d seconds\n" % (timeEnd - timeBegin))
             self.__lfh.write("+ReferenceSequenceUtils.__runBlastLocal() Hit list length       = %d\n" % len(hitList))

@@ -254,7 +254,7 @@ class ReferenceSequenceDataUpdate(object):
              Store matching results in the local session directory.
         """
         try:
-            startTime=time.clock()        
+            startTime=time.time()        
             #
             entityId=entityD['ENTITY_ID']
             rsu=ReferenceSequenceUtils(siteId=self.__siteId,verbose=self.__verbose,log=self.__lfh)
@@ -279,7 +279,7 @@ class ReferenceSequenceDataUpdate(object):
             rsio.writeMatchResults(entityD,outFilePath=fn,matchResults=mR)
 
             if (self.__verbose):
-                endTime=time.clock()
+                endTime=time.time()
                 self.__lfh.write("+ReferenceSequenceDataUpdate.__doReferenceSearch()  completed at %s (%.2f seconds)\n" % 
                                  (time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime-startTime))
         except:
@@ -326,7 +326,7 @@ class ReferenceSequenceDataUpdate(object):
         """
         #
         entityId=entityD['ENTITY_ID']
-        startTime=time.clock()        
+        startTime=time.time()        
         if (self.__verbose):
             self.__lfh.write("+ReferenceSequenceDataUpdate.__reloadReferenceSequences() for entityId %r started at %s \n" % 
                              (entityId,time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -394,7 +394,7 @@ class ReferenceSequenceDataUpdate(object):
 
         self.__sds.serialize()
         if (self.__verbose):
-            endTime=time.clock()
+            endTime=time.time()
             self.__lfh.write("+ReferenceSequenceDataUpdate.__reloadReferenceSequences()  for entity %r completed at %s (%.2f seconds)\n" % 
                              (entityId, time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
                               endTime-startTime))

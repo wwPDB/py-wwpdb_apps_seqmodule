@@ -39,7 +39,7 @@ class TaxonomyUtilsTests(unittest.TestCase):
         pass
 
     def testReadTaxonomyNames(self):
-        startTime = time.clock()
+        startTime = time.time()
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -55,14 +55,14 @@ class TaxonomyUtilsTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime = time.clock()
+        endTime = time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                        sys._getframe().f_code.co_name,
                                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
                                                                        endTime - startTime))
 
     def testReadAndSerializeTaxonomyNames(self):
-        startTime = time.clock()
+        startTime = time.time()
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -73,14 +73,14 @@ class TaxonomyUtilsTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime = time.clock()
+        endTime = time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                        sys._getframe().f_code.co_name,
                                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
                                                                        endTime - startTime))
 
     def testDeserializeTaxonomyNames(self):
-        startTime = time.clock()
+        startTime = time.time()
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -91,14 +91,14 @@ class TaxonomyUtilsTests(unittest.TestCase):
         except:
             traceback.print_exc(file=self.__lfh)
             self.fail()
-        endTime = time.clock()
+        endTime = time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                        sys._getframe().f_code.co_name,
                                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
                                                                        endTime - startTime))
 
     def testLookupNames(self):
-        startTime = time.clock()
+        startTime = time.time()
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -110,14 +110,14 @@ class TaxonomyUtilsTests(unittest.TestCase):
         except:
             traceback.print_exc(file=self.__lfh)
             self.fail()
-        endTime = time.clock()
+        endTime = time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                        sys._getframe().f_code.co_name,
                                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
                                                                        endTime - startTime))
 
     def testLookupParents(self):
-        startTime = time.clock()
+        startTime = time.time()
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -130,14 +130,14 @@ class TaxonomyUtilsTests(unittest.TestCase):
         except:
             traceback.print_exc(file=self.__lfh)
             self.fail()
-        endTime = time.clock()
+        endTime = time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                        sys._getframe().f_code.co_name,
                                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
                                                                        endTime - startTime))
 
     def testReadTaxonomyNodes(self):
-        startTime = time.clock()
+        startTime = time.time()
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -153,14 +153,14 @@ class TaxonomyUtilsTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime = time.clock()
+        endTime = time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                        sys._getframe().f_code.co_name,
                                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
                                                                        endTime - startTime))
 
     def testReadAndSerializeTaxonomyNodes(self):
-        startTime = time.clock()
+        startTime = time.time()
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -171,14 +171,14 @@ class TaxonomyUtilsTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime = time.clock()
+        endTime = time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                        sys._getframe().f_code.co_name,
                                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
                                                                        endTime - startTime))
 
     def testDeserializeTaxonomyNodes(self):
-        startTime = time.clock()
+        startTime = time.time()
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -190,7 +190,7 @@ class TaxonomyUtilsTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime = time.clock()
+        endTime = time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                        sys._getframe().f_code.co_name,
                                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime()),

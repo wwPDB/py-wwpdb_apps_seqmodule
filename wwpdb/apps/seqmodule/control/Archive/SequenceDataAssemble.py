@@ -231,7 +231,7 @@ class SequenceDataAssemble(object):
              Store matching results in the local session directory.
         """
         try:
-            startTime = time.clock()
+            startTime = time.time()
             #
             sdr = SequenceReferenceData(self.__verbose, self.__lfh)
             rsu = ReferenceSequenceUtils(siteId=self.__siteId, verbose=self.__verbose, log=self.__lfh)
@@ -278,7 +278,7 @@ class SequenceDataAssemble(object):
                 rsio.writeMatchResults(eD, outFilePath=fn, matchResults=mR)
 
             if (self.__verbose):
-                endTime = time.clock()
+                endTime = time.time()
                 self.__lfh.write("+SequenceDataAssemble.__doReferenceSearch()  completed at %s (%.2f seconds)\n" %
                                  (time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime))
             #
@@ -336,7 +336,7 @@ class SequenceDataAssemble(object):
                               seqAssign[entity]      = archive reference sequence assignments
         """
         #
-        startTime = time.clock()
+        startTime = time.time()
         #
         if (self.__verbose):
             self.__lfh.write("+SequenceDataAssemble.__loadSequenceDataStore() for sessionId %s started at %s \n" %
@@ -577,7 +577,7 @@ class SequenceDataAssemble(object):
             sds.dump(self.__lfh)
 
         if (self.__verbose):
-            endTime = time.clock()
+            endTime = time.time()
             self.__lfh.write("+SequenceDataAssembleWf.__loadSequenceDataStore()  completed at %s (%.2f seconds)\n" %
                              (time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
                               endTime - startTime))

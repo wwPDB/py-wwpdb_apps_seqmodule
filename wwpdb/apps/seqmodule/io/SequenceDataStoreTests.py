@@ -97,7 +97,7 @@ class SequenceDataStoreTests(unittest.TestCase):
     def testStoreExampleData(self): 
         """  Test creating store, serializing and deserializing data.
         """
-        startTime=time.clock()        
+        startTime=time.time()        
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -129,7 +129,7 @@ class SequenceDataStoreTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime=time.clock()
+        endTime=time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                      sys._getframe().f_code.co_name,
                                                                      time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
@@ -138,7 +138,7 @@ class SequenceDataStoreTests(unittest.TestCase):
     def testReadExampleData(self): 
         """  Test read existing store -
         """
-        startTime=time.clock()        
+        startTime=time.time()        
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -159,7 +159,7 @@ class SequenceDataStoreTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime=time.clock()
+        endTime=time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                      sys._getframe().f_code.co_name,
                                                                      time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
@@ -169,7 +169,7 @@ class SequenceDataStoreTests(unittest.TestCase):
     def testAccessMethodsExampleData(self): 
         """  SequenceDataStore() accessor tests - 
         """
-        startTime=time.clock()        
+        startTime=time.time()        
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -204,7 +204,7 @@ class SequenceDataStoreTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime=time.clock()
+        endTime=time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                      sys._getframe().f_code.co_name,
                                                                      time.strftime("%Y %m %d %H:%M:%S", time.localtime()),

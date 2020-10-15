@@ -79,7 +79,7 @@ class SummaryViewTests(unittest.TestCase):
 
             Using upload file source. rcsb-mmcif
         """
-        startTime=time.clock()        
+        startTime=time.time()        
         self.__lfh.write("\n\n========================================================================================================\n")
         self.__lfh.write("Starting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
@@ -113,7 +113,7 @@ class SummaryViewTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime=time.clock()
+        endTime=time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                      sys._getframe().f_code.co_name,
                                                                      time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
@@ -125,7 +125,7 @@ class SummaryViewTests(unittest.TestCase):
 
             Using examples files in to simulate upload file source.
         """
-        startTime=time.clock()        
+        startTime=time.time()        
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -146,7 +146,7 @@ class SummaryViewTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime=time.clock()
+        endTime=time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                      sys._getframe().f_code.co_name,
                                                                      time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
@@ -158,7 +158,7 @@ class SummaryViewTests(unittest.TestCase):
 
             Using archive file source.
         """
-        startTime=time.clock()        
+        startTime=time.time()        
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -174,7 +174,7 @@ class SummaryViewTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime=time.clock()
+        endTime=time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                        sys._getframe().f_code.co_name,
                                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
@@ -186,7 +186,7 @@ class SummaryViewTests(unittest.TestCase):
 
             Using repository cache with 'session' file source.
         """
-        startTime=time.clock()        
+        startTime=time.time()        
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -202,7 +202,7 @@ class SummaryViewTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime=time.clock()
+        endTime=time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                      sys._getframe().f_code.co_name,
                                                                      time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
@@ -211,7 +211,7 @@ class SummaryViewTests(unittest.TestCase):
     def testSummaryArchiveView(self): 
         """ Test construction of a summary view from a sequence data store containing pairwise alignment stats.
         """
-        startTime=time.clock()        
+        startTime=time.time()        
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -231,7 +231,7 @@ class SummaryViewTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime=time.clock()
+        endTime=time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                      sys._getframe().f_code.co_name,
                                                                      time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
@@ -241,7 +241,7 @@ class SummaryViewTests(unittest.TestCase):
 
             Use example/test case setup from repository cache - 
         """
-        startTime=time.clock()        
+        startTime=time.time()        
         self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
                                                        sys._getframe().f_code.co_name,
                                                        time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
@@ -261,7 +261,7 @@ class SummaryViewTests(unittest.TestCase):
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
-        endTime=time.clock()
+        endTime=time.time()
         self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
                                                                      sys._getframe().f_code.co_name,
                                                                      time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
