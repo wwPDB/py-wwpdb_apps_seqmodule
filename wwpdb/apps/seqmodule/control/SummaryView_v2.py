@@ -404,11 +404,13 @@ class SummaryView(object):
         for partId in partIdList:
             #
             authVerList = self.__sds.getVersionIds(seqId=seqIdRef, partId=partId, altId=1, dataType="feature", seqType='auth')
-            TaxId = ""
+            # Changed to original tax ID ( DAOTHER-6126 )
+            OrigTaxId = ""
             skipPart = False
             if (len(authVerList) > 0):
                 authFObj = self.__sds.getFeatureObj(seqIdRef, 'auth', partId=partId, altId=1, version=authVerList[0])
                 sourceInfo = authFObj.getEntitySourceMethod().upper()
+                OrigTaxId = authFObj.getSourceTaxIdOrig()
                 TaxId = authFObj.getSourceTaxId()
                 if (sourceInfo == 'NAT') and TaxId:
                      if TaxId in self.__natureSourceTaxIds:
@@ -453,7 +455,7 @@ class SummaryView(object):
                     #
                     taxIdWarningFlag = False
                     RefTaxId = seqFeature.getSourceTaxId()
-                    if TaxId and RefTaxId and (TaxId != RefTaxId):
+                    if OrigTaxId and RefTaxId and (OrigTaxId != RefTaxId):
                         taxIdWarningFlag = True
                     #
                     isSelected = seqRefId in self.__summarySeqSelectList

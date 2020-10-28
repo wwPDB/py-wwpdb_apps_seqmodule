@@ -170,7 +170,7 @@ class FetchReferenceSequenceUtils(object):
                 #
             #
             return idCode,self.__addingMissingKey(infoD)
-        elif dbResource in ["GB", "DBJ", "EMB"]:
+        elif dbResource in ["GB", "DBJ", "EMB", "EMBL", "REF"]:
             infoD = fetchNcbiGi(dbAccession, xmlPath=None, siteId=self.__siteId)
             if infoD:
                 infoD["db_accession"] = dbAccession
