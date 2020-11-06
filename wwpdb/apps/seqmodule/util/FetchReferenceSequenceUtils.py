@@ -45,6 +45,10 @@ class FetchReferenceSequenceUtils(object):
             #
             return error,{},[]
         #
+        # for DAOTHER-6304
+        if polyTypeCode == "DNA":
+            self.__refInfoD["sequence"] = self.__refInfoD["sequence"].replace("U", "T")
+        #
         seqLength = len(self.__refInfoD["sequence"])
         #
         try:

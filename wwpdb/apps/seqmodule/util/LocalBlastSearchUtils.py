@@ -436,7 +436,9 @@ class LocalBlastSearchUtils(object):
             if (self.__cleanUp and not self.__debug):
                 dp.cleanup()
             #
-        elif self.__seqType == 'polyribonucleotide':
+        #elif self.__seqType == 'polyribonucleotide':
+        #for DAOTHER-6304
+        elif self.__seqType in ['polydeoxyribonucleotide', 'polyribonucleotide']:
             if len(oneLetterCodeSeq) > self.__minRnaSequenceSearchLength:
                 dp = RcsbDpUtility(tmpPath=tmpPathAbs, siteId=self.__siteId, verbose=True)
                 dp.addInput(name="one_letter_code_sequence", value=oneLetterCodeSeq)
@@ -513,7 +515,9 @@ class LocalBlastSearchUtils(object):
                     #
                 #
             #
-        elif self.__seqType == 'polyribonucleotide':
+        #elif self.__seqType == 'polyribonucleotide':
+        # for DAOTHER-6304
+        elif self.__seqType in ['polydeoxyribonucleotide', 'polyribonucleotide']:
             hitList = searchHitList
             idCodeList = []
             for hit in hitList:
