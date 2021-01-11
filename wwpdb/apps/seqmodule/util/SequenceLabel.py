@@ -460,6 +460,17 @@ class SequenceFeature(object):
                 self.__lfh.write("+SequenceFeature.getRefSeqDetails() failed\n")
         return '', '', '', ''
 
+    def setRefSeqVariant(self, variant=''):
+        if variant:
+            self.__fD['REF_SEQ_VARIANT'] = str(variant)
+        #
+
+    def getRefSeqVariant(self):
+        if 'REF_SEQ_VARIANT' in self.__fD:
+            return self.__fD['REF_SEQ_VARIANT']
+        #
+        return ''
+
     def getRefSeqDepositorInfo(self):
         return {}
 

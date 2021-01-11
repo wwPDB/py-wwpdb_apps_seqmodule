@@ -474,14 +474,22 @@ class LocalBlastSearchUtils(object):
             idCodeList = []
             for hit in searchHitList:
                 if 'db_accession' in hit and 'db_name' in hit:
+                    try:
+                        start = int(str(hit["hitFrom"]))
+                    except:
+                        start = 0
+                    #
+                    try:
+                        end = int(str(hit["hitTo"]))
+                    except:
+                        end = 0
+                    #
                     if 'db_isoform' in hit and (len(hit['db_isoform']) > 0) and (hit['db_isoform'] not in ['.', '?']):
-                        idCodeList.append(hit['db_isoform'])
+                        idCodeList.append( ( hit['db_isoform'], start, end ) )
                     else:
-                        idCodeList.append(hit['db_accession'])
+                        idCodeList.append( ( hit['db_accession'], start, end ) )
                     #
                 #
-            #
-            idCodeList = list(set(idCodeList))
             #
             # Incorporate non-overlapping additional details about each matching sequence entry.
             #   ( Still using the REST API to get the entry information )
@@ -489,7 +497,7 @@ class LocalBlastSearchUtils(object):
             if (self.__verbose):
                 self.__lfh.write("+LocalBlastSearchUtils.__readBlastResultXmlFile() Fetch sequence database entries for %d filtered reference idcodes\n" % len(idCodeList))
             if len(idCodeList) > 0:
-                unpD = fetchUniProt(siteId=self.__siteId, verbose=self.__verbose, log=self.__lfh, idCodeList=idCodeList)
+                unpD = fetchUniProt(idTupleList=idCodeList, verbose=self.__verbose, log=self.__lfh)
                 for hit in searchHitList:
                     acId = None
                     isIso = False
@@ -500,11 +508,21 @@ class LocalBlastSearchUtils(object):
                         acId = hit['db_accession']
                     #
                     if acId is not None:
+                        try:
+                            start = int(str(hit["hitFrom"]))
+                        except:
+                            start = 0
+                        #
+                        try:
+                            end = int(str(hit["hitTo"]))
+                        except:
+                            end = 0
+                        #
                         dd = {}
-                        if acId in unpD:
-                            dd = unpD[acId]
-                        elif isIso and hit['db_accession'] in unpD:
-                            dd = unpD[hit['db_accession']]
+                        if ( acId, start, end ) in unpD:
+                            dd = unpD[( acId, start, end )]
+                        elif isIso and ( ( hit['db_accession'], start, end ) in unpD):
+                            dd = unpD[( hit['db_accession'], start, end )]
                         #
                         for (k, v) in dd.items():
                             if (k != "sequence") and (k not in hit):

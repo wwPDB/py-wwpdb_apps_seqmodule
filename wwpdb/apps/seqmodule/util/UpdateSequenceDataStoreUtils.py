@@ -506,6 +506,9 @@ class UpdateSequenceDataStoreUtils(object):
 
         self.__seqFeature.setRefSeqNames(proteinName=rD["name"], synonyms=rD["synonyms"], geneName=rD["gene"])
         self.__seqFeature.setRefSeqDetails(enzymeClass=rD["ec"], description=rD["db_description"], comments=rD["comments"], keywords=rD["keyword"])
+        if ("variant" in rD) and rD["variant"]:
+            self.__seqFeature.setRefSeqVariant(variant=rD["variant"])
+        #
         if "hitFrom" in rD:
             self.__seqFeature.setItem("REF_MATCH_BEGIN", int(rD["hitFrom"]))
         #

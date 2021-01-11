@@ -17,6 +17,7 @@
 #                  reduce the number of id lookups and try to find distant matching SP entries.
 #  1-Aug-2014  jdw update handling of annotation fetch failures
 #  8-Dec-2015  jdw change isoform annoation processing -
+# 30-Dec-2020   zf Use FetchUnpXml instead of FetchUniProtEntry class. Allow the location specific feature names if exist.
 ##
 """
 Utility methods to retrieve information from NCBI & Uniprot databases
@@ -29,23 +30,55 @@ __version__ = "V0.09"
 
 import os, sys
 from wwpdb.utils.seqdb_v2.FetchNcbiXml import FetchFullNcbiXml, FetchNcbiXml
-from wwpdb.utils.seqdb_v2.FetchUniProtEntry import FetchUniProtEntry
+from wwpdb.utils.seqdb_v2.FetchUnpXml import FetchUnpXml
 from wwpdb.utils.config.ConfigInfo import ConfigInfo
 
-def fetchUniProt(siteId=None, verbose=False, log=sys.stderr, idCodeList=None, filePath=None):
+def fetchUniProt(idTupleList=[], filePath=None, verbose=False, log=sys.stderr):
     """
     """
     d = {}
-    fobj = FetchUniProtEntry(siteId=siteId, verbose=verbose, log=log)
+    if not idTupleList:
+       return d
+    #
+    idCodeList = []
+    for idTuple in idTupleList:
+        if idTuple[0] not in idCodeList:
+            idCodeList.append(idTuple[0])
+        #
+    #
+    if not idCodeList:
+       return d
+    #
+    fobj = FetchUnpXml(verbose=verbose, log=log)
     ok = fobj.fetchList(idCodeList)
     if filePath is not None:
         fobj.writeUnpXml(filePath)
     #
     if ok:
-        d = fobj.getResult()
+        resultDicts = fobj.getResult()
+        multiResultDicts = fobj.getMultipleResultDict()
         # filter any redundant annotations --
         #
-        for (acId, vd) in d.items():
+        for idTuple in idTupleList:
+            if idTuple[0] not in resultDicts:
+                continue
+            #
+            vd = resultDicts[idTuple[0]]
+            #
+            if (idTuple[0] in multiResultDicts) and multiResultDicts[idTuple[0]]:
+                found = False
+                for retD in multiResultDicts[idTuple[0]]:
+                    if ("begin" not in retD) or ("end" not in retD) or (idTuple[1] < retD["begin"]) or (idTuple[2] > retD["end"]):
+                        continue
+                    #
+                    found = True
+                    vd = retD
+                    break
+                #
+                if (not found) and ("all" in multiResultDicts[idTuple[0]][-1]) and (multiResultDicts[idTuple[0]][-1]["all"] == "yes"):
+                    vd = multiResultDicts[idTuple[0]][-1]
+                #
+            #
             for k in vd.keys():
                 if k in ['ec', 'comments', 'synonyms']:
                     v = vd[k]
@@ -74,6 +107,7 @@ def fetchUniProt(siteId=None, verbose=False, log=sys.stderr, idCodeList=None, fi
                     vd[k] = ','.join(oL)
                 #
             #
+            d[idTuple] = vd
         #
     #
     return d

@@ -365,10 +365,20 @@ class GetSameSeqAnnotation(object):
             #
             if "db_name" in infoDic:
                 if infoDic["db_name"] == "UNP":
+                    try:
+                        start = int(str(infoDic["hitFrom"]))
+                    except:
+                        start = 0
+                    #
+                    try:
+                        end = int(str(infoDic["hitTo"]))
+                    except:
+                        end = 0
+                    #
                     if ("db_isoform" in infoDic) and infoDic["db_isoform"]:
-                        unpIdList.append(str(infoDic["db_isoform"]))
+                        unpIdList.append( ( str(infoDic["db_isoform"]), start, end ) )
                     elif ("db_accession" in infoDic) and infoDic["db_accession"]:
-                        unpIdList.append(str(infoDic["db_accession"]))
+                        unpIdList.append( ( str(infoDic["db_accession"]), start, end ) )
                     #
                 elif infoDic["db_name"] == "GB":
                     if ("db_accession" in infoDic) and infoDic["db_accession"]:
@@ -384,8 +394,7 @@ class GetSameSeqAnnotation(object):
         unpD = {}
         gbD = {}
         if len(unpIdList) > 0:
-            unpIdList = list(set(unpIdList))
-            unpD = fetchUniProt(siteId=self.__siteId, verbose=self.__verbose, log=self.__lfh, idCodeList=unpIdList)
+            unpD = fetchUniProt(idTupleList=unpIdList, verbose=self.__verbose, log=self.__lfh)
         elif len(gbIdList) > 0:
             gbIdList = list(set(gbIdList))
             for idCode in gbIdList:
@@ -397,13 +406,23 @@ class GetSameSeqAnnotation(object):
             dbDic = {}
             if "db_name" in infoDic:
                 if infoDic["db_name"] == "UNP":
+                    try:
+                        start = int(str(infoDic["hitFrom"]))
+                    except:
+                        start = 0
+                    #
+                    try:
+                        end = int(str(infoDic["hitTo"]))
+                    except:
+                        end = 0
+                    #
                     if ("db_isoform" in infoDic) and infoDic["db_isoform"]:
-                        if infoDic["db_isoform"] in unpD:
-                            dbDic = unpD[infoDic["db_isoform"]]
+                        if (infoDic["db_isoform"], start, end) in unpD:
+                            dbDic = unpD[(infoDic["db_isoform"], start, end)]
                         #
                     elif ("db_accession" in infoDic) and infoDic["db_accession"]:
-                        if infoDic["db_accession"] in unpD:
-                            dbDic = unpD[infoDic["db_accession"]]
+                        if (infoDic["db_accession"], start, end) in unpD:
+                            dbDic = unpD[(infoDic["db_accession"], start, end)]
                         #
                     #
                 elif infoDic["db_name"] == "GB":

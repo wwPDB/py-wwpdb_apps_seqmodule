@@ -36,6 +36,7 @@ class AlignmentTools(AlignmentDataStore):
                                 "UNK", "A", "C", "G", "I", "T", "U", "DA", "DC", "DG", "DI", "DT", "DU" )
         #
         self.__parentCompIdMap = {}
+        self.__refSeqVariantList = []
 
     def __clearLocalVariables(self):
         """ Clear all local variables
@@ -530,6 +531,7 @@ class AlignmentTools(AlignmentDataStore):
                 start_position = self._partPosDict[int(seqPartId)][0]
                 end_position = self._partPosDict[int(seqPartId)][1]
             #
+            self.__getRefSeqVariants(otherLabel)
             numConflict,missingAuthSeqList = self.__assignNumericConflicts(authIdx, otherIdx, "ref", start_position, end_position)
             self.__annotateConflictingComments(authIdx, otherIdx, start_position, end_position)
         #
@@ -956,7 +958,7 @@ class AlignmentTools(AlignmentDataStore):
         """ Extract all author input mutation information (e.g. V178A ) from _entity.pdbx_mutation
         """
         featureD = self._getFeatureByPackLabelFromDataStore(self.__local_authLabel)
-        if not "ENTITY_MUTATION_DETAILS" in featureD:
+        if "ENTITY_MUTATION_DETAILS" not in featureD:
             return
         #
         self._authDefinedMutationList = []
@@ -993,6 +995,17 @@ class AlignmentTools(AlignmentDataStore):
                 #
             #
         #
+
+    def __getRefSeqVariants(self, refLabel):
+        """
+        """
+        self.__refSeqVariantList = []
+        #
+        featureD = self._getFeatureByPackLabelFromDataStore(refLabel)
+        if ("REF_SEQ_VARIANT" not in featureD) or (not featureD["REF_SEQ_VARIANT"]):
+            return
+        #
+        self.__refSeqVariantList = featureD["REF_SEQ_VARIANT"].split(",")
 
     def __generateInputSeqInfoForPseudoMultiAlignFromSeqList(self, seqType="auth", inputSeqList=[], start=0, end=0):
         """ Generate input sequence information for PseudoMultiAlign program
@@ -1141,7 +1154,9 @@ class AlignmentTools(AlignmentDataStore):
         else:
             mut1 = refAlignTuple[0] + authAlignTuple[2] + authAlignTuple[0]
             mut2 = refAlignTuple[0] + refAlignTuple[2] + authAlignTuple[0]
-            if (mut1 in self._authDefinedMutationList) or (mut2 in self._authDefinedMutationList):
+            if mut2 in self.__refSeqVariantList:
+                comment = "variant"
+            elif (mut1 in self._authDefinedMutationList) or (mut2 in self._authDefinedMutationList):
                 comment = "engineered mutation"
             else:
                 comment = "conflict"

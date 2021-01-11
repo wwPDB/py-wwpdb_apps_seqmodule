@@ -36,7 +36,17 @@ class FetchReferenceSequenceUtils(object):
         """ return error message, sequence feature dictionary, sequence list
         """
         if not self.__refInfoD:
-            self.__accCode,self.__refInfoD = self.__getRefInfo(dbName, dbAccession, dbIsoform)
+            try:
+                start = int(str(refSeqBeg))
+            except:
+                start = 0
+            #
+            try:
+                end = int(str(refSeqEnd))
+            except:
+                end = 0
+            #
+            self.__accCode,self.__refInfoD = self.__getRefInfo(dbName, dbAccession, dbIsoform, start, end)
         #
         if (not self.__refInfoD) or ("sequence" not in self.__refInfoD):
             error = "Fetch reference sequence [ dbName=" + dbName + ", Accession=" + self.__accCode + "] failed."
@@ -114,7 +124,7 @@ class FetchReferenceSequenceUtils(object):
                 dbAccession = tL[0]
             #
         #
-        self.__accCode,self.__refInfoD = self.__getRefInfo(dbName, dbAccession, dbIsoform)
+        self.__accCode,self.__refInfoD = self.__getRefInfo(dbName, dbAccession, dbIsoform, 0, 0)
         #
         if (not self.__refInfoD) or ("sequence" not in self.__refInfoD):
             return {}
@@ -125,6 +135,9 @@ class FetchReferenceSequenceUtils(object):
         #
         refSeqBeg = idx + 1
         refSeqEnd = refSeqBeg + len(authSeqs) - 1
+        if dbName in ["UNP", "SP", "TR"]:
+            self.__accCode,self.__refInfoD = self.__getRefInfo(dbName, dbAccession, dbIsoform, refSeqBeg, refSeqEnd)
+        #
         self.__refInfoD["db_length"] = len(self.__refInfoD["sequence"])
         self.__refInfoD["identity"] = len(authSeqs)
         self.__refInfoD["positive"] = len(authSeqs)
@@ -143,7 +156,7 @@ class FetchReferenceSequenceUtils(object):
         #
         return self.__refInfoD
 
-    def __getRefInfo(self, dbName, dbAccession, dbIsoform):
+    def __getRefInfo(self, dbName, dbAccession, dbIsoform, start, end):
         """ Fetch sequence data from Uniprot or GeneBank database
         """
         dbResource = self.__srd.convertDbNameToResource(dbName)
@@ -153,13 +166,13 @@ class FetchReferenceSequenceUtils(object):
             if dbIsoform is not None and len(dbIsoform) > 0:
                 idCode = str(dbIsoform)
             #
-            dt = fetchUniProt(siteId=self.__siteId, verbose=self.__verbose, log=self.__lfh, idCodeList=[idCode])
+            dt = fetchUniProt(idTupleList=[ ( idCode, start, end ) ], verbose=self.__verbose, log=self.__lfh)
             #
             infoD = {}
-            if idCode in dt:
-                infoD = dt[idCode]
-            elif dbAccession in dt:
-                infoD = dt[dbAccession]
+            if ( idCode, start, end ) in dt:
+                infoD = dt[( idCode, start, end )]
+            elif ( dbAccession, start, end ) in dt:
+                infoD = dt[(dbAccession, start, end )]
             elif len(dt.values()) == 1:
                 if ("db_code" in dt.values()[0]) and (dt.values()[0]["db_code"] == dbAccession):
                     infoD = dt.values()[0]
