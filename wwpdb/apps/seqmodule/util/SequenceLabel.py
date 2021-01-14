@@ -103,6 +103,9 @@ class SequenceFeatureMap(object):
                 authFD[mapTup[0]] = ''
             #
         #
+        if ('REF_SEQ_FRAGMENT_DETAILS' in refFD) and (len(refFD['REF_SEQ_FRAGMENT_DETAILS']) > 1):
+            authFD['ENTITY_FRAGMENT_DETAILS'] = refFD['REF_SEQ_FRAGMENT_DETAILS']
+        #
         if (self.__debug):
             for mapTup in mapTupList:
                 self.__lfh.write('++++After %30s  %r\n' % (mapTup[0], authFD[mapTup[0]]))
@@ -167,7 +170,7 @@ class SequenceFeature(object):
                            'HOST_ORG_VARIANT', 'HOST_ORG_VARIANT_ORIG',
                            'HOST_ORG_PLASMID_ORIG', 'HOST_ORG_COMMON_NAME_ORIG', 'HOST_ORG_CELL_LINE_ORIG',
                            'DB_MOLECULE_NAME', 'DB_MOLECULE_SYNONYMS', 'DB_GENE_NAME',
-                           'DB_MOLECULE_EC', 'DB_MOLECULE_DESCRIPTION', 'DB_MOLECULE_COMMENTS', 'DB_MOLECULE_KEYWORDS',
+                           'DB_MOLECULE_EC', 'DB_MOLECULE_DESCRIPTION', 'DB_MOLECULE_COMMENTS', 'DB_MOLECULE_KEYWORDS', 'REF_SEQ_FRAGMENT_DETAILS',
                            'REF_ENTRY_ID', 'REF_ENTRY_ENTITY_ID', 'REF_ENTRY_STATUS', 'REF_ENTRY_ANN', 
                            'AUTH_XYZ_SEQ_BEGIN', 'AUTH_XYZ_SEQ_END', 'CURRENT_AUTH_SELECT_ID', 'CURRENT_REF_SELECT_ID']
         #
@@ -470,6 +473,11 @@ class SequenceFeature(object):
             return self.__fD['REF_SEQ_VARIANT']
         #
         return ''
+
+    def setRefSeqFragmentDetails(self, fragmentDetails=''):
+        if fragmentDetails:
+            self.__fD['REF_SEQ_FRAGMENT_DETAILS'] = str(fragmentDetails)
+        #
 
     def getRefSeqDepositorInfo(self):
         return {}

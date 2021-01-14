@@ -184,7 +184,8 @@ class GetSameSeqAnnotation(object):
         itemList = ( ( "seq_part_id", "SEQ_PART_ID" ), ( "seq_part_beg", "SEQ_NUM_BEG" ), ( "seq_part_end", "SEQ_NUM_END" ), \
                      ( "seq_part_type", "SEQ_PART_TYPE" ), ( "entity_description", "name" ), ( "entity_synonyms", "synonyms" ), \
                      ( "gene_name", "gene" ), ( "taxonomy_id", "taxonomy_id" ), ( "source_scientific_name", "source_scientific" ), \
-                     ( "source_strain", "strain" ), ( "source_common_name", "source_common" ) )  #variant, entity_enzyme_class, entity_fragment_details
+                     ( "source_strain", "strain" ), ( "source_common_name", "source_common" ), ( "entity_enzyme_class", "ec" ), \
+                     ( "entity_fragment_details", "entity_fragment_details" ) ) #variant
         #
         partItemList = ( "SEQ_PART_ID", "SEQ_NUM_BEG", "SEQ_NUM_END", "SEQ_PART_TYPE", "taxonomy_id" )
         #
@@ -436,7 +437,9 @@ class GetSameSeqAnnotation(object):
             if not dbDic:
                 return {}
             #
-            for item in ( 'db_isoform_description', 'db_description', 'ec', 'db_description', 'comments', 'keyword' ):
+            # Remove merging "ec" number
+            #for item in ( 'db_isoform_description', 'db_description', 'ec', 'db_description', 'comments', 'keyword' ):
+            for item in ( "db_isoform_description", "db_description", "comments", "keyword" ):
                 if item in dbDic:
                     infoDic[item] = dbDic[item]
                 else:

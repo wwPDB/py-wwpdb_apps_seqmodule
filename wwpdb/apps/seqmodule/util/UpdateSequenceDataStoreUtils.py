@@ -509,6 +509,9 @@ class UpdateSequenceDataStoreUtils(object):
         if ("variant" in rD) and rD["variant"]:
             self.__seqFeature.setRefSeqVariant(variant=rD["variant"])
         #
+        if ("entity_fragment_details" in rD) and rD["entity_fragment_details"]:
+            self.__seqFeature.setRefSeqFragmentDetails(fragmentDetails=rD["entity_fragment_details"])
+        #
         if "hitFrom" in rD:
             self.__seqFeature.setItem("REF_MATCH_BEGIN", int(rD["hitFrom"]))
         #
