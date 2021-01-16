@@ -611,15 +611,19 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 skip = ((polyTypeCode in ["SAC"]) or ((polyTypeCode in ["DNA", "RNA", "XNA"]) and (seqLen < self.__minSearchSequenceLengthNA)) or \
                        ((polyTypeCode in ["AA"]) and (seqLen < self.__minSearchSequenceLengthAA)))
                 #
+                NA_flag = False
+                if polyTypeCode == "DNA":
+                    NA_flag = True
+                #
                 if (self._verbose):
                     self._lfh.write("+SequenceDataAssemble.__doReferenceSearch() search for entity id %s type %s length %d skip status %r\n" %
                                      (eId, polyTypeCode, seqLen, skip))
                     self._lfh.flush()
                 #
                 if sId in self.__authDefinedRefD:
-                    entityTupList.append(( sId, eD, self.__authDefinedRefD[sId], skip ))
+                    entityTupList.append(( sId, eD, self.__authDefinedRefD[sId], skip, NA_flag ))
                 else:
-                    entityTupList.append(( sId, eD, (), skip ))
+                    entityTupList.append(( sId, eD, (), skip, NA_flag ))
                 #
             #
             if not entityTupList:
@@ -636,6 +640,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             #
             blastList = []
             skipList = []
+            naList = []
             if self.__reRunBlastSearchFlag:
                 blastList = entityTupList
                 self.__autoProcessFlag = False
@@ -664,7 +669,11 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                     if (len(entityTup[2]) > 0) or (not entityTup[3]):
                         blastList.append(entityTup)
                         if not entityTup[3]:
-                            self.__autoProcessFlag = False
+                            if entityTup[4]:
+                                naList.append(entityTup[0])
+                            else:
+                                self.__autoProcessFlag = False
+                            #
                         #
                     #
                 #
@@ -672,6 +681,13 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             refD = {}
             if blastList:
                 refD = self.__runSeqBlastSearch(blastList)
+            #
+            if refD:
+                for k,v in refD.items():
+                    if k in naList:
+                        self.__autoProcessFlag = False
+                    #
+                #
             #
             if self.__autoProcessFlag:
                 for entityTup in skipList:
