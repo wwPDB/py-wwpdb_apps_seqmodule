@@ -26,6 +26,7 @@ class AlignmentTools(AlignmentDataStore):
         super(AlignmentTools, self).__init__(reqObj=reqObj, entityId=entityId, pathInfo=pathInfo, seqDataStore=seqDataStore, \
                                              deserializeFlag=deserializeFlag, verbose=verbose, log=log)
         #
+        self._longExpressionTagCountCutoff = 20
         self.__clearLocalVariables()
         self.__local_authLabel = self._authLabel
         #

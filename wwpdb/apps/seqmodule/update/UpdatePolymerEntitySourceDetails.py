@@ -358,7 +358,10 @@ class UpdatePolymerEntitySourceDetails(object):
         #
         authSeqType, authSeqInstId, authSeqPartId, authSeqAltId, authSeqVersion = authSL.get()
         authFD = authFdObj.get()
-        refFD = refFdObj.get()
+        #
+        refFD = {}
+        if refFdObj:
+            refFD = refFdObj.get()
         #
         norineFlag = False
         seqLength = ''
@@ -429,21 +432,21 @@ class UpdatePolymerEntitySourceDetails(object):
         pD['AUTH_DB_CODE_LIST'] = ','.join(authDbCodeList)
         pD['AUTH_DB_ACCESSION_LIST'] = ','.join(authDbAccessionList)
 
-        pD['REF_DB_NAME'] = refFD['DB_NAME']
-        pD['REF_DB_CODE'] = refFD['DB_CODE']
-        displayCode = refFD['DB_ACCESSION']
-        if refFD['DB_ISOFORM'] is not None and len(refFD['DB_ISOFORM']) > 1:
-            displayCode = refFD['DB_ISOFORM']
-        pD['REF_DB_ACCESSION'] = displayCode
-        pD['REF_DB_MOLECULE_NAME'] = refFD['DB_MOLECULE_NAME']
-        pD['REF_DB_MOLECULE_SYNONYMS'] = refFD['DB_MOLECULE_SYNONYMS']
-        pD['REF_DB_SOURCE_ORGANISM'] = refFD['SOURCE_ORGANISM']
-        pD['REF_DB_SOURCE_COMMON_NAME'] = refFD['SOURCE_COMMON_NAME']
-        pD['REF_DB_SOURCE_TAXID'] = refFD['SOURCE_TAXID']
-        pD['REF_DB_SOURCE_STRAIN'] = refFD['SOURCE_STRAIN']
-        pD['REF_DB_GENE_NAME'] = refFD['DB_GENE_NAME']
-        pD['REF_DB_ENZYME_CLASS'] = refFD['DB_MOLECULE_EC']
-
+        if refFD:
+            pD['REF_DB_NAME'] = refFD['DB_NAME']
+            pD['REF_DB_CODE'] = refFD['DB_CODE']
+            displayCode = refFD['DB_ACCESSION']
+            if refFD['DB_ISOFORM'] is not None and len(refFD['DB_ISOFORM']) > 1:
+                displayCode = refFD['DB_ISOFORM']
+            pD['REF_DB_ACCESSION'] = displayCode
+            pD['REF_DB_MOLECULE_NAME'] = refFD['DB_MOLECULE_NAME']
+            pD['REF_DB_MOLECULE_SYNONYMS'] = refFD['DB_MOLECULE_SYNONYMS']
+            pD['REF_DB_SOURCE_ORGANISM'] = refFD['SOURCE_ORGANISM']
+            pD['REF_DB_SOURCE_COMMON_NAME'] = refFD['SOURCE_COMMON_NAME']
+            pD['REF_DB_SOURCE_TAXID'] = refFD['SOURCE_TAXID']
+            pD['REF_DB_SOURCE_STRAIN'] = refFD['SOURCE_STRAIN']
+            pD['REF_DB_GENE_NAME'] = refFD['DB_GENE_NAME']
+            pD['REF_DB_ENZYME_CLASS'] = refFD['DB_MOLECULE_EC']
         #
         if authFD['SOURCE_METHOD'] == "MAN":
             tup = ('true', 'false', 'false')
@@ -480,12 +483,13 @@ class UpdatePolymerEntitySourceDetails(object):
 
         pD.update(authFD)
         pD['CURRENT_AUTH_SELECT_ID'] = authSelectId
-        pD['CURRENT_REF_SELECT_ID'] = refSelectId
+        if refSelectId:
+            pD['CURRENT_REF_SELECT_ID'] = refSelectId
         #
         pD['STRUCT_TITLE'] = self.__sds.getEntryDetail('STRUCT_TITLE')
         pD['CITATION_TITLE'] = self.__sds.getEntryDetail('CITATION_TITLE')
         #
-        if (self.__debug):
+        if (self.__debug and refFD):
             self.__lfh.write("+UpdatePolymerEntitySourceDetails.makeEntityReview() reference sequence feature dictionary contents:\n")
             for k in sorted(refFD.keys()):
                 v = refFD[k]
@@ -494,6 +498,9 @@ class UpdatePolymerEntitySourceDetails(object):
                 for k in sorted(pD.keys()):
                     v = pD[k]
                     self.__lfh.write(" ++++    %-40s   --  %s\n" % (k, v))
+                #
+            #
+        #
         rL = (form_template % pD)
         #
         return rL

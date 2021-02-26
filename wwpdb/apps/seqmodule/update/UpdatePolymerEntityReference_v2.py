@@ -250,7 +250,6 @@ class UpdatePolymerEntityReference(UpdateSequenceDataStoreUtils):
         if len(verList) == 0:
             return authId,{}
         #
-        sL.clear()
         sL.set(seqType="auth", seqInstId=entityId, seqPartId=partId, seqAltId=1, seqVersion=verList[0])
         selectedAuthId = sL.pack()
         return selectedAuthId,self.getFeature("auth", entityId, partId, 1, verList[0])

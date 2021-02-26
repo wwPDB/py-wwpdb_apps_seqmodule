@@ -529,7 +529,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 #
             #
         #
-        self.__warningMsg = self._getNaturalSourceWarningMessage(self.__annotationDict["source_method"].upper(), eelCommentL)
+        self.__warningMsg += self._getNaturalSourceWarningMessage(self.__annotationDict["source_method"].upper(), eelCommentL)
 #       if not self.__warningMsg:
 #           return
 #       #
@@ -722,12 +722,25 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         """
         conflictList = []
         seqPosAuth = 0
+        expressionTagCount = 0
+        foundLongExpressionTag = False
         #
         for alPos,alignTup in enumerate(self._seqAlignList):
             if len(alignTup[authIdx][5]) < 1:
+                if expressionTagCount >= self._longExpressionTagCountCutoff:
+                    foundLongExpressionTag = True
+                #
+                expressionTagCount = 0
                 continue
             #
             cType,comment = self._decodeComment(alignTup[authIdx][5])
+            if comment == "expression tag":
+                expressionTagCount += 1
+            else:
+                if expressionTagCount >= self._longExpressionTagCountCutoff:
+                    foundLongExpressionTag = True
+                #
+                expressionTagCount = 0
             #
             idAuth = self._getResLabelId(seqType=self.__seqTypeAuth, seqInstId=self.__seqInstIdAuth, seqAltId=self.__seqAltIdAuth, \
                          seqVersion=self.__seqVersionAuth, residueCode3=alignTup[authIdx][1], residueLabelIndex=alignTup[authIdx][2], alignIndex=alPos, \
@@ -758,6 +771,12 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             if not inPart:
                 conflictList.extend(self.__wrConflictTableRowOther(alPos, idAuth, alignTup[authIdx][1], comment))
             #
+        #
+        if expressionTagCount >= self._longExpressionTagCountCutoff:
+            foundLongExpressionTag = True
+        #
+        if foundLongExpressionTag:
+            self.__warningMsg += "Entity '" + self._entityId + "' has a long expression tag.<br />"
         #
         return conflictList
 

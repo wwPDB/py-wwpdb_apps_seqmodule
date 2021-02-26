@@ -75,6 +75,9 @@ class AlignmentExport(AlignmentTools):
         #
         eelCommentL = []
         refMap = {}
+        expressionTagCount = 0 
+        foundLongExpressionTag = False
+        #
         for idRef in idListRef:
             refMap[idRef] = self._getUnpackSeqLabel(idRef)
         #
@@ -99,6 +102,15 @@ class AlignmentExport(AlignmentTools):
             #
             if len(alignTup[authIdx][5]) > 0:
                 cType,comment = self._decodeComment(alignTup[authIdx][5])
+                #
+                if comment == "expression tag":
+                    expressionTagCount += 1
+                else:
+                    if expressionTagCount >= self._longExpressionTagCountCutoff:
+                        foundLongExpressionTag = True
+                    #
+                    expressionTagCount = 0 
+                #
                 if sourceType.strip().upper() == "NAT":
                     for ccType in ( "engineered mutation", "expression tag", "linker" ):
                         if comment.find(ccType) != -1:
@@ -140,13 +152,27 @@ class AlignmentExport(AlignmentTools):
                     rptDeleteL.append([str(irow), str(self._entityId), str(tstPartId), self._srd.convertDbNameToResource(featureD["DB_NAME"]), \
                                       featureD["DB_ACCESSION"], featureD["DB_ISOFORM"], tstCompId, tstSeqNum])
                 #
+            else:
+                if expressionTagCount >= self._longExpressionTagCountCutoff:
+                    foundLongExpressionTag = True
+                #
+                expressionTagCount = 0
             #
             irow = len(rptRefL) + 1
             rptRefL.append([str(irow), str(self._entityId), entity_mon_id, entity_seq_num, str(self._entityId), str(tstCompId), \
                             str(tstSeqNum), str(tstPartId)])
             #
         #
-        return rptRefL,rptCommentL,rptCommentModL,rptDeleteL,self._getNaturalSourceWarningMessage(sourceType, eelCommentL)
+        if expressionTagCount >= self._longExpressionTagCountCutoff:
+            foundLongExpressionTag = True
+        #
+        warningMsg = ""
+        if foundLongExpressionTag:
+            warningMsg += "Entity '" + self._entityId + "' has a long expression tag.<br />"
+        #
+        warningMsg += self._getNaturalSourceWarningMessage(sourceType, eelCommentL)
+        #
+        return rptRefL,rptCommentL,rptCommentModL,rptDeleteL,warningMsg
 
     def __alignXyzReport(self, authIdx, idListXyz):
         """ Export all coordinate alignments
