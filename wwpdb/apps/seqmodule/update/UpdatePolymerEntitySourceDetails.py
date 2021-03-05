@@ -447,6 +447,11 @@ class UpdatePolymerEntitySourceDetails(object):
             pD['REF_DB_SOURCE_STRAIN'] = refFD['SOURCE_STRAIN']
             pD['REF_DB_GENE_NAME'] = refFD['DB_GENE_NAME']
             pD['REF_DB_ENZYME_CLASS'] = refFD['DB_MOLECULE_EC']
+        else:
+            for item in ( 'REF_DB_NAME', 'REF_DB_CODE', 'REF_DB_ACCESSION', 'REF_DB_MOLECULE_NAME', 'REF_DB_MOLECULE_SYNONYMS', 'REF_DB_SOURCE_ORGANISM', \
+                          'REF_DB_SOURCE_COMMON_NAME', 'REF_DB_SOURCE_TAXID', 'REF_DB_SOURCE_STRAIN', 'REF_DB_GENE_NAME', 'REF_DB_ENZYME_CLASS' ):
+                pD[item] = ''
+            #
         #
         if authFD['SOURCE_METHOD'] == "MAN":
             tup = ('true', 'false', 'false')

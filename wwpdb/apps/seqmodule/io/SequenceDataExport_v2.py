@@ -153,7 +153,9 @@ class SequenceDataExport(object):
             #
             pdbxPathNext = self.__pI.getModelPdbxFilePath(self.__identifier, fileSource="session", versionId="next")
             logPath = os.path.join(self.__sessionPath, "annot-seqmod-merge.log")
-
+            if os.access(logPath, os.R_OK):
+                os.remove(logPath)
+            #
             self.__lfh.write("\n+SequenceDataExport.applyAssignmentsToModel() starting model target path %s\n" % pdbxPath)
             self.__lfh.write("+SequenceDataExport.applyAssignmentsToModel() model output path %s\n" % pdbxPathNext)
             self.__lfh.write("+SequenceDataExport.applyAssignmentsToModel() assignment file path %s\n" % self.__exportFilePathSession)
@@ -166,6 +168,9 @@ class SequenceDataExport(object):
             dp.exp(pdbxPathNext)
             dp.expLog(logPath)
             # dp.cleanup()
+            if not os.access(pdbxPathNext, os.R_OK):
+                return False
+            #
         except:
             if (self.__verbose):
                 self.__lfh.write("+SequenceDataExport.applyAssignmentsToModel() model update failed for assignment file  %s\n"
