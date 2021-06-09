@@ -18,7 +18,7 @@ import copy, os, sys, time, traceback
 from wwpdb.apps.seqmodule.io.SequenceDataStore import SequenceDataStore
 from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel, SequenceFeature
 from wwpdb.io.file.mmCIFUtil import mmCIFUtil
-from wwpdb.utils.config.ConfigInfo import ConfigInfo
+from wwpdb.utils.config.ConfigInfoApp import ConfigInfoAppCommon
 
 class UpdateSequenceDataStoreUtils(object):
     """
@@ -200,8 +200,8 @@ class UpdateSequenceDataStoreUtils(object):
             return "",entityD
         #
         siteId = str(self._reqObj.getValue("WWPDB_SITE_ID"))
-        cI = ConfigInfo(siteId)
-        ccPath = os.path.join(cI.get("SITE_REFDATA_TOP_CVS_SB_PATH"), cI.get("SITE_REFDATA_PROJ_NAME_CC"))
+        cICommon = ConfigInfoAppCommon(siteId)
+        ccPath = cICommon.get_site_cc_cvs_path()
         #
         sTupL = self.getSequence("auth", entityId, 1, 1, verList[0])
         r1L = []

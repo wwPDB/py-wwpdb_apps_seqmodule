@@ -13,7 +13,7 @@ __version__ = "V0.09"
 
 import copy, os, sys, traceback
 
-from wwpdb.utils.config.ConfigInfo import ConfigInfo
+from wwpdb.utils.config.ConfigInfoApp import ConfigInfoAppCommon
 from wwpdb.apps.seqmodule.align.AlignmentToolUtils import getSeqAlignment,mergeSeqAlignment,codeSeqIndex,decodeIndex,assignConflict
 from wwpdb.apps.seqmodule.io.AlignmentDataStore import AlignmentDataStore
 from wwpdb.utils.align.alignlib import PseudoMultiAlign
@@ -30,10 +30,10 @@ class AlignmentTools(AlignmentDataStore):
         self.__clearLocalVariables()
         self.__local_authLabel = self._authLabel
         #
-        self.__cI = ConfigInfo(siteId=self._siteId, verbose=self._verbose, log=self._lfh)
-        self.__ccTopPath = os.path.join(self.__cI.get("SITE_REFDATA_TOP_CVS_SB_PATH"), self.__cI.get("SITE_REFDATA_PROJ_NAME_CC"))
-        self.__standardList = ( "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", \
-                                "LYS", "MET", "PHE", "PRO", "PYL", "SEC", "SER", "THR", "TRP", "TYR", "VAL", \
+        self.__cICommon = ConfigInfoAppCommon(self._siteId)
+        self.__ccTopPath = self.__cICommon.get_site_cc_cvs_path()
+        self.__standardList = ( "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU",
+                                "LYS", "MET", "PHE", "PRO", "PYL", "SEC", "SER", "THR", "TRP", "TYR", "VAL",
                                 "UNK", "A", "C", "G", "I", "T", "U", "DA", "DC", "DG", "DI", "DT", "DU" )
         #
         self.__parentCompIdMap = {}
