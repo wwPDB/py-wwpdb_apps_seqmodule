@@ -238,6 +238,7 @@ class GetSameSeqAnnotation(object):
         numMap = {}
         authMap = {}
         refMap = {}
+        seq_count = 0
         #
         # Read pdbx_seqtool_mapping_ref category
         #
@@ -276,7 +277,11 @@ class GetSameSeqAnnotation(object):
             if alignTup[1]:
                 numMap[alignTup[1]] = len(alignList)
             #
-            if (alignTup[0] != self.__gapSymbol) and alignTup[1]:
+            if (alignTup[0] != self.__gapSymbol) and (alignTup[1] != self.__gapSymbol):
+                if self.__threeLetterCodeSeqList[seq_count] != alignTup[0]:
+                    return {}
+                #
+                seq_count += 1
                 authMap[alignTup[0] + "_" + alignTup[1]] = len(alignList)
             #
             if (alignTup[2] != self.__gapSymbol) and alignTup[3] and (alignTup[4] != self.__gapSymbol):
@@ -285,15 +290,8 @@ class GetSameSeqAnnotation(object):
             alignList.append(alignTup)
             threeLetterSeqList.append((alignTup[0], alignTup[6]))
         #
-        if (not alignList) or (len(threeLetterSeqList) != len(self.__threeLetterCodeSeqList)):
+        if (not alignList) or (seq_count  != len(self.__threeLetterCodeSeqList)):
             return {}
-        #
-        for i in range(0, len(threeLetterSeqList)):
-            if str(threeLetterSeqList[i][0]) != str(self.__threeLetterCodeSeqList[i]):
-                if str(threeLetterSeqList[i][1]) != str(self.__oneLetterCodeSeqList[i]):
-                    return {}
-                #
-            #
         #
         for partTup in partsTaxIdInfo:
             if (not partTup[1] in numMap) or (not partTup[2] in numMap):

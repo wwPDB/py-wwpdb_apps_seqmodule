@@ -23,6 +23,7 @@
 # 15-May-2014  jdw add status field for instance id with xyz sequence groups
 # 22-May-2014  jdw add method to provide entry details --
 # 30-Aug-2017  zf  change self.__reqObj.getSummaryAlignList & self.__reqObj.getSummarySelectList to use latest UI input values
+# 29-Jun-2021  zf  added self.__checkPolyAlaAssignment()
 ##
 """
 Controlling class for the production of data for the summary sequence view.
@@ -208,12 +209,17 @@ class SummaryView(object):
             self.__lfh.write("+SummaryView.__loadSummary() group list is %r\n" % gIdList)
             self.__lfh.write("+SummaryView.__loadSummary() starting selection list %r\n" % self.__summarySeqSelectList)
             self.__lfh.write("+SummaryView.__loadSummary() starting alignment list %r\n" % self.__summarySeqAlignList)
+        #
 
+        polyAlaCaseList = []
         for gId in gIdList:
             #
             summaryDataObj[gId] = {}
             #
-            dT = self.__buildAuthSection(groupId=gId, op=op)
+            dT,polyALA_assignment = self.__buildAuthSection(groupId=gId, op=op)
+            if polyALA_assignment > 0:
+                polyAlaCaseList.append(( gId, polyALA_assignment ))
+            #
             summaryDataObj[gId]['auth'] = dT
 
             rL = self.__buildReferenceSection(groupId=gId)
@@ -241,6 +247,19 @@ class SummaryView(object):
             #
             warningMsg += "Part range errors:<br />\n" + self.__partRangeErrorMsg
         #
+        if polyAlaCaseList:
+            for polyAlaCaseTupL in polyAlaCaseList:
+                if warningMsg:
+                    warningMsg += "<br />\n"
+                #
+                warningMsg += "Entity [" + polyAlaCaseTupL[0] + "]"
+                if polyAlaCaseTupL[1] == 1:
+                    warningMsg += " is composed only of poly-ALA.<br />\n"
+                else:
+                    warningMsg += " has stretches of poly-ALA.<br />\n"
+                #
+            #
+        #
         return summaryDataObj,warningMsg
 
     def __buildAuthSection(self, groupId=None, op='load'):
@@ -253,7 +272,6 @@ class SummaryView(object):
         """
 
         seqLabel = SequenceLabel()
-        seqFeature = SequenceFeature()
 
         taxD = {}
         rowIdList = []
@@ -275,8 +293,17 @@ class SummaryView(object):
 
         verList = self.__sds.getVersionIds(seqId0, partId=partId0, altId=altId, dataType="sequence", seqType='auth')
 
+        first = True
+        polyALA_assignment = 0
         for ver in verList:
             seqAuth = self.__sds.getSequence(seqId=seqId0, seqType='auth', partId=partId0, altId=altId, version=ver)
+            if first:
+                authFObj = self.__sds.getFeatureObj(seqId0, 'auth', partId=partId0, altId=altId, version=ver)
+                polymerTypeCode = authFObj.getPolymerType()
+                if polymerTypeCode == 'AA':
+                    polyALA_assignment = self.__checkPolyAlaAssignment(seqAuth)
+                #
+            #
             seqLabel.set(seqType='auth', seqInstId=seqId0, seqPartId=partId0, seqAltId=altId, seqVersion=ver)
             seqAuthId = seqLabel.pack()
             rowIdList.append(seqAuthId)
@@ -298,15 +325,15 @@ class SummaryView(object):
             rowDataDict['ROW_DETAIL_STRING'] = ''
             rowDataDict.update(detailsD[ver])
             rowDataDictList.append(rowDataDict)
-
+            first = False
         #
         dT = {}
         dT['ROW_IDS'] = rowIdList
         dT['ROW_STATUS'] = rowStatusList
         dT['ROW_DATA_DICT'] = rowDataDictList
         dT['ENTITY_NUM_PARTS'] = len(partIdList)
-
-        return dT
+        #
+        return dT,polyALA_assignment
 
     def __buildCoordinateSection(self, groupId=None):
         """ Assemble the data content for the coordinate sequence summary view.
@@ -556,6 +583,31 @@ class SummaryView(object):
             fOut.clear()
         #
         return detailsD
+
+    def __checkPolyAlaAssignment(self, seqAuth):
+        """ Check if the sequence contains 10 or more consecutive ALA residues
+        """
+        has_consecutive_ALA = False
+        count = 0
+        for seqTupL in seqAuth:
+            if seqTupL[0] == 'ALA':
+                count += 1
+            else:
+                if count > 9:
+                    has_consecutive_ALA = True
+                #
+                count = 0;
+            #
+        #
+        if count > 9:
+            has_consecutive_ALA = True
+        #
+        if count == len(seqAuth):
+            return 1
+        elif has_consecutive_ALA:
+            return 2
+        #
+        return 0
 
     def __markupAuthorAssignments(self, entityId):
         """  Markup the author provided reference assignments -

@@ -67,13 +67,30 @@ def fetchUniProt(idTupleList=[], filePath=None, verbose=False, log=sys.stderr):
             #
             if (idTuple[0] in multiResultDicts) and multiResultDicts[idTuple[0]]:
                 found = False
+                diff = -1
                 for retD in multiResultDicts[idTuple[0]]:
                     if ("begin" not in retD) or ("end" not in retD) or (idTuple[1] < retD["begin"]) or (idTuple[2] > retD["end"]):
                         continue
                     #
-                    found = True
-                    vd = retD
-                    break
+                    if diff == -1:
+                        found = True
+                        vd = retD
+                        try:
+                            diff = (int(idTuple[1]) - int(retD["begin"])) + (int(retD["end"]) - int(idTuple[2]))
+                        except:
+                            pass
+                        #
+                    else:
+                        try:
+                            diff1 = (int(idTuple[1]) - int(retD["begin"])) + (int(retD["end"]) - int(idTuple[2]))
+                            if diff1 < diff:
+                                diff = diff1
+                                vd = retD
+                            #
+                        except:
+                            pass
+                        #
+                    #
                 #
                 if (not found) and ("all" in multiResultDicts[idTuple[0]][-1]) and (multiResultDicts[idTuple[0]][-1]["all"] == "yes"):
                     vd = multiResultDicts[idTuple[0]][-1]

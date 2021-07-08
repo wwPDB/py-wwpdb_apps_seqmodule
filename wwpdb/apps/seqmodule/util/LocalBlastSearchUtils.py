@@ -499,10 +499,12 @@ class LocalBlastSearchUtils(object):
             if len(idCodeList) > 0:
                 unpD = fetchUniProt(idTupleList=idCodeList, verbose=self.__verbose, log=self.__lfh)
                 for hit in searchHitList:
+                    hit['non_isoform_score'] = 1
                     acId = None
                     isIso = False
                     if 'db_isoform' in hit and (len(hit['db_isoform']) > 0) and (hit['db_isoform'] not in ['.', '?']):
                         acId = hit['db_isoform']
+                        hit['non_isoform_score'] = 0
                         isIso = True
                     elif 'db_accession' in hit:
                         acId = hit['db_accession']
@@ -694,7 +696,7 @@ class LocalBlastSearchUtils(object):
                 cutoff_identity_score = lowest_identity_score_with_taxid_match
             #
         #
-        hitList.sort(key=itemgetter('identity_score', 'taxid_match', 'code_score', 'db_score'))
+        hitList.sort(key=itemgetter('identity_score', 'taxid_match', 'code_score', 'db_score', 'non_isoform_score'))
         #
         first = True
         for i, hit in enumerate(hitList):

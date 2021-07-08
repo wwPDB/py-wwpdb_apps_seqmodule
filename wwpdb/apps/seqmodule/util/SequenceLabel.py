@@ -85,7 +85,7 @@ class SequenceFeatureMap(object):
                         updateFlag = True
                     #
                 elif refFD[mapTup[1]] is not None and len(refFD[mapTup[1]]) > 1:
-                    if refFD[mapTup[1]].strip().upper() != 'UNCHARACTERIZED PROTEIN':
+                    if (refFD[mapTup[1]].strip().upper() != 'UNCHARACTERIZED PROTEIN') and (refFD[mapTup[1]].strip().upper() != 'PREDICTED PROTEIN'):
                         authFD[mapTup[0]] = refFD[mapTup[1]]
                         updateFlag = True
                     #

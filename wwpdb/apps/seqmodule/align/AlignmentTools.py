@@ -1182,10 +1182,10 @@ class AlignmentTools(AlignmentDataStore):
         if (defaultComment == "insertion") or (defaultComment == "modified residue") or ((len(authComment) < 1) and (len(refComment) < 1)):
             return "DEFAULT:" + defaultComment
         #
-        if defaultComment in ( "engineered mutation", "conflict", "variant", "microheterogeneity" ):
-            if aComment in ( "engineered mutation", "conflict", "variant", "microheterogeneity" ):
+        if defaultComment in ( "engineered mutation", "conflict", "variant", "microheterogeneity", "linker" ):
+            if aComment in ( "engineered mutation", "conflict", "variant", "microheterogeneity", "linker" ):
                 return authComment
-            elif rComment in ( "engineered mutation", "conflict", "variant", "microheterogeneity" ):
+            elif rComment in ( "engineered mutation", "conflict", "variant", "microheterogeneity", "linker" ):
                 return refComment
             #
         #
