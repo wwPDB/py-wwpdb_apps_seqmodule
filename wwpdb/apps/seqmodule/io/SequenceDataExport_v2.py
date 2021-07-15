@@ -345,6 +345,7 @@ class SequenceDataExport(object):
         warningMsg = ""
         natureSourceTaxIds = {}
         #
+        polyAlaCaseList = []
         for gId in gIdList:
             #
             # Get seqIds in group -
@@ -363,6 +364,7 @@ class SequenceDataExport(object):
             #
             sourceInfo = ""
             idAuthSeq = ""
+            first = True
             if gId in self.__I["auth"]:
                 if (self.__verbose):
                     self.__lfh.write("+SequenceDataExport.__exportSeqMapping() entity group %s author sequence s list %r\n" % \
@@ -387,6 +389,14 @@ class SequenceDataExport(object):
                     if (self.__verbose):
                         self.__lfh.write("+SequenceDataExport.__exportSeqMapping() from entity group %s exporting author sequence %s\n" % (gId, idAuthSeq))
                     #
+                    if first and ("POLYMER_TYPE" in fD) and (fD["POLYMER_TYPE"] == "AA"):
+                        seqAuth = self.__sds.getSequence(seqId=gId, seqType="auth", partId=partId, altId=altId, version=ver)
+                        polyALA_assignment = self.__checkPolyAlaAssignment(seqAuth)
+                        if polyALA_assignment > 0:
+                            polyAlaCaseList.append(( gId, polyALA_assignment ))
+                        #
+                    #
+                    first = False
                 #
             #
             if not idAuthSeq:
@@ -484,6 +494,18 @@ class SequenceDataExport(object):
                 warningMsg += "source taxonomy Id '" + k + "'.<br />\n"
             #
         #
+        if polyAlaCaseList:
+            for polyAlaCaseTupL in polyAlaCaseList:
+                if warningMsg:
+                    warningMsg += "<br />\n"
+                #
+                warningMsg += "Entity [" + polyAlaCaseTupL[0] + "]"
+                if polyAlaCaseTupL[1] == 1:
+                    warningMsg += " is composed only of poly-ALA.<br />\n"
+                else:
+                    warningMsg += " has stretches of poly-ALA.<br />\n"
+                #
+            #
         # ref FeatureD ---
         rptRefDbL = self.__refDdReport(refFeatureD)
         #rptDeleteL = self.__deletionReport(refFeatureD, allRefSeqIdxD)
@@ -545,6 +567,31 @@ class SequenceDataExport(object):
             return False, numConflicts, conflictList, warningMsg
 
         return True, numConflicts, conflictList, warningMsg
+
+    def __checkPolyAlaAssignment(self, seqAuth):
+        """ Check if the sequence contains 10 or more consecutive ALA residues
+        """
+        has_consecutive_ALA = False
+        count = 0
+        for seqTupL in seqAuth:
+            if seqTupL[0] == "ALA":
+                count += 1
+            else:
+                if count > 9:
+                    has_consecutive_ALA = True
+                #
+                count = 0;
+            #
+        #
+        if count > 9:
+            has_consecutive_ALA = True
+        #
+        if count == len(seqAuth):
+            return 1
+        elif has_consecutive_ALA:
+            return 2
+        #
+        return 0
 
     def __refDdReport(self, refFeatureD):
         """  Return a list of content rows for reference sequence database accession report --

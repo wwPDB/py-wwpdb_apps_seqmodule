@@ -473,6 +473,7 @@ class LocalBlastSearchUtils(object):
         if self.__seqType in ['polypeptide(L)', 'polypeptide(D)', 'polypeptide']:
             idCodeList = []
             for hit in searchHitList:
+                hit['non_isoform_score'] = 1
                 if 'db_accession' in hit and 'db_name' in hit:
                     try:
                         start = int(str(hit["hitFrom"]))
@@ -499,7 +500,6 @@ class LocalBlastSearchUtils(object):
             if len(idCodeList) > 0:
                 unpD = fetchUniProt(idTupleList=idCodeList, verbose=self.__verbose, log=self.__lfh)
                 for hit in searchHitList:
-                    hit['non_isoform_score'] = 1
                     acId = None
                     isIso = False
                     if 'db_isoform' in hit and (len(hit['db_isoform']) > 0) and (hit['db_isoform'] not in ['.', '?']):
@@ -541,6 +541,7 @@ class LocalBlastSearchUtils(object):
             hitList = searchHitList
             idCodeList = []
             for hit in hitList:
+                hit['non_isoform_score'] = 1
                 if 'db_accession' in hit:
                     idCodeList.append(hit['db_accession'])
                 #
@@ -625,6 +626,9 @@ class LocalBlastSearchUtils(object):
         lowest_identity_score_with_taxid_match = 101
         lowest_identity_score_with_refid_match = 101
         for i, hit in enumerate(hitList):
+            if 'non_isoform_score' not in hit:
+                hit['non_isoform_score'] = 1
+            #
             if fullScoreFlag or ("identity_score" not in hit):
                 hit['identity_score'] = (float(hit['identity']) - float(hit['gaps'])) * 100.0 / float(hit['query_length'])
                 if self.__debug:
