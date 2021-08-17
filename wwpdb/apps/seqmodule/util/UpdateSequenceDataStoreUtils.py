@@ -413,10 +413,15 @@ class UpdateSequenceDataStoreUtils(object):
                 #
             #
             if (len(rList) > 0) and (not selfRefFlag):
-                self.__seqLabel.set(seqType="ref", seqInstId=sId, seqPartId=partNo, seqAltId=len(rList), seqVersion=1)
-                self.__defSelList.append(self.__seqLabel.pack())
-                ref_label[partNo] = [ self.__seqLabel.pack() ]
-                self._entityAlignInfoMap[sId]["alignids"].append(self.__seqLabel.pack())
+                if ("statistics" in rList[-1]) and (rList[-1]["statistics"][2] > 0.899999):
+                    self.__seqLabel.set(seqType="ref", seqInstId=sId, seqPartId=partNo, seqAltId=len(rList), seqVersion=1)
+                    self.__defSelList.append(self.__seqLabel.pack())
+                    ref_label[partNo] = [ self.__seqLabel.pack() ]
+                    self._entityAlignInfoMap[sId]["alignids"].append(self.__seqLabel.pack())
+                else:
+                    self.__defSelList.append("selfref_" + str(sId) + "_" + str(partNo))
+                    self._entityAlignInfoMap[sId]["alignids"].append("selfref_" + str(sId) + "_" + str(partNo))
+                #
             else:
                 self.__defSelList.append("selfref_" + str(sId) + "_" + str(partNo))
                 self._entityAlignInfoMap[sId]["alignids"].append("selfref_" + str(sId) + "_" + str(partNo))

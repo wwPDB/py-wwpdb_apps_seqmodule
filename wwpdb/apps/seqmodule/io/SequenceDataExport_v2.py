@@ -689,6 +689,7 @@ class SequenceDataExport(object):
                        ("SOURCE_STRAIN", "source_strain"),
                        ("SOURCE_COMMON_NAME", "source_common_name"),
                        ("SOURCE_VARIANT", "variant"),
+                       ("POLYMER_LINKING_TYPE", "entity_polymer_type"),
                        ("ENTITY_ENZYME_CLASS", "entity_enzyme_class"),
                        ("ENTITY_FRAGMENT_DETAILS", "entity_fragment_details"),
                        ("ENTITY_MUTATION_DETAILS", "entity_mutation_details"),

@@ -648,7 +648,13 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         uds.set("title", eD["STRUCT_TITLE"])
         uds.set("pdbid", eD["PDB_ID"])
         uds.set("rev-allalignids", self.__alignIdList)
-        uds.set("rev-selectids", self.__selectedIdList)
+        if len(self._selfRefPartIdList) > 0:
+            selectedIdList = copy.deepcopy(self.__selectedIdList)
+            selectedIdList.extend(self._selfRefPartIdList)
+            uds.set("rev-selectids", selectedIdList)
+        else:
+            uds.set("rev-selectids", self.__selectedIdList)
+        #
         uds.serialize()
 
     def __removeFile(self, filePath):

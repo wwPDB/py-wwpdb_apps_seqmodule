@@ -156,16 +156,20 @@ class LocalBlastSearchUtils(object):
     def __getReSortHitInfo(self, inD):
         """
         """
-        outD = {}
-        for partNum, fD in enumerate(self.__entityD['PART_LIST'], start=1):
-            partId = str(partNum)
-            if partId not in inD:
-                continue
+        try:
+            outD = {}
+            for partNum, fD in enumerate(self.__entityD['PART_LIST'], start=1):
+                partId = str(partNum)
+                if partId not in inD:
+                    continue
+                #
+                start_index,hitList = self.__sortHitList(inD[partId], fD['SOURCE_TAXID'], False)
+                outD[partId] = hitList
             #
-            start_index,hitList = self.__sortHitList(inD[partId], fD['SOURCE_TAXID'], False)
-            outD[partId] = hitList
+            return outD
+        except:
+            return {}
         #
-        return outD
 
     def __runBlastSearch(self):
         """ Perform sequence search for each entity part in the input feature list described in the input dictionary.

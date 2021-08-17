@@ -6,6 +6,7 @@
 #   18-Apr-2014  jdw   add option for enity consolidation --
 #    7-Aug-2015  jdw   upper case input one-letter-code sequence -
 #    7-Sep-2017  zf    modified __updatePolymerEntityPartitions() to remove extra incorrect fragment assignment(s)
+#    7-Aug-2021  zf    add option for changing _entity_poly.type
 #
 ##
 """
@@ -82,9 +83,10 @@ class UpdatePolymerEntityPartitions(object):
             <input type="hidden" name="numparts" value="%d" />
 
             <table>
-            <tr> <th>Entity Sequence</th></tr>
+            <tr><th>Entity Sequence</th><th>Entity Type</th></tr>
             <tr>
             <td style="text-align: left; font-family: monospace; white-space: pre;"><span id="entity_seq_1"  data-ief-edittype="textarea-mono" class="ief">%s</span></td>
+            <td><span id="entity_type_1" class="%s" data-ief-edittype="select" data-ief-selectvalues='%s'>%s</span></td>
             </tr>
             </table>
             <br />
@@ -123,20 +125,27 @@ class UpdatePolymerEntityPartitions(object):
         optList = ['', 'Biological sequence']
         #optSel = ['false' for opt in optList]
         #
+        entityTypeList = [ 'polypeptide(L)', 'polypeptide(D)', 'polydeoxyribonucleotide', 'polyribonucleotide', \
+                           'polydeoxyribonucleotide/polyribonucleotide hybrid', 'cyclic-pseudo-peptide', 'peptide nucleic acid', 'other' ]
         #
-        seq_length, seq1, partD = self.__getEntityPartDetails(entityId)
+        seq_length, seq1, partD, entityType = self.__getEntityPartDetails(entityId)
         if (self.__verbose):
             self.__lfh.write("+UpdatePolymerEntityPartitions.makePolymerEntityPartEditForm() entity partition starting data\n")
             self.__lfh.write(" Sequence:\n%s\n" % seq1)
             for k, v in partD.items():
                 self.__lfh.write(" part %r  data:  %r\n" % (k, v))
-
+            #
+        #
         partIdList = list(partD.keys())
         partIdList.sort(key=int)
         #
+        entityDisplayClass = "ief"
+        if entityType == self.__placeHolderValue:
+            entityDisplayClass = "ief greyedout"
         #
+        entityTypeTxt = self.__formatSelectList(entityTypeList, entityType)
         oL = []
-        oL.append(top_form_template % (entryId, entityId, self.__sessionId, entityId, len(partIdList), seq1))
+        oL.append(top_form_template % (entryId, entityId, self.__sessionId, entityId, len(partIdList), seq1, entityDisplayClass, entityTypeTxt, entityType))
         #
         for partId in partIdList:
             pIdT, seqBeg, seqEnd, pType, taxIdT = partD[partId]
@@ -151,7 +160,7 @@ class UpdatePolymerEntityPartitions(object):
             oL.append('<td><span id="p_%d_seqbegin" class="ief">%s</span></td>' % (partId, seqBeg))
             oL.append('<td><span id="p_%d_seqend"   class="ief">%s</span></td>' % (partId, seqEnd))
             jTxt = self.__formatSelectList(optList, pType)
-            oL.append('<td><span id="p_%d_seqtype"  class="ief" data-ief-edittype="select" data-ief-selectvalues=\'%s\'>%s</span>' % (partId, jTxt, pType))
+            oL.append('<td><span id="p_%d_seqtype"  class="ief" data-ief-edittype="select" data-ief-selectvalues=\'%s\'>%s</span></td>' % (partId, jTxt, pType))
             oL.append('</tr>')
 
         partId = int(partIdList[-1])
@@ -192,6 +201,7 @@ class UpdatePolymerEntityPartitions(object):
             totalNumParts = int(str(self.__reqObj.getValue("total_numparts")))
             entityId = self.__reqObj.getValue("entityid")
             seq1 = str(self.__reqObj.getValue("entity_seq_1")).upper().strip()
+            entity_type_1 = str(self.__reqObj.getValue("entity_type_1")).strip()
             #
             mergeEntityId = self.__reqObj.getValue("merge_instance_1")
             if mergeEntityId != self.__placeHolderValue:
@@ -217,7 +227,7 @@ class UpdatePolymerEntityPartitions(object):
                 #
             #
             self.__lfh.write("+UpdatePolymerEntityPartitions.polymerEntityPartEditFormResponder() pD=%d\n" % len(pD))
-            seq_length, seq1Org, pOrgD = self.__getEntityPartDetails(entityId=entityId, numExtra=(totalNumParts - numParts))
+            seq_length, seq1Org, pOrgD, entityType = self.__getEntityPartDetails(entityId=entityId, numExtra=(totalNumParts - numParts))
             #
             if seq1 != seq1Org:
                 self.__lfh.write("+UpdatePolymerEntityPartitions.polymerEntityPartEditFormResponder() sequence has changed\n")
@@ -227,6 +237,10 @@ class UpdatePolymerEntityPartitions(object):
             else:
                 updateSequenceFlag = False
                 self.__lfh.write("+UpdatePolymerEntityPartitions.polymerEntityPartEditFormResponder() sequence is unchanged\n")
+            #
+            updatePolymerTypeFlag = False
+            if entity_type_1 and (entity_type_1 != entityType):
+                updatePolymerTypeFlag = True
             #
             updatePartitionFlag = False
             #for partId in range(1, numParts + 8):
@@ -243,13 +257,16 @@ class UpdatePolymerEntityPartitions(object):
                     break
                 #
             #
-            if updatePartitionFlag or updateSequenceFlag:
+            if updatePartitionFlag or updatePolymerTypeFlag or updateSequenceFlag:
                 if (self.__verbose):
                     self.__lfh.write("+UpdatePolymerEntityPartitions.polymerEntityPartEditFormResponder() source data for entity %s updated with %r\n" % (entityId, pD))
-                self.__updatePolymerEntityPartitions(entityId=entityId, partD=pD, seq1=seq1, updateSequenceFlag=updateSequenceFlag)
+                self.__updatePolymerEntityPartitions(entityId=entityId, partD=pD, seq1=seq1, polymerType=entity_type_1, updateSequenceFlag=updateSequenceFlag, \
+                                                     updatePolymerTypeFlag=updatePolymerTypeFlag)
             else:
                 if (self.__verbose):
                     self.__lfh.write("+UpdatePolymerEntityPartitions.polymerEntityPartEditFormResponder() form values unchanged\n")
+                #
+            #
         except:
             self.__lfh.write("+UpdatePolymerEntityPartitions.sourceEditResponder() failing\n")
             traceback.print_exc(file=self.__lfh)
@@ -476,6 +493,9 @@ class UpdatePolymerEntityPartitions(object):
                 self.__sds.setFeatureObj(fObj, seqId0, seqType='auth', partId=partId, altId=1, version=nextVer)
                 if (self.__verbose):
                     self.__lfh.write("+UpdatePolymerEntityPartitions.polymerEntityPartEditFormResponder() entity %s new part %d with version %d\n" % (entityId, partId, nextVer))
+                #
+            #
+        #
         self.__sds.serialize()
         return True
 
@@ -497,6 +517,7 @@ class UpdatePolymerEntityPartitions(object):
         seqId0 = entityId
 
         polymerTypeCode = 'AA'
+        entityType = self.__placeHolderValue
         #
         partIdList = self.__sds.getPartIds(seqId0, dataType="sequence", seqType="auth")
 
@@ -508,6 +529,12 @@ class UpdatePolymerEntityPartitions(object):
                 seqFeature.set(pfD)
                 pId, pSeqBegin, pSeqEnd, pType = seqFeature.getAuthPartDetails()
                 polymerTypeCode = seqFeature.getPolymerType()
+                if entityType == self.__placeHolderValue:
+                    polymerType = seqFeature.getPolymerLinkingType()
+                    if polymerType:
+                        entityType = polymerType
+                    #
+                #
                 taxId = seqFeature.getSourceTaxId()
                 pD[pId] = (pId, pSeqBegin, pSeqEnd, pType, taxId)
                 lastPart = pId
@@ -526,9 +553,9 @@ class UpdatePolymerEntityPartitions(object):
             r3List.append(r3)
         seq1 = self.__srd.cnvList3to1WithModsFormatted(r3List, maxLine=60)
         #
-        return len(r3List), seq1, pD
+        return len(r3List), seq1, pD, entityType
 
-    def __updatePolymerEntityPartitions(self, entityId, partD, seq1=None, updateSequenceFlag=False):
+    def __updatePolymerEntityPartitions(self, entityId, partD, seq1=None, polymerType=None, updateSequenceFlag=False, updatePolymerTypeFlag=False):
         """ Create new versions of sequence and all related parts --
         """
         if (self.__verbose):
@@ -546,6 +573,7 @@ class UpdatePolymerEntityPartitions(object):
             #
             if ((seqPartType == self.__placeHolderValue) or (seqBeg == self.__placeHolderValue) or (seqEnd == self.__placeHolderValue)):
                 continue
+            #
             seqNumBeg = int(seqBeg)
             seqNumEnd = int(seqEnd)
             seqBegMin = min(seqBegMin, seqNumBeg)
@@ -557,12 +585,13 @@ class UpdatePolymerEntityPartitions(object):
                 spt = 'expression tag'
             elif seqPartType in ['linker']:
                 spt = 'linker'
+            #
             pD[pId] = (pId, seqNumBeg, seqNumEnd, spt)
             nP += 1
         #
-        #
         if (self.__verbose):
             self.__lfh.write("\n\n+UpdatePolymerEntityPartitions.__updatePolymerEntityPartitions() entity %s seqBegMin %d   seqEndMax %d\n" % (entityId, seqBegMin, seqEndMax))
+        #
 
         tU = TaxonomyUtils(siteId=self.__siteId, verbose=self.__verbose, log=self.__lfh)
 
@@ -582,16 +611,19 @@ class UpdatePolymerEntityPartitions(object):
         vL = self.__sds.getVersionIds(seqId0, partId=1, altId=1, dataType="sequence", seqType="auth")
         if len(vL) < 1:
             return False
-
+        #
         curVer = int(str(vL[0]))
         nextVer = curVer + 1
-        #
+        self.__lfh.write("+UpdatePolymerEntityPartitions.__updatePolymerEntityPartitions() nextVer=%d\n" % nextVer)
         #
         seqIdxNext = []
         if updateSequenceFlag:
             # First update the sequences for each part IF the sequence has changed -
             authSelectId, authSL, authFdObj = self.__getCurrentAuthSelection(entityId, partId=1)
             polyTypeCode = authFdObj.getPolymerType()
+            if updatePolymerTypeFlag:
+                polyTypeCode = self.__srd.getPolymerTypeCode(polymerType)
+            #
             (r1L, r3L) = self.__srd.parseSequence(str(seq1).upper(), polyTypeCode)
             #
             #  Handle any change in sequence length at the endpoints --
@@ -607,9 +639,10 @@ class UpdatePolymerEntityPartitions(object):
                 comment = self.__getAuthSeqComment(ir, pD, seqBegMin, seqEndMax)
                 seqIdxNext.append((r3, str(ir), comment, ir, self.__srd.cnv3To1(r3), r3))
                 ir += 1
+            #
             for pId in pD.keys():
                 self.__sds.setSequence(seqIdxNext, seqId0, 'auth', partId=pId, altId=1, version=nextVer)
-
+            #
         #
         for partId, pTup in partD.items():
             authSelectId, authSL, authFdObj = self.__getCurrentAuthSelection(entityId, partId=partId)
@@ -630,9 +663,14 @@ class UpdatePolymerEntityPartitions(object):
                         authFdObj.setSource(organism=nL[0], taxid=taxId)
                     else:
                         authFdObj.setTaxId(taxid=taxId)
-                authFdObj.setAuthPartDetails(partId, seqBeg, seqEnd, seqPartType)
-                self.__sds.setFeatureObj(authFdObj, seqId0, seqType='auth', partId=partId, altId=1, version=nextVer)
+                    #
                 #
+                authFdObj.setAuthPartDetails(partId, seqBeg, seqEnd, seqPartType)
+                if updatePolymerTypeFlag:
+                    authFdObj.setPolymerLinkingType(polymerType)
+                    authFdObj.setPolymerType(self.__srd.getPolymerTypeCode(polymerType))
+                #
+                self.__sds.setFeatureObj(authFdObj, seqId0, seqType='auth', partId=partId, altId=1, version=nextVer)
                 #
                 if not updateSequenceFlag:
                     #  Update the annotation of the prior sequence ...
@@ -648,18 +686,18 @@ class UpdatePolymerEntityPartitions(object):
                 #  Adding a new entity part ---
                 pId, seqBeg, seqEnd, seqPartType, taxId = pTup
                 if (self.__verbose):
-                    self.__lfh.write(
-                        "+UpdatePolymerEntityPartitions.__updatePolymerEntityPartitions() Entity %s part %d new assignment form values %s\n" %
+                    self.__lfh.write("+UpdatePolymerEntityPartitions.__updatePolymerEntityPartitions() Entity %s part %d new assignment form values %s\n" % \
                         (entityId, partId, pTup))
                 #
                 if ((seqPartType == self.__placeHolderValue) or (seqBeg == self.__placeHolderValue) or (seqEnd == self.__placeHolderValue)):
                     continue
-
                 #
                 if ((taxId is None) or (taxId == self.__placeHolderValue)):
                     taxId = ''
                     if (self.__verbose):
                         self.__lfh.write("+UpdatePolymerEntityPartitions.__updatePolymerEntityPartitions() Handle missing taxid for entity %s part %s\n" % (entityId, pId))
+                    #
+                  
                 #
                 # Update the sequence ... if it has not already been done above.
                 #
@@ -669,6 +707,7 @@ class UpdatePolymerEntityPartitions(object):
                     for sT in seqIdx:
                         comment = self.__getAuthSeqComment(sT[3], pD, seqBegMin, seqEndMax)
                         sTupL.append((sT[0], sT[1], comment, sT[3], sT[4], sT[5]))
+                    #
                     self.__sds.setSequence(sTupL, seqId0, seqType='auth', partId=partId, altId=1, version=nextVer)
                 #
                 # Update features ... Using data from the principal part.
@@ -681,7 +720,11 @@ class UpdatePolymerEntityPartitions(object):
                     fObj.setSource(organism=nL[0], taxid=taxId)
                 else:
                     fObj.setTaxId(taxid=taxId)
+                #
                 fObj.setAuthPartDetails(partId, seqBeg, seqEnd, seqPartType)
+                if updatePolymerTypeFlag:
+                    fObj.setPolymerLinkingType(polymerType)
+                    fObj.setPolymerType(self.__srd.getPolymerTypeCode(polymerType))
                 #
                 #  JDW also need to update any other entity-level details ---
                 #
