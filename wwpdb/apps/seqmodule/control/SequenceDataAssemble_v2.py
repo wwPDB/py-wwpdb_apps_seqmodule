@@ -791,7 +791,6 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         return rList,rList,[]
 
-    @snoop
     def __runSameSeqAnnotationSearch(self, entityTupList):
         """ Search same sequence annotation information from processed entries
         """
@@ -898,6 +897,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         return {}
 
+    @snoop
     def runMultiBlastReferenceSearches(self, dataList, procName, optionsD, workingDir):
         """ Multiple blast reference sequence search processing API
         """
