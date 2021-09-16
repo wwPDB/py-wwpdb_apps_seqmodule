@@ -45,6 +45,7 @@ from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceDat
 from rcsb.utils.multiproc.MultiProcUtil import MultiProcUtil
 from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
+import snoop
 
 class LocalBlastSearchUtils(object):
     """ Execute search service and assemble reference sequence data.
