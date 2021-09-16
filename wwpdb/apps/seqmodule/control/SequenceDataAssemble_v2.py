@@ -53,6 +53,9 @@ from rcsb.utils.multiproc.MultiProcUtil import MultiProcUtil
 from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
 from wwpdb.utils.session.UtilDataStore import UtilDataStore
+import snoop
+snoop.install(out='/nfs/msd/services/onedep_production/val_test/snoop.log')
+
 
 class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
     """
@@ -591,6 +594,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         return True
 
+    @snoop
     def __doReferenceSearch(self, entityD, entityIdList):
         """  Perform the reference sequence database search using the input entity dictionary.
              Store matching results in the local session directory.
@@ -787,6 +791,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         return rList,rList,[]
 
+    @snoop
     def __runSameSeqAnnotationSearch(self, entityTupList):
         """ Search same sequence annotation information from processed entries
         """
