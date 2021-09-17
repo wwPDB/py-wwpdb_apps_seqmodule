@@ -45,7 +45,6 @@ from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceDat
 from rcsb.utils.multiproc.MultiProcUtil import MultiProcUtil
 from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
-import snoop
 
 class LocalBlastSearchUtils(object):
     """ Execute search service and assemble reference sequence data.
@@ -91,7 +90,6 @@ class LocalBlastSearchUtils(object):
                                             'db_length', 'db_description', 'db_isoform_description']
         #
 
-    @snoop
     def searchSeqReference(self, dataSetId=None, entityD=None, authRefList=()):
         """ Reference sequence search process for the entity described in the input dictionary.
             Return a list of hitLists for matching reference sequences extracted from the BLAST search results
@@ -116,7 +114,6 @@ class LocalBlastSearchUtils(object):
         #
         return rD
 
-    @snoop
     def __getExistingSearchResult(self):
         """ Get prvious blast search result
         """
@@ -170,7 +167,6 @@ class LocalBlastSearchUtils(object):
         #
         return outD
 
-    @snoop
     def __runBlastSearch(self):
         """ Perform sequence search for each entity part in the input feature list described in the input dictionary.
         """

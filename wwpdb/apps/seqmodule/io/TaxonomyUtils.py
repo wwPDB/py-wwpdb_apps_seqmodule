@@ -30,7 +30,6 @@ except ImportError:
     import pickle
 from wwpdb.utils.config.ConfigInfo import ConfigInfo
 from wwpdb.utils.config.ConfigInfoApp import ConfigInfoAppCommon
-import snoop
 
 class TaxonomyUtils(object):
     """ Accessors for NCBI taxonomy names and organizational data hierarchy.
@@ -39,7 +38,6 @@ class TaxonomyUtils(object):
         and coordinated within the project reference data storage model.
     """
 
-    @snoop
     def __init__(self, siteId='WWPDB_DEPLOY_TEST', verbose=True, log=sys.stderr):
         self.__verbose = verbose
         self.__debug = True
