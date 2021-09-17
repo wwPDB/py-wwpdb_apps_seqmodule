@@ -29,7 +29,7 @@ try:
 except ImportError:
     import pickle
 from wwpdb.utils.config.ConfigInfo import ConfigInfo
-
+from wwpdb.utils.config.ConfigInfoApp import ConfigInfoAppCommon
 
 class TaxonomyUtils(object):
     """ Accessors for NCBI taxonomy names and organizational data hierarchy.
@@ -45,7 +45,8 @@ class TaxonomyUtils(object):
         self.__siteId = siteId
 
         self.__cI = ConfigInfo(self.__siteId)
-        self.__taxPath = self.__cI.get('SITE_REFDATA_TAXONOMY_PATH')
+        self.__cIAppCommon = ConfigInfoAppCommon(self.__siteId)
+        self.__taxPath = self.__cIAppCommon.get_taxdump_path()
 
         self.__pickleProtocol = pickle.HIGHEST_PROTOCOL
         #

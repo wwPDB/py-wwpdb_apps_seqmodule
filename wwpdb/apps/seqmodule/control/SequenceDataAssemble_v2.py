@@ -54,6 +54,7 @@ from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
 from wwpdb.utils.session.UtilDataStore import UtilDataStore
 
+
 class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
     """
      This class encapsulates the data assembly operations
