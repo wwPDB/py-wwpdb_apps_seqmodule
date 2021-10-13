@@ -52,6 +52,7 @@ import sys
 import re
 import traceback
 
+from wwpdb.apps.seqmodule.io.TaxonomyDbUtils import TaxonomyDbUtils
 
 class SequenceFeatureMap(object):
 
@@ -66,14 +67,22 @@ class SequenceFeatureMap(object):
         mapTupList = [('ENTITY_DESCRIPTION', 'DB_MOLECULE_NAME'),
                       ('ENTITY_SYNONYMS', 'DB_MOLECULE_SYNONYMS'),
                       ('SOURCE_GENE_NAME', 'DB_GENE_NAME'),
-                      ('SOURCE_TAXID', 'SOURCE_TAXID'),
-                      ('SOURCE_ORGANISM', 'SOURCE_ORGANISM'),
+                     #('SOURCE_TAXID', 'SOURCE_TAXID'),
+                     #('SOURCE_ORGANISM', 'SOURCE_ORGANISM'),
                       ('SOURCE_STRAIN', 'SOURCE_STRAIN'),
-                      ('SOURCE_COMMON_NAME', 'SOURCE_COMMON_NAME'),
+                     #('SOURCE_COMMON_NAME', 'SOURCE_COMMON_NAME'),
                       ('ENTITY_ENZYME_CLASS', 'DB_MOLECULE_EC')]
         if (self.__debug):
             for mapTup in mapTupList:
                 self.__lfh.write('++++Before Mapping %30s : %-40r  %30s:  %r\n' % (mapTup[0], authFD[mapTup[0]], mapTup[1], refFD[mapTup[0]]))
+        #
+        if ("SOURCE_TAXID" in authFD) and authFD["SOURCE_TAXID"]:
+            taxInfoUtil = TaxonomyDbUtils(verbose=self.__verbose, log=self.__lfh)
+            scientific_name,common_name = taxInfoUtil.getTaxonomyNames(authFD["SOURCE_TAXID"])
+            if scientific_name:
+                authFD["SOURCE_ORGANISM"] = scientific_name
+                authFD["SOURCE_COMMON_NAME"] = common_name
+            #
         #
         for mapTup in mapTupList:
             if mapTup[0] == 'ENTITY_DESCRIPTION':
