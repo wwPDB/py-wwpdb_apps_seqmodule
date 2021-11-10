@@ -49,7 +49,7 @@ from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel
 from wwpdb.apps.seqmodule.util.UpdateSequenceDataStoreUtils import UpdateSequenceDataStoreUtils
 from wwpdb.apps.seqmodule.util.MultiProcLimit import MultiProcLimit
 from wwpdb.utils.config.ConfigInfo import ConfigInfo
-from rcsb.utils.multiproc.MultiProcUtil import MultiProcUtil
+from rcsb.utils.multiproc.MultiProcPoolUtil import MultiProcPoolUtil
 from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
 from wwpdb.utils.session.UtilDataStore import UtilDataStore
@@ -724,7 +724,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 numProc = len(entityTupList)
             else:
                 numProc = int(multiprocessing.cpu_count() / 2)
-            mpu = MultiProcUtil(verbose = True)
+            mpu = MultiProcPoolUtil(verbose = True)
             mpu.set(workerObj = self, workerMethod = "runMultiReferenceSearches")
             mpu.setWorkingDir(self.__sessionPath)
             #
@@ -798,7 +798,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 numProc = len(entityTupList)
             else:
                 numProc = int(multiprocessing.cpu_count() / 2)
-            mpu = MultiProcUtil(verbose = True)
+            mpu = MultiProcPoolUtil(verbose = True)
             mpu.set(workerObj = self, workerMethod = "runMultiSameSeqAnnotationSearches")
             mpu.setWorkingDir(self.__sessionPath)
             #
@@ -851,7 +851,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 numProc = len(entityTupList)
             else:
                 numProc = int(multiprocessing.cpu_count() / 2)
-            mpu = MultiProcUtil(verbose = True)
+            mpu = MultiProcPoolUtil(verbose = True)
             mpu.set(workerObj = self, workerMethod = "runMultiBlastReferenceSearches")
             mpu.setWorkingDir(self.__sessionPath)
             #

@@ -42,7 +42,7 @@ from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import fetchNcbiSummary,fetchUniP
 from wwpdb.apps.seqmodule.io.TaxonomyUtils import TaxonomyUtils
 from wwpdb.apps.seqmodule.util.FetchReferenceSequenceUtils import FetchReferenceSequenceUtils
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
-from rcsb.utils.multiproc.MultiProcUtil import MultiProcUtil
+from rcsb.utils.multiproc.MultiProcPoolUtil import MultiProcPoolUtil
 from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
 
@@ -254,7 +254,7 @@ class LocalBlastSearchUtils(object):
         rD = {}
         try:
             numProc = int(multiprocessing.cpu_count() / 2)
-            mpu = MultiProcUtil(verbose = True)
+            mpu = MultiProcPoolUtil(verbose = True)
             mpu.set(workerObj = self, workerMethod = "runMultiLocalBlasts")
             mpu.setWorkingDir(self.__sessionPath)
             mpu.setOptions({'ncbilock' : self.__ncbilock})
@@ -738,7 +738,7 @@ class LocalBlastSearchUtils(object):
         alignMap = {}
         try:
             numProc = int(multiprocessing.cpu_count() / 2)
-            mpu = MultiProcUtil(verbose = True)
+            mpu = MultiProcPoolUtil(verbose = True)
             mpu.set(workerObj = self, workerMethod = 'getMultiSeqAlignmentProcess')
             mpu.setWorkingDir(self.__sessionPath)
             ok,failList,retLists,diagList = mpu.runMulti(dataList = hitList, numProc = numProc, numResults = 1)
