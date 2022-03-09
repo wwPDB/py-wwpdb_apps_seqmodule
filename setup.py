@@ -46,7 +46,7 @@ setup(
     install_requires=['wwpdb.utils.config >= 0.24', 'wwpdb.io', 'wwpdb.utils.session',
                       'wwpdb.utils.wf', 'wwpdb.utils.seqdb_v2 ~= 0.4',
                       'wwpdb.utils.align', 'wwpdb.utils.detach',
-                      'wwpdb.utils.dp', 'wwpdb.utils.cc_dict_util',
+                      'wwpdb.utils.dp', 'wwpdb.utils.db',
                       'rcsb.utils.multiproc'],
     packages=find_packages(exclude=['wwpdb.apps.tests-seqmodule',
                                     'mock-data']),
