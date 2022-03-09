@@ -22,14 +22,6 @@ import sys
 import traceback
 import unittest
 
-
-HERE = os.path.abspath(os.path.dirname(__file__))
-TOPDIR = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
-#TESTOUTPUT = os.path.join(HERE, 'test-output', platform.python_version())
-#if not os.path.exists(TESTOUTPUT):
-#    os.makedirs(TESTOUTPUT)
-mockTopPath = os.path.join(TOPDIR, 'wwpdb', 'mock-data')
-
 from wwpdb.apps.seqmodule.io.PdbxIoUtils import ModelFileIo, PdbxFileIo
 
 
@@ -38,8 +30,10 @@ class PdbxIoUtilsTests(unittest.TestCase):
         #
         self.__verbose = True
         self.__lfh = sys.stdout
+
         ## Old examples -
-        self.__pathExamples = os.path.join(mockTopPath, 'MODELS')
+        HERE = os.path.abspath(os.path.dirname(__file__))
+        self.__pathExamples = os.path.join(HERE, 'data')
         #
         self.__examFileList = ['4ec0.cif', '3rer.cif']
 
