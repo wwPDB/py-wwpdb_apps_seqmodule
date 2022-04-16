@@ -19,15 +19,27 @@ __license__   = "Creative Commons Attribution 3.0 Unported"
 __version__   = "V0.07"
 
 
-import sys, unittest, shutil, traceback
-import time, os, os.path
+import sys
+import unittest
+import shutil
+import traceback
+import time
+import os
+import os.path
 
-from wwpdb.apps.seqmodule.align.AlignmentStatistics    import AlignmentStatistics
+if __package__ is None or __package__ == "":
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from commonsetup import HERE  # noqa:  F401 pylint: disable=import-error,unused-import
+else:
+    from .commonsetup import HERE  # noqa: F401 pylint: disable=relative-beyond-top-level
+
+from wwpdb.apps.seqmodule.align.AlignmentStatistics import AlignmentStatistics
 from wwpdb.apps.seqmodule.control.SequenceDataAssemble_v2 import SequenceDataAssemble
-from wwpdb.io.misc.FormatOut   import FormatOut
-from wwpdb.io.locator.PathInfo    import PathInfo
-from wwpdb.utils.config.ConfigInfo  import ConfigInfo,getSiteId
-from wwpdb.apps.seqmodule.webapp.SeqModWebRequest       import SeqModInputRequest
+from wwpdb.io.misc.FormatOut import FormatOut
+from wwpdb.io.locator.PathInfo import PathInfo
+from wwpdb.utils.config.ConfigInfo import ConfigInfo, getSiteId
+from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest
+
 
 class AlignmentStatisticsTests(unittest.TestCase):
     def setUp(self):
