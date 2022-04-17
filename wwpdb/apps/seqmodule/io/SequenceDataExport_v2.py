@@ -41,30 +41,36 @@ __email__ = "jwest@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.07"
 
-import os, string, sys, traceback
+import os
+import sys
+import traceback
 
 from mmcif.api.DataCategory import DataCategory
 from mmcif.api.PdbxContainers import DataContainer
 from mmcif.io.PdbxWriter import PdbxWriter
+
 #
 from wwpdb.apps.seqmodule.align.AlignmentExport import AlignmentExport
 from wwpdb.apps.seqmodule.io.SequenceDataStore import SequenceDataStore
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
-from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel, SequenceFeature
+from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel
 from wwpdb.apps.seqmodule.util.Autodict import Autodict
+
 #
 from wwpdb.io.misc.FormatOut import FormatOut
 from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
 
+
 class SequenceDataExport(object):
     """
-     This class encapsulates all of the data export operations
-     of sequence and other data to the RCSB/WF data pipeline.
+    This class encapsulates all of the data export operations
+    of sequence and other data to the RCSB/WF data pipeline.
 
-     Storage model - exported data is loaded from the sequence data store
-                     where it is managed by the SequenceDataStore() class.
+    Storage model - exported data is loaded from the sequence data store
+                    where it is managed by the SequenceDataStore() class.
     """
+
     def __init__(self, reqObj=None, exportList=[], verbose=False, log=sys.stderr):
         self.__verbose = verbose
         self.__reqObj = reqObj
@@ -91,11 +97,11 @@ class SequenceDataExport(object):
 
             self.__pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
             self.__exportFilePathSession = self.__pI.getSequenceAssignmentFilePath(self.__identifier, fileSource="session", versionId="next")
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SequenceDataExport.__setup() session assignment file path %s\n" % self.__exportFilePathSession)
             #
             self.__sds = SequenceDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-            if (self.__debug):
+            if self.__debug:
                 self.__sds.dump(self.__lfh)
             #
             if not self.__summarySeqSelectList:
@@ -107,25 +113,24 @@ class SequenceDataExport(object):
             self.__annoSeqAuthRefMap = {}
             self.__I = self.__makeExportIndex(self.__summarySeqSelectList)
             self.__makeSelfReferenceIndex(self.__summarySeqSelectList)
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SequenceDataExport.__setup() incoming selected id list %r\n" % (self.__summarySeqSelectList))
                 self.__lfh.write("+SequenceDataExport.__setup() self reference list %r\n" % self.__selfReferenceEntityList)
             #
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             self.__lfh.write("+SequenceDataExport.__setup() failed for entry id %s\n" % (self.__identifier))
             traceback.print_exc(file=self.__lfh)
         #
 
     def exportAssignments(self):
-        """ Export assign file and associated updated model data file --
-        """
+        """Export assign file and associated updated model data file --"""
         numConflicts = 0
         conflictList = []
         try:
             ok, numConflicts, conflictList, warningMsg = self.__exportSeqMapping()
             return ok, numConflicts, conflictList, warningMsg
-        except:
-            if (self.__verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__verbose:
                 self.__lfh.write("+SequenceDataExport.exportAssignments() failed for entry id %s\n" % (self.__identifier))
                 traceback.print_exc(file=self.__lfh)
             #
@@ -133,13 +138,11 @@ class SequenceDataExport(object):
         return False, numConflicts, conflictList, ""
 
     def getAllEntityIdList(self):
-        """ Interface to get all entity Id list from SequenceDataStore
-        """
+        """Interface to get all entity Id list from SequenceDataStore"""
         return self.__sds.getGroupIds()
 
     def applyAssignmentsToModel(self):
-        """  Create an updated model file in the current session --
-        """
+        """Create an updated model file in the current session --"""
         try:
             #  ----------------
             # Changes will always be applied to the earliest model in the current session  --
@@ -171,10 +174,9 @@ class SequenceDataExport(object):
             if not os.access(pdbxPathNext, os.R_OK):
                 return False
             #
-        except:
-            if (self.__verbose):
-                self.__lfh.write("+SequenceDataExport.applyAssignmentsToModel() model update failed for assignment file  %s\n"
-                                 % self.__exportFilePathSession)
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__verbose:
+                self.__lfh.write("+SequenceDataExport.applyAssignmentsToModel() model update failed for assignment file  %s\n" % self.__exportFilePathSession)
                 traceback.print_exc(file=self.__lfh)
             return False
         #
@@ -189,20 +191,20 @@ class SequenceDataExport(object):
         fOut.clear()
 
     def __makeExportIndex(self, selectIdList):
-        """ Return an index dictionary for the input sequence id list -
+        """Return an index dictionary for the input sequence id list -
 
-            The sequence labels  have the format:
+        The sequence labels  have the format:
 
-            seqType + "_" + seqInstId + "_" + seqPartId + "_" + seqAltId  + "_" + seqVersion
+        seqType + "_" + seqInstId + "_" + seqPartId + "_" + seqAltId  + "_" + seqVersion
 
-            or, for the special case of a self reference --
+        or, for the special case of a self reference --
 
-            "selfref"  "_"  entityId  "_"  partId
+        "selfref"  "_"  entityId  "_"  partId
         """
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SequenceDataExport.__makeExportIndex() selected sequence id list %r\n" % selectIdList)
         #
-        I = Autodict()
+        I = Autodict()  # noqa: E741
         try:
             for seqId in selectIdList:
                 tup = seqId.strip().split("_")
@@ -213,8 +215,8 @@ class SequenceDataExport(object):
                 #
                 I[tup[0]][tup[1]][int(tup[2])] = (int(tup[3]), int(tup[4]))
             #
-        except:
-            if (self.__verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__verbose:
                 self.__lfh.write("+SequenceDataExport.__makeExportIndex() failed \n")
                 traceback.print_exc(file=self.__lfh)
             #
@@ -222,26 +224,25 @@ class SequenceDataExport(object):
         return I
 
     def __makeSelfReferenceIndex(self, selectIdList):
-        """ Return the list self referenced entities for the input sequence id list -
+        """Return the list self referenced entities for the input sequence id list -
 
-            The sequence labels  have the format:
+        The sequence labels  have the format:
 
-            seqType + "_" + seqInstId + "_" + seqPartId + "_" + seqAltId  + "_" + seqVersion
+        seqType + "_" + seqInstId + "_" + seqPartId + "_" + seqAltId  + "_" + seqVersion
 
-            or, for the special case of a self reference --
+        or, for the special case of a self reference --
 
-            "selfref"  "_"  entityId  "_"  partId
+        "selfref"  "_"  entityId  "_"  partId
         """
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SequenceDataExport.__makeSelfReferenceIndex() selected sequence id list %r\n" % selectIdList)
         #
         try:
             for seqId in selectIdList:
                 tup = seqId.strip().split("_")
                 if str(tup[0]).strip() == "selfref":
-                    if (self.__verbose):
-                        self.__lfh.write("+SequenceDataExport.__makeSelfReferenceIndex() - assigning reference for sequence entity %s part %s (%s)\n" %
-                                         (tup[1], tup[2], tup[0]))
+                    if self.__verbose:
+                        self.__lfh.write("+SequenceDataExport.__makeSelfReferenceIndex() - assigning reference for sequence entity %s part %s (%s)\n" % (tup[1], tup[2], tup[0]))
                     #
                     seqId = str(tup[1]).strip()
                     partId = str(tup[2]).strip()
@@ -254,7 +255,7 @@ class SequenceDataExport(object):
                         row = []
                         row.append(len(self.__annoRefDbL) + 1)
                         row.append(seqId)
-                        for item in ( "ANNO_EDIT_DB_NAME", "ANNO_EDIT_DB_CODE", "ANNO_EDIT_DB_ACCESSION", "ANNO_EDIT_DB_ALIGN_BEGIN", "ANNO_EDIT_DB_ALIGN_END" ):
+                        for item in ("ANNO_EDIT_DB_NAME", "ANNO_EDIT_DB_CODE", "ANNO_EDIT_DB_ACCESSION", "ANNO_EDIT_DB_ALIGN_BEGIN", "ANNO_EDIT_DB_ALIGN_END"):
                             if (item in seqAuthFD) and seqAuthFD[item]:
                                 row.append(seqAuthFD[item])
                             else:
@@ -266,15 +267,15 @@ class SequenceDataExport(object):
                             if (seqId in self.__annoSeqAuthRefMap) and self.__annoSeqAuthRefMap[seqId]:
                                 seqAuthRefMap = self.__annoSeqAuthRefMap[seqId]
                             else:
-                                seqAuthIdx = self.__sds.getSequence(seqId=seqId,seqType="auth",partId=int(partId),altId=altId,version=verId)
+                                seqAuthIdx = self.__sds.getSequence(seqId=seqId, seqType="auth", partId=int(partId), altId=altId, version=verId)
                                 idx = 1
                                 for seqAuth in seqAuthIdx:
-                                    seqAuthRefMap.append([ ".", seqId, seqAuth[0], str(idx), seqId, ".", ".", "." ])
+                                    seqAuthRefMap.append([".", seqId, seqAuth[0], str(idx), seqId, ".", ".", "."])
                                     idx += 1
                                 #
                             #
                             if seqAuthRefMap:
-                                authFObj = self.__sds.getFeatureObj(seqId, "auth", partId=int(partId),altId=altId,version=verId)
+                                authFObj = self.__sds.getFeatureObj(seqId, "auth", partId=int(partId), altId=altId, version=verId)
                                 authPartId, authSeqBeg, authSeqEnd, authSeqPartType = authFObj.getAuthPartDetails()
                                 partBeg = int(authSeqBeg)
                                 partEnd = int(authSeqEnd)
@@ -306,29 +307,28 @@ class SequenceDataExport(object):
                     #
                 #
             #
-        except:
-            if (self.__verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__verbose:
                 self.__lfh.write("+SequenceDataExport.__makeSelfReferenceIndex() failed \n")
                 traceback.print_exc(file=self.__lfh)
             #
         #
 
     def __exportSeqMapping(self):
-        """  Export worker function -
-        """
+        """Export worker function -"""
         #
         # Get entry ids
         depDataSetId = self.__sds.getEntryDetail("DEPOSITION_DATA_SET_ID")
-        pdbId = self.__sds.getEntryDetail("PDB_ID")
+        # pdbId = self.__sds.getEntryDetail("PDB_ID")
         #
         # Get the entity group list -
         gIdList = self.__sds.getGroupIds()
         if len(gIdList) < 1:
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SequenceDataExport.__exportSeqMapping() for data set %s group list is empty\n" % depDataSetId)
             #
         #
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SequenceDataExport.__exportSeqMapping() number of groups %d depDataSetId %s\n" % (len(gIdList), depDataSetId))
         #
 
@@ -352,12 +352,12 @@ class SequenceDataExport(object):
             #
             seqIdList = self.__sds.getGroup(gId)
             if len(seqIdList) < 1:
-                if (self.__verbose):
+                if self.__verbose:
                     self.__lfh.write("+SequenceDataExport.__exportSeqMapping() skipping entity group %s which has no instances\n" % (gId))
                 #
                 continue
             #
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SequenceDataExport.__exportSeqMapping() group %s sequence list %r\n" % (gId, seqIdList))
             #
             # Author sequence -
@@ -366,9 +366,8 @@ class SequenceDataExport(object):
             idAuthSeq = ""
             first = True
             if gId in self.__I["auth"]:
-                if (self.__verbose):
-                    self.__lfh.write("+SequenceDataExport.__exportSeqMapping() entity group %s author sequence s list %r\n" % \
-                                    (gId, list(self.__I["auth"][gId].items())))
+                if self.__verbose:
+                    self.__lfh.write("+SequenceDataExport.__exportSeqMapping() entity group %s author sequence s list %r\n" % (gId, list(self.__I["auth"][gId].items())))
                 #
                 for partId, (altId, ver) in self.__I["auth"][gId].items():
                     fD = self.__sds.getFeature(gId, seqType="auth", partId=partId, altId=altId, version=ver)
@@ -380,20 +379,20 @@ class SequenceDataExport(object):
                                     natureSourceTaxIds[fD["SOURCE_TAXID"]].append(gId)
                                 #
                             else:
-                                natureSourceTaxIds[fD["SOURCE_TAXID"]] = [ gId ]
+                                natureSourceTaxIds[fD["SOURCE_TAXID"]] = [gId]
                             #
                         #
                     #
                     seqLabel.set(seqType="auth", seqInstId=gId, seqPartId=partId, seqAltId=altId, seqVersion=ver)
                     idAuthSeq = seqLabel.pack()
-                    if (self.__verbose):
+                    if self.__verbose:
                         self.__lfh.write("+SequenceDataExport.__exportSeqMapping() from entity group %s exporting author sequence %s\n" % (gId, idAuthSeq))
                     #
                     if first and ("POLYMER_TYPE" in fD) and (fD["POLYMER_TYPE"] == "AA"):
                         seqAuth = self.__sds.getSequence(seqId=gId, seqType="auth", partId=partId, altId=altId, version=ver)
                         polyALA_assignment = self.__checkPolyAlaAssignment(seqAuth)
                         if polyALA_assignment > 0:
-                            polyAlaCaseList.append(( gId, polyALA_assignment ))
+                            polyAlaCaseList.append((gId, polyALA_assignment))
                         #
                     #
                     first = False
@@ -401,7 +400,7 @@ class SequenceDataExport(object):
             #
             if not idAuthSeq:
                 # report missing author sequence
-                if (self.__verbose):
+                if self.__verbose:
                     self.__lfh.write("+SequenceDataExport.__exportSeqMapping() missing author sequence from entity group %s\n" % gId)
                 #
                 continue
@@ -420,14 +419,13 @@ class SequenceDataExport(object):
                     refFeatureD[(gId, partId)] = (idRefSeq, altId, seqRefFD, partId)
                     allRefSeqIdxD[idRefSeq] = seqRefIdx
                     #
-                    if (self.__verbose):
-                        self.__lfh.write("+SequenceDataExport.__exportSeqMapping() from entity group %s part %s exporting reference sequence %s\n" % \
-                                        (gId, partId, idRefSeq))
+                    if self.__verbose:
+                        self.__lfh.write("+SequenceDataExport.__exportSeqMapping() from entity group %s part %s exporting reference sequence %s\n" % (gId, partId, idRefSeq))
                     #
                 #
             else:
                 # report missing reference sequence
-                if (self.__verbose):
+                if self.__verbose:
                     self.__lfh.write("+SequenceDataExport.__exportSeqMapping() missing reference sequence from group %s\n" % gId)
                 #
             #
@@ -435,9 +433,9 @@ class SequenceDataExport(object):
             #
             idListXyz = []
             for seqId in seqIdList:
-                if seqId in self.__I['xyz']:
-                    for partId, (altId, ver) in self.__I['xyz'][seqId].items():
-                        seqLabel.set(seqType='xyz', seqInstId=seqId, seqPartId=partId, seqAltId=altId, seqVersion=ver)
+                if seqId in self.__I["xyz"]:
+                    for partId, (altId, ver) in self.__I["xyz"][seqId].items():
+                        seqLabel.set(seqType="xyz", seqInstId=seqId, seqPartId=partId, seqAltId=altId, seqVersion=ver)
                         idXyzSeq = seqLabel.pack()
                         idListXyz.append(idXyzSeq)
                     #
@@ -449,10 +447,10 @@ class SequenceDataExport(object):
             if (len(idListRef) < 1) and (len(idListXyz) < 1):
                 continue
             #
-            alignExport = AlignmentExport(reqObj=self.__reqObj, entityId=gId, pathInfo=self.__pI, seqDataStore=self.__sds, \
-                                          verbose=self.__verbose, log=self.__lfh)
-            localRptRefL,localRptCommentL,localRptCommentModL,localRptDeleteL,localRptXyzL,message,numC = \
-                           alignExport.doExport(idAuthSeq, idListRef, idListXyz, self.__selfRefList, sourceInfo)
+            alignExport = AlignmentExport(reqObj=self.__reqObj, entityId=gId, pathInfo=self.__pI, seqDataStore=self.__sds, verbose=self.__verbose, log=self.__lfh)
+            localRptRefL, localRptCommentL, localRptCommentModL, localRptDeleteL, localRptXyzL, message, numC = alignExport.doExport(
+                idAuthSeq, idListRef, idListXyz, self.__selfRefList, sourceInfo
+            )
             if self.__verbose:
                 errMsg = alignExport.getErrorMessage()
                 if errMsg:
@@ -485,7 +483,7 @@ class SequenceDataExport(object):
         #
         if len(natureSourceTaxIds) > 1:
             warningMsg += "Entry contains multiple natural sources:<br />\n"
-            for k,v in natureSourceTaxIds.items():
+            for k, v in natureSourceTaxIds.items():
                 if len(v) > 1:
                     warningMsg += "Entities '" + "', '".join(v) + "' have "
                 else:
@@ -508,7 +506,7 @@ class SequenceDataExport(object):
             #
         # ref FeatureD ---
         rptRefDbL = self.__refDdReport(refFeatureD)
-        #rptDeleteL = self.__deletionReport(refFeatureD, allRefSeqIdxD)
+        # rptDeleteL = self.__deletionReport(refFeatureD, allRefSeqIdxD)
 
         try:
             # Make a local copy of the mapping file in the session directory and then copy the file as needed.
@@ -516,18 +514,24 @@ class SequenceDataExport(object):
             blockList = []
             ofh = open(self.__exportFilePathSession, "w")
             dataBlock = DataContainer(depDataSetId)
-            if (len(self.__trueSelfReferenceEntityList) > 0):
+            if len(self.__trueSelfReferenceEntityList) > 0:
                 dataBlock.append(self.__cifCatSelfReference(self.__trueSelfReferenceEntityList))
             #
             if len(rptRefDbL) > 0:
-                dataBlock.append(self.__writeGeneralCifCategory("pdbx_seqtool_db_ref", ( "ordinal", "entity_id", "db_name", "db_code", \
-                                 "db_accession", "db_isoform", "match_begin", "match_end", "entity_part_id" ), rptRefDbL))
+                dataBlock.append(
+                    self.__writeGeneralCifCategory(
+                        "pdbx_seqtool_db_ref", ("ordinal", "entity_id", "db_name", "db_code", "db_accession", "db_isoform", "match_begin", "match_end", "entity_part_id"), rptRefDbL
+                    )
+                )
             #
             if len(self.__annoRefDbL) > 0:
-                dataBlock.append(self.__writeGeneralCifCategory("pdbx_seqtool_anno_db_ref", ("ordinal", "entity_id", "db_name", "db_code", \
-                                 "db_accession", "match_begin", "match_end", "entity_part_id"), self.__annoRefDbL))
+                dataBlock.append(
+                    self.__writeGeneralCifCategory(
+                        "pdbx_seqtool_anno_db_ref", ("ordinal", "entity_id", "db_name", "db_code", "db_accession", "match_begin", "match_end", "entity_part_id"), self.__annoRefDbL
+                    )
+                )
                 #
-                for k,seqAuthRefMap in self.__annoSeqAuthRefMap.items():
+                for k, seqAuthRefMap in self.__annoSeqAuthRefMap.items():
                     for seqAuth in seqAuthRefMap:
                         seqAuth[0] = str(len(rptRefL) + 1)
                         rptRefL.append(tuple(seqAuth))
@@ -537,31 +541,48 @@ class SequenceDataExport(object):
             dataBlock.append(self.__getEntitySourceCategory())
             #
             if len(rptCommentL) > 0:
-                dataBlock.append(self.__writeGeneralCifCategory("pdbx_seqtool_mapping_comment", ("ordinal", "entity_id", \
-                                 "entity_mon_id", "entity_seq_num", "comment"), rptCommentL))
+                dataBlock.append(
+                    self.__writeGeneralCifCategory("pdbx_seqtool_mapping_comment", ("ordinal", "entity_id", "entity_mon_id", "entity_seq_num", "comment"), rptCommentL)
+                )
             #
             if len(rptCommentModL) > 0:
-                dataBlock.append(self.__writeGeneralCifCategory("pdbx_seqtool_mapping_modification_comment", ("ordinal", \
-                                 "entity_id", "entity_mon_id", "entity_seq_num", "comment"), rptCommentModL))
+                dataBlock.append(
+                    self.__writeGeneralCifCategory(
+                        "pdbx_seqtool_mapping_modification_comment", ("ordinal", "entity_id", "entity_mon_id", "entity_seq_num", "comment"), rptCommentModL
+                    )
+                )
             #
             if len(rptDeleteL) > 0:
-                dataBlock.append(self.__writeGeneralCifCategory("pdbx_seqtool_ref_deletions", ("ordinal", "entity_id", "part_id", \
-                                 "db_name", "db_accession", "db_isoform", "ref_mon_id", "ref_mon_num"), rptDeleteL))
+                dataBlock.append(
+                    self.__writeGeneralCifCategory(
+                        "pdbx_seqtool_ref_deletions", ("ordinal", "entity_id", "part_id", "db_name", "db_accession", "db_isoform", "ref_mon_id", "ref_mon_num"), rptDeleteL
+                    )
+                )
             #
             if len(rptRefL) > 0:
-                dataBlock.append(self.__writeGeneralCifCategory("pdbx_seqtool_mapping_ref", ("ordinal", "entity_id", "entity_mon_id", \
-                                 "entity_seq_num", "auth_asym_id", "ref_mon_id", "ref_mon_num", "entity_part_id"), rptRefL))
+                dataBlock.append(
+                    self.__writeGeneralCifCategory(
+                        "pdbx_seqtool_mapping_ref",
+                        ("ordinal", "entity_id", "entity_mon_id", "entity_seq_num", "auth_asym_id", "ref_mon_id", "ref_mon_num", "entity_part_id"),
+                        rptRefL,
+                    )
+                )
             #
             if len(rptXyzL) > 0:
-                dataBlock.append(self.__writeGeneralCifCategory("pdbx_seqtool_mapping_xyz", ("ordinal", "entity_id", "entity_mon_id", \
-                  "entity_seq_num", "auth_asym_id", "pdb_mon_id", "pdb_mon_num", "pdb_ins_code", "hetero_flag", "org_mon_id"), rptXyzL))
+                dataBlock.append(
+                    self.__writeGeneralCifCategory(
+                        "pdbx_seqtool_mapping_xyz",
+                        ("ordinal", "entity_id", "entity_mon_id", "entity_seq_num", "auth_asym_id", "pdb_mon_id", "pdb_mon_num", "pdb_ins_code", "hetero_flag", "org_mon_id"),
+                        rptXyzL,
+                    )
+                )
             #
             blockList.append(dataBlock)
             pdbxW = PdbxWriter(ofh)
             pdbxW.write(blockList)
             ofh.close()
-        except:
-            if (self.__verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__verbose:
                 self.__lfh.write("+SequenceDataExport.__exportSeqMapping() saving export mapping file failed %s\n" % self.__exportFilePathSession)
                 traceback.print_exc(file=self.__lfh)
             return False, numConflicts, conflictList, warningMsg
@@ -569,8 +590,7 @@ class SequenceDataExport(object):
         return True, numConflicts, conflictList, warningMsg
 
     def __checkPolyAlaAssignment(self, seqAuth):
-        """ Check if the sequence contains 10 or more consecutive ALA residues
-        """
+        """Check if the sequence contains 10 or more consecutive ALA residues"""
         has_consecutive_ALA = False
         count = 0
         for seqTupL in seqAuth:
@@ -580,7 +600,7 @@ class SequenceDataExport(object):
                 if count > 9:
                     has_consecutive_ALA = True
                 #
-                count = 0;
+                count = 0
             #
         #
         if count > 9:
@@ -594,58 +614,64 @@ class SequenceDataExport(object):
         return 0
 
     def __refDdReport(self, refFeatureD):
-        """  Return a list of content rows for reference sequence database accession report --
-        """
+        """Return a list of content rows for reference sequence database accession report --"""
         rptRefDbL = []
         irow = 1
         for (gId, partId), tup in refFeatureD.items():
-            if ((str(gId), str(partId)) in self.__selfReferenceEntityList):
+            if (str(gId), str(partId)) in self.__selfReferenceEntityList:
                 continue
             #
-            sId = tup[0]
+            # sId = tup[0]
             fD = tup[2]
-            rptRefDbL.append([irow, gId, self.__srd.convertDbNameToResource(fD["DB_NAME"]), fD["DB_CODE"], fD["DB_ACCESSION"], fD["DB_ISOFORM"], \
-                            fD["REF_MATCH_BEGIN"], fD["REF_MATCH_END"], partId])
+            rptRefDbL.append(
+                [
+                    irow,
+                    gId,
+                    self.__srd.convertDbNameToResource(fD["DB_NAME"]),
+                    fD["DB_CODE"],
+                    fD["DB_ACCESSION"],
+                    fD["DB_ISOFORM"],
+                    fD["REF_MATCH_BEGIN"],
+                    fD["REF_MATCH_END"],
+                    partId,
+                ]
+            )
             irow += 1
         #
         return rptRefDbL
 
     def __deletionReport(self, refFeatureD, allRefSeqIdxD):
-        """  Return a list of content rows for the sequence deletion report.
-        """
+        """Return a list of content rows for the sequence deletion report."""
         rptDeleteL = []
         idel = 1
         for (gId, partId), tup in refFeatureD.items():
-            if ((str(gId), str(partId)) in self.__selfReferenceEntityList):
+            if (str(gId), str(partId)) in self.__selfReferenceEntityList:
                 continue
             #
             sId = tup[0]
             fD = tup[2]
             if sId in allRefSeqIdxD:
-                if (self.__verbose):
+                if self.__verbose:
                     self.__lfh.write("+SequenceDataExport.__exportSeqMapping() searching deletions in seqId %s\n" % sId)
                 #
                 refSeqIdx = allRefSeqIdxD[sId]
                 for sTup in refSeqIdx:
                     if sTup[2] in ["Deletion", "deletion"]:
-                        if (self.__verbose):
+                        if self.__verbose:
                             self.__lfh.write("+SequenceDataExport.__exportSeqMapping() position %s comment %s\n" % (sTup[1], sTup[2]))
                         #
-                        rptDeleteL.append([idel, gId, partId, self.__srd.convertDbNameToResource(fD["DB_NAME"]), fD["DB_ACCESSION"], \
-                                          fD["DB_ISOFORM"], sTup[0], sTup[1]])
+                        rptDeleteL.append([idel, gId, partId, self.__srd.convertDbNameToResource(fD["DB_NAME"]), fD["DB_ACCESSION"], fD["DB_ISOFORM"], sTup[0], sTup[1]])
                         idel += 1
                     #
                 #
             else:
-                self.__lfh.write("+SequenceDataExport.__exportSeqMapping() delete scan missing reference sequence for seqId %s keys() %r\n" % \
-                                (sId, allRefSeqIdxD.keys()))
+                self.__lfh.write("+SequenceDataExport.__exportSeqMapping() delete scan missing reference sequence for seqId %s keys() %r\n" % (sId, allRefSeqIdxD.keys()))
             #
         #
         return rptDeleteL
 
     def __cifCatSelfReference(self, entityList):
-        """ Update entities for self reference  ---
-        """
+        """Update entities for self reference  ---"""
         aCat = DataCategory("pdbx_seqtool_self_ref")
         aCat.appendAttribute("entity_id")
         aCat.appendAttribute("entity_part_id")
@@ -654,8 +680,8 @@ class SequenceDataExport(object):
         return aCat
 
     def __writeGeneralCifCategory(self, categoryName, categoryItems, dataList):
-        """ Write pdbx_seqtool_db_ref, pdbx_seqtool_anno_db_ref, pdbx_seqtool_ref_deletions, pdbx_seqtool_mapping_ref, pdbx_seqtool_mapping_comment,
-            pdbx_seqtool_mapping_modification_comment, pdbx_seqtool_mapping_xyz categories
+        """Write pdbx_seqtool_db_ref, pdbx_seqtool_anno_db_ref, pdbx_seqtool_ref_deletions, pdbx_seqtool_mapping_ref, pdbx_seqtool_mapping_comment,
+        pdbx_seqtool_mapping_modification_comment, pdbx_seqtool_mapping_xyz categories
         """
         if len(dataList) < 1:
             return None
@@ -673,40 +699,40 @@ class SequenceDataExport(object):
         return aCat
 
     def __getEntitySourceCategory(self):
-        """ Return category object of source details.
-        """
-        itemTupList = [("ORDINAL", "ordinal"),
-                       ("ENTITY_ID", "entity_id"),
-                       ("AUTH_SEQ_PART_ID", "seq_part_id"),
-                       ("AUTH_SEQ_NUM_BEGIN", "seq_part_beg"),
-                       ("AUTH_SEQ_NUM_END", "seq_part_end"),
-                       ("AUTH_SEQ_PART_TYPE", "seq_part_type"),
-                       ("ENTITY_DESCRIPTION", "entity_description"),
-                       ("ENTITY_SYNONYMS", "entity_synonyms"),
-                       ("SOURCE_GENE_NAME", "gene_name"),
-                       ("SOURCE_TAXID", "taxonomy_id"),
-                       ("SOURCE_ORGANISM", "source_scientific_name"),
-                       ("SOURCE_STRAIN", "source_strain"),
-                       ("SOURCE_COMMON_NAME", "source_common_name"),
-                       ("SOURCE_VARIANT", "variant"),
-                       ("POLYMER_LINKING_TYPE", "entity_polymer_type"),
-                       ("ENTITY_ENZYME_CLASS", "entity_enzyme_class"),
-                       ("ENTITY_FRAGMENT_DETAILS", "entity_fragment_details"),
-                       ("ENTITY_MUTATION_DETAILS", "entity_mutation_details"),
-                       ("ENTITY_DETAILS", "entity_details"),
-                       ("SOURCE_METHOD", "source_method"),
-                       ("HOST_ORG_SOURCE", "host_org_scientific_name"),
-                       ("HOST_ORG_STRAIN", "host_org_strain"),
-                       ("HOST_ORG_TAXID", "host_org_taxonomy_id"),
-                       ("HOST_ORG_VECTOR", "host_org_vector"),
-                       ("HOST_ORG_VECTOR_TYPE", "host_org_vector_type"),
-                       ("HOST_ORG_PLASMID", "host_org_plasmid"),
-                       ("HOST_ORG_COMMON_NAME", "host_org_common_name"),
-                       ("HOST_ORG_CELL_LINE", "host_org_cell_line"),
-                       ("HOST_ORG_VARIANT", "host_org_variant"),
-                       ]
+        """Return category object of source details."""
+        itemTupList = [
+            ("ORDINAL", "ordinal"),
+            ("ENTITY_ID", "entity_id"),
+            ("AUTH_SEQ_PART_ID", "seq_part_id"),
+            ("AUTH_SEQ_NUM_BEGIN", "seq_part_beg"),
+            ("AUTH_SEQ_NUM_END", "seq_part_end"),
+            ("AUTH_SEQ_PART_TYPE", "seq_part_type"),
+            ("ENTITY_DESCRIPTION", "entity_description"),
+            ("ENTITY_SYNONYMS", "entity_synonyms"),
+            ("SOURCE_GENE_NAME", "gene_name"),
+            ("SOURCE_TAXID", "taxonomy_id"),
+            ("SOURCE_ORGANISM", "source_scientific_name"),
+            ("SOURCE_STRAIN", "source_strain"),
+            ("SOURCE_COMMON_NAME", "source_common_name"),
+            ("SOURCE_VARIANT", "variant"),
+            ("POLYMER_LINKING_TYPE", "entity_polymer_type"),
+            ("ENTITY_ENZYME_CLASS", "entity_enzyme_class"),
+            ("ENTITY_FRAGMENT_DETAILS", "entity_fragment_details"),
+            ("ENTITY_MUTATION_DETAILS", "entity_mutation_details"),
+            ("ENTITY_DETAILS", "entity_details"),
+            ("SOURCE_METHOD", "source_method"),
+            ("HOST_ORG_SOURCE", "host_org_scientific_name"),
+            ("HOST_ORG_STRAIN", "host_org_strain"),
+            ("HOST_ORG_TAXID", "host_org_taxonomy_id"),
+            ("HOST_ORG_VECTOR", "host_org_vector"),
+            ("HOST_ORG_VECTOR_TYPE", "host_org_vector_type"),
+            ("HOST_ORG_PLASMID", "host_org_plasmid"),
+            ("HOST_ORG_COMMON_NAME", "host_org_common_name"),
+            ("HOST_ORG_CELL_LINE", "host_org_cell_line"),
+            ("HOST_ORG_VARIANT", "host_org_variant"),
+        ]
 
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SequenceDataExport.__getSourceDetails() starting\n")
             # self.printIt()
         #
@@ -716,7 +742,7 @@ class SequenceDataExport(object):
         for entityId in entityIdList:
             seqIds = self.__sds.getGroup(entityId)
             if len(seqIds) < 1:
-                if (self.__verbose):
+                if self.__verbose:
                     self.__lfh.write("+SequenceDataExport.__getSourceDetails() entityId %s is empty\n" % (entityId))
                 #
                 continue
@@ -725,9 +751,8 @@ class SequenceDataExport(object):
             partIdList = self.__sds.getPartIds(seqId0, dataType="sequence", seqType="auth")
             #
             for partId in partIdList:
-                if (self.__verbose):
-                    self.__lfh.write("+SequenceDataExport.__getSourceDetails() entityId %r partId %r  __I  %r\n" % \
-                                    (entityId, partId, self.__I["auth"][seqId0][partId]))
+                if self.__verbose:
+                    self.__lfh.write("+SequenceDataExport.__getSourceDetails() entityId %r partId %r  __I  %r\n" % (entityId, partId, self.__I["auth"][seqId0][partId]))
                 # JDW
                 # altId,versionId=self.__I["auth"][seqId0][partId]
                 altId, versionId = self.__I["auth"][seqId0][1]

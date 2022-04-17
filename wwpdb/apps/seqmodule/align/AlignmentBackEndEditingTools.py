@@ -11,17 +11,20 @@ __email__ = "zfeng@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.09"
 
-import copy, os, sys, traceback
+import copy
+import sys
 
 from wwpdb.apps.seqmodule.align.AlignmentTools import AlignmentTools
-from wwpdb.apps.seqmodule.align.AlignmentToolUtils import codeIndex,decodeIndex
+from wwpdb.apps.seqmodule.align.AlignmentToolUtils import codeIndex, decodeIndex
+
 
 class AlignmentBackEndEditingTools(AlignmentTools):
-    """ Manage sequence alignment editing
-    """
+    """Manage sequence alignment editing"""
+
     def __init__(self, reqObj=None, entityId=None, pathInfo=None, seqDataStore=None, deserializeFlag=True, verbose=False, log=sys.stderr):
-        super(AlignmentBackEndEditingTools, self).__init__(reqObj=reqObj, entityId=entityId, pathInfo=pathInfo, seqDataStore=seqDataStore, \
-                                             deserializeFlag=deserializeFlag, verbose=verbose, log=log)
+        super(AlignmentBackEndEditingTools, self).__init__(
+            reqObj=reqObj, entityId=entityId, pathInfo=pathInfo, seqDataStore=seqDataStore, deserializeFlag=deserializeFlag, verbose=verbose, log=log
+        )
         #
         self.__local_authLabel = self._authLabel
         self.__newPartInfoDict = {}
@@ -31,19 +34,17 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         self.__newSeqLabelIdMap = {}
 
     def _update_details(self, resLabel, editInfoTuple):
-        """ Replace comment details: editInfoTuple ( 0: seqType, 1: seqLabelId, 2: alignTupleIndex, 3: editObj )
-        """
+        """Replace comment details: editInfoTuple ( 0: seqType, 1: seqLabelId, 2: alignTupleIndex, 3: editObj )"""
         self._seqAlignList[int(resLabel.getAlignmentIndex())][int(editInfoTuple[2])][5] = "ANNOTATED:" + str(editInfoTuple[3].getValueNew())
         #
         self.__updateEditingHistory(editInfoTuple[3].getEditType(), editInfoTuple[0], editInfoTuple[1])
 
     def _update_replace(self, resLabel, editInfoTuple):
-        """ Replace residue name: editInfoTuple ( 0: seqType, 1: seqLabelId, 2: alignTupleIndex, 3: editObj )
-        """
+        """Replace residue name: editInfoTuple ( 0: seqType, 1: seqLabelId, 2: alignTupleIndex, 3: editObj )"""
         newResidueName = editInfoTuple[3].getValueNew()[0]
         newOneLetterCode = self._srd.cnv3To1(newResidueName)
         if editInfoTuple[0] == "auth":
-            for labelId,tupleIndex in self._xyzAlignLabelIndices.items():
+            for labelId, tupleIndex in self._xyzAlignLabelIndices.items():
                 self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][6] = 0
                 self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][7] = ""
                 if labelId.startswith("xyz"):
@@ -56,7 +57,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
                 #
                 self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][0] = newOneLetterCode
                 self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][1] = newResidueName
-            #   
+            #
         else:
             self._seqAlignList[int(resLabel.getAlignmentIndex())][int(editInfoTuple[2])][0] = newOneLetterCode
             self._seqAlignList[int(resLabel.getAlignmentIndex())][int(editInfoTuple[2])][1] = newResidueName
@@ -64,8 +65,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         self.__updateEditingHistory(editInfoTuple[3].getEditType(), editInfoTuple[0], editInfoTuple[1])
 
     def _update_replaceid(self, resLabel, editInfoTuple):
-        """ Exchange residue position: editInfoTuple ( 0: seqType, 1: seqLabelId, 2: alignTupleIndex, 3: editObj )
-        """
+        """Exchange residue position: editInfoTuple ( 0: seqType, 1: seqLabelId, 2: alignTupleIndex, 3: editObj )"""
         newId = editInfoTuple[3].getNewElementId()
         newLabelObj = self._getResLabelFromResLabelId(newId)
         srcSeqPos = newLabelObj.getSequenceIndex()
@@ -75,7 +75,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         #
         if editInfoTuple[0] == "xyz":
             if srcResNam != self._gapSymbol:
-                for labelId,tupleIndex in self._xyzAlignLabelIndices.items():
+                for labelId, tupleIndex in self._xyzAlignLabelIndices.items():
                     if labelId.startswith("auth"):
                         if srcResNam != self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][1]:
                             oneLetterCode = self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][0]
@@ -87,7 +87,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
                 try:
                     seq = self._getSequenceByPackLabelFromDataStore(editInfoTuple[1])
                     self._seqAlignList[int(resLabel.getAlignmentIndex())][int(editInfoTuple[2])][5] = seq[int(srcSeqPos)][2]
-                except:
+                except:  # noqa: E722 pylint: disable=bare-except
                     pass
                 #
             else:
@@ -102,7 +102,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         self.__updateEditingHistory(editInfoTuple[3].getEditType(), editInfoTuple[0], editInfoTuple[1])
         #
         if (srcResNam != self._gapSymbol) and (editInfoTuple[0] == "auth"):
-            for labelId,tupleIndex in self._xyzAlignLabelIndices.items():
+            for labelId, tupleIndex in self._xyzAlignLabelIndices.items():
                 self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][6] = 0
                 self._seqAlignList[int(resLabel.getAlignmentIndex())][int(tupleIndex)][7] = ""
                 if labelId.startswith("xyz"):
@@ -119,8 +119,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         #
 
     def _update_insert(self, resLabel, editInfoTuple):
-        """ Insert residue(s): editInfoTuple ( 0: seqType, 1: seqLabelId, 2: alignTupleIndex, 3: editObj )
-        """
+        """Insert residue(s): editInfoTuple ( 0: seqType, 1: seqLabelId, 2: alignTupleIndex, 3: editObj )"""
         alignList = []
         for alignTup in self._seqAlignList:
             if int(alignTup[int(editInfoTuple[2])][4]) == int(resLabel.getAlignmentIndex()):
@@ -135,9 +134,9 @@ class AlignmentBackEndEditingTools(AlignmentTools):
                     newAlignTup = []
                     for i in range(0, len(alignTup)):
                         if i == int(editInfoTuple[2]):
-                            newAlignTup.append([ oneLetterCode, residueName, "", "", "", "", 0, "" ])
+                            newAlignTup.append([oneLetterCode, residueName, "", "", "", "", 0, ""])
                         else:
-                            newAlignTup.append([ self._gapSymbol, self._gapSymbol, "", "", "", "", 0, "" ])
+                            newAlignTup.append([self._gapSymbol, self._gapSymbol, "", "", "", "", 0, ""])
                         #
                     #
                     alignList.append(newAlignTup)
@@ -151,8 +150,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         self.__updateEditingHistory(editInfoTuple[3].getEditType(), editInfoTuple[0], editInfoTuple[1])
 
     def _update_delete(self, resLabel, editInfoTuple):
-        """ Delete residue: editInfoTuple ( 0: seqType, 1: seqLabelId, 2: alignTupleIndex, 3: editObj )
-        """
+        """Delete residue: editInfoTuple ( 0: seqType, 1: seqLabelId, 2: alignTupleIndex, 3: editObj )"""
         self._seqAlignList[int(resLabel.getAlignmentIndex())][int(editInfoTuple[2])][0] = self._gapSymbol
         self._seqAlignList[int(resLabel.getAlignmentIndex())][int(editInfoTuple[2])][1] = self._gapSymbol
         self._seqAlignList[int(resLabel.getAlignmentIndex())][int(editInfoTuple[2])][2] = ""
@@ -164,8 +162,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         self.__updateEditingHistory(editInfoTuple[3].getEditType(), editInfoTuple[0], editInfoTuple[1])
 
     def _updateAlignmentAndSequences(self, inputAlignIdList, inputSelectedIdList):
-        """ Consolidate alignment and update any sequence changes after alignment editing operation.
-        """
+        """Consolidate alignment and update any sequence changes after alignment editing operation."""
         if len(self.__editedType) < 1:
             return
         #
@@ -181,18 +178,18 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         authIdx = self._seqAlignLabelIndices[self.__local_authLabel]
         self._checkPartStartEndPosMap(authIdx, self.__local_authLabel)
         #
-        for seqType in ( "auth", "xyz", "ref" ):
+        for seqType in ("auth", "xyz", "ref"):
             if seqType not in self.__editedSeqLabelMap:
                 continue
             #
-            for seqLabelId,editTypeList in self.__editedSeqLabelMap[seqType].items():
+            for seqLabelId, editTypeList in self.__editedSeqLabelMap[seqType].items():
                 self.__updateSequenceInfo(authIdx, seqLabelId, editTypeList)
             #
         #
         if ("details" in self.__editedType) or ("replace" in self.__editedType) or ("delete" in self.__editedType) or ("insert" in self.__editedType):
             self.saveSequenceDataStore()
         #
-        outputAlignIdList,outputSelectedIdList = self.__updateSeqLabelIdWithNewVersion(inputAlignIdList, inputSelectedIdList)
+        outputAlignIdList, outputSelectedIdList = self.__updateSeqLabelIdWithNewVersion(inputAlignIdList, inputSelectedIdList)
         #
         if ("replaceid" in self.__editedType) or ("delete" in self.__editedType) or ("insert" in self.__editedType):
             self.__updateXyzAlignList()
@@ -210,11 +207,10 @@ class AlignmentBackEndEditingTools(AlignmentTools):
             #
             self._insertXyzAlignIndexList(xyzLabelList, self.__xyzAlignIndexList)
         #
-        return outputAlignIdList,outputSelectedIdList
+        return outputAlignIdList, outputSelectedIdList
 
     def __updateEditingHistory(self, edType, seqType, seqLabelId):
-        """ Record editing history
-        """
+        """Record editing history"""
         if edType not in self.__editedType:
             self.__editedType.append(edType)
         #
@@ -224,17 +220,16 @@ class AlignmentBackEndEditingTools(AlignmentTools):
                     self.__editedSeqLabelMap[seqType][seqLabelId].append(edType)
                 #
             else:
-                self.__editedSeqLabelMap[seqType][seqLabelId] = [ edType ]
+                self.__editedSeqLabelMap[seqType][seqLabelId] = [edType]
             #
         else:
             tmpD = {}
-            tmpD[seqLabelId] = [ edType ]
+            tmpD[seqLabelId] = [edType]
             self.__editedSeqLabelMap[seqType] = tmpD
         #
 
     def __removeEmptyAlignRecord(self, reIndexingFlag):
-        """ Remove all empty align records after "delete" operation
-        """
+        """Remove all empty align records after "delete" operation"""
         alignList = []
         for alignTup in self._seqAlignList:
             hasValue = False
@@ -258,17 +253,15 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         #
 
     def __reIndexingAlignment(self):
-        """ Re-indexing align position index after "delete" or "insert" operations
-        """
-        for idx,alignTup in enumerate(self._seqAlignList):
+        """Re-indexing align position index after "delete" or "insert" operations"""
+        for idx, alignTup in enumerate(self._seqAlignList):
             for alignRecord in alignTup:
                 alignRecord[4] = idx
             #
         #
 
     def __updateSequenceInfo(self, authIdx, seqLabelId, editTypeList):
-        """ Propogate the alignment edits to new versions of the sequences in the sequence data store.
-        """
+        """Propogate the alignment edits to new versions of the sequences in the sequence data store."""
         if (len(editTypeList) < 1) or ((len(editTypeList) == 1) and (editTypeList[0] == "replaceid")):
             return
         #
@@ -285,7 +278,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         alignIdx = self._seqAlignLabelIndices[seqLabelId]
         posPartIdDict = {}
         if (alignIdx == authIdx) and (("delete" in editTypeList) or ("insert" in editTypeList) or ("replace" in editTypeList)):
-            for partId,posRange in self._partPosDict.items():
+            for partId, posRange in self._partPosDict.items():
                 for pos in range(posRange[0], posRange[1] + 1):
                     posPartIdDict[pos] = partId
                 #
@@ -296,7 +289,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         numMatchGaps = 0
         #
         newSeqList = []
-        for idx,alignTup in enumerate(self._seqAlignList):
+        for idx, alignTup in enumerate(self._seqAlignList):
             if (idx < begPos) or (idx > endPos):
                 continue
             #
@@ -315,13 +308,11 @@ class AlignmentBackEndEditingTools(AlignmentTools):
             comment = ""
             if seqType == "auth":
                 alignTup[alignIdx][2] = str(seqIdx + 1)
-                intIdx,comment = decodeIndex(alignTup[alignIdx][3])
+                intIdx, comment = decodeIndex(alignTup[alignIdx][3])
                 if intIdx >= 0:
-                    newSeqList.append(( alignTup[alignIdx][1], alignTup[alignIdx][2], orgSeqList[intIdx][2], seqIdx + 1, alignTup[alignIdx][0], \
-                                        orgSeqList[intIdx][5]))
+                    newSeqList.append((alignTup[alignIdx][1], alignTup[alignIdx][2], orgSeqList[intIdx][2], seqIdx + 1, alignTup[alignIdx][0], orgSeqList[intIdx][5]))
                 else:
-                    newSeqList.append(( alignTup[alignIdx][1], alignTup[alignIdx][2], "", seqIdx + 1, alignTup[alignIdx][0], \
-                                        alignTup[alignIdx][1]))
+                    newSeqList.append((alignTup[alignIdx][1], alignTup[alignIdx][2], "", seqIdx + 1, alignTup[alignIdx][0], alignTup[alignIdx][1]))
                 #
                 if (alignIdx == authIdx) and (("delete" in editTypeList) or ("insert" in editTypeList) or ("replace" in editTypeList)):
                     if idx in posPartIdDict:
@@ -329,21 +320,21 @@ class AlignmentBackEndEditingTools(AlignmentTools):
                         if partId in self.__newPartInfoDict:
                             self.__newPartInfoDict[partId][1] = seqIdx + 1
                         else:
-                            self.__newPartInfoDict[partId] = [ seqIdx + 1, seqIdx + 1 ]
+                            self.__newPartInfoDict[partId] = [seqIdx + 1, seqIdx + 1]
                         #
                     #
                 #
             elif seqType == "xyz":
-                intIdx,comment = decodeIndex(alignTup[alignIdx][3])
+                intIdx, comment = decodeIndex(alignTup[alignIdx][3])
                 if intIdx >= 0:
-                    newSeqList.append(( alignTup[alignIdx][1], alignTup[alignIdx][2], orgSeqList[intIdx][2], seqIdx + 1, alignTup[alignIdx][0], \
-                                        orgSeqList[intIdx][5], orgSeqList[intIdx][6]))
+                    newSeqList.append(
+                        (alignTup[alignIdx][1], alignTup[alignIdx][2], orgSeqList[intIdx][2], seqIdx + 1, alignTup[alignIdx][0], orgSeqList[intIdx][5], orgSeqList[intIdx][6])
+                    )
                 else:
-                    newSeqList.append(( alignTup[alignIdx][1], alignTup[alignIdx][2], "", seqIdx + 1, alignTup[alignIdx][0], \
-                                        alignTup[alignIdx][1], "0"))
+                    newSeqList.append((alignTup[alignIdx][1], alignTup[alignIdx][2], "", seqIdx + 1, alignTup[alignIdx][0], alignTup[alignIdx][1], "0"))
                 #
-            else: 
-                newSeqList.append(( alignTup[alignIdx][1], alignTup[alignIdx][2], "", seqIdx + 1, alignTup[alignIdx][0] ))
+            else:
+                newSeqList.append((alignTup[alignIdx][1], alignTup[alignIdx][2], "", seqIdx + 1, alignTup[alignIdx][0]))
             #
             alignTup[alignIdx][3] = codeIndex(seqIdx, comment)
         #
@@ -357,12 +348,12 @@ class AlignmentBackEndEditingTools(AlignmentTools):
                     sFeature.clearAlignDetails()
                     jPartId, jSeqPartType = sFeature.getPartInfo()
                     if partId in self.__newPartInfoDict:
-                        sFeature.setAuthPartDetails(partId, self.__newPartInfoDict[partId][0],  self.__newPartInfoDict[partId][1], jSeqPartType)
+                        sFeature.setAuthPartDetails(partId, self.__newPartInfoDict[partId][0], self.__newPartInfoDict[partId][1], jSeqPartType)
                         #
                         altIdList = self.getAlternativeIdList("ref", seqInstId, partId)
                         for altId in altIdList:
                             fObj = self._getFeatureObjByUnpackLabelFromDataStore("ref", seqInstId, partId, altId, seqVersion)
-                            fObj.setAuthPartDetails(partId, self.__newPartInfoDict[partId][0],  self.__newPartInfoDict[partId][1], jSeqPartType)
+                            fObj.setAuthPartDetails(partId, self.__newPartInfoDict[partId][0], self.__newPartInfoDict[partId][1], jSeqPartType)
                             self.setFeature(fObj.get(), "ref", seqInstId, partId, altId, seqVersion)
                         #
                     #
@@ -373,49 +364,50 @@ class AlignmentBackEndEditingTools(AlignmentTools):
             sFeature = self._getFeatureObjByUnpackLabelFromDataStore(seqType, seqInstId, seqPartId, seqAltId, seqVersion)
             sFeature.clearAlignDetails()
             if seqType == "xyz":
-                sFeature.setAuthXyzAlignDetails(seqLen=len(newSeqList), alignLen=int(alignLength), seqSim=float(numMatch) / float(alignLength), \
-                                                seqSimWithGaps=float(numMatchGaps) / float(alignLength))
+                sFeature.setAuthXyzAlignDetails(
+                    seqLen=len(newSeqList), alignLen=int(alignLength), seqSim=float(numMatch) / float(alignLength), seqSimWithGaps=float(numMatchGaps) / float(alignLength)
+                )
             else:
-                sFeature.setAuthRefAlignDetails(seqLen=len(newSeqList), alignLen=int(alignLength), seqSim=float(numMatch) / float(alignLength), \
-                                                seqSimWithGaps=float(numMatchGaps) / float(alignLength))
+                sFeature.setAuthRefAlignDetails(
+                    seqLen=len(newSeqList), alignLen=int(alignLength), seqSim=float(numMatch) / float(alignLength), seqSimWithGaps=float(numMatchGaps) / float(alignLength)
+                )
             #
             self.setFeature(sFeature.get(), seqType, seqInstId, seqPartId, seqAltId, nextVersion)
         #
         self.__newSeqLabelIdMap[seqLabelId] = self._getSeqLabelId((seqType, seqInstId, seqPartId, seqAltId, nextVersion))
 
     def __updateXyzAlignList(self):
-        """ Re-create self._xyzAlignLabelIndices, self._reverseXyzAlignLabelIndices & self._xyzAlignList from
-            self._seqAlignLabelIndices, self._reverseSeqAlignLabelIndices & self._seqAlignList
+        """Re-create self._xyzAlignLabelIndices, self._reverseXyzAlignLabelIndices & self._xyzAlignList from
+        self._seqAlignLabelIndices, self._reverseSeqAlignLabelIndices & self._seqAlignList
         """
         if self._authLabel not in self._seqAlignLabelIndices:
             return
         #
         indexList = []
-        indexList.append(( self._authLabel, self._seqAlignLabelIndices[self._authLabel] ))
+        indexList.append((self._authLabel, self._seqAlignLabelIndices[self._authLabel]))
         for i in range(0, len(self._reverseSeqAlignLabelIndices)):
             seqLabelId = self._reverseSeqAlignLabelIndices[i]
             if not seqLabelId.startswith("xyz"):
                 continue
             #
-            indexList.append(( seqLabelId, i ))
+            indexList.append((seqLabelId, i))
         #
         self._xyzAlignLabelIndices = {}
         self._reverseXyzAlignLabelIndices = {}
-        for idx,indexTuple in enumerate(indexList):
+        for idx, indexTuple in enumerate(indexList):
             self._xyzAlignLabelIndices[indexTuple[0]] = idx
             self._reverseXyzAlignLabelIndices[idx] = indexTuple[0]
         #
-        self._xyzAlignList,self.__xyzAlignIndexList = self.__getAlignAndIndexList(inputSeqIndexList=indexList)
+        self._xyzAlignList, self.__xyzAlignIndexList = self.__getAlignAndIndexList(inputSeqIndexList=indexList)
 
     def __getAlignAndIndexList(self, inputSeqIndexList=[], includeAlignmentFlag=True):
-        """
-        """
+        """ """
         alignList = []
         alignIndexList = []
         for seqAlignTuple in self._seqAlignList:
             hasRealValue = False
             for indexTuple in inputSeqIndexList:
-                intIdx,comment = decodeIndex(seqAlignTuple[indexTuple[1]][3])
+                intIdx, comment = decodeIndex(seqAlignTuple[indexTuple[1]][3])
                 if intIdx >= 0:
                     hasRealValue = True
                     break
@@ -437,11 +429,10 @@ class AlignmentBackEndEditingTools(AlignmentTools):
             #
             alignIndexList.append(alignIndexTuple)
         #
-        return alignList,alignIndexList
+        return alignList, alignIndexList
 
     def __updateRefAlignList(self):
-        """
-        """
+        """ """
         if self._authLabel not in self._seqAlignLabelIndices:
             return
         #
@@ -450,23 +441,22 @@ class AlignmentBackEndEditingTools(AlignmentTools):
             if not seqLabelId.startswith("ref"):
                 continue
             #
-            indexList = [ ( self._authLabel, self._seqAlignLabelIndices[self._authLabel] ), ( seqLabelId, i ) ]
+            indexList = [(self._authLabel, self._seqAlignLabelIndices[self._authLabel]), (seqLabelId, i)]
             #
-            alignList,refAlignIndexList = self.__getAlignAndIndexList(inputSeqIndexList=indexList, includeAlignmentFlag=False)
+            alignList, refAlignIndexList = self.__getAlignAndIndexList(inputSeqIndexList=indexList, includeAlignmentFlag=False)
             if refAlignIndexList:
-                self._insertRefAlignIndexList([ self._authLabel, seqLabelId ], refAlignIndexList)
+                self._insertRefAlignIndexList([self._authLabel, seqLabelId], refAlignIndexList)
             #
         #
 
     def __updateSeqLabelIdWithNewVersion(self, inputAlignIdList, inputSelectedIdList):
-        """ Update seqLabelId with next version if exists
-        """
+        """Update seqLabelId with next version if exists"""
         if not self.__newSeqLabelIdMap:
-            return inputAlignIdList,inputSelectedIdList
+            return inputAlignIdList, inputSelectedIdList
         #
         # Insert new/old instId relationship
         #
-        for oldId,newId in self.__newSeqLabelIdMap.items():
+        for oldId, newId in self.__newSeqLabelIdMap.items():
             self._insertAssociatedInstIds(newId, oldId)
         #
         # update seqIds with new version
@@ -474,20 +464,19 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         if self.__local_authLabel in self.__newSeqLabelIdMap:
             self._authLabel = self.__newSeqLabelIdMap[self.__local_authLabel]
         #
-        self._seqAlignLabelIndices,self._reverseSeqAlignLabelIndices = self.__reAssignAlignLabelIndices(self._seqAlignLabelIndices)
-        self._xyzAlignLabelIndices,self._reverseXyzAlignLabelIndices = self.__reAssignAlignLabelIndices(self._xyzAlignLabelIndices)
+        self._seqAlignLabelIndices, self._reverseSeqAlignLabelIndices = self.__reAssignAlignLabelIndices(self._seqAlignLabelIndices)
+        self._xyzAlignLabelIndices, self._reverseXyzAlignLabelIndices = self.__reAssignAlignLabelIndices(self._xyzAlignLabelIndices)
         #
         # update input align ID list
         outputAlignIdList = self.__reAssignAlignIdList(inputAlignIdList)
         outputSelectedIdList = self.__reAssignAlignIdList(inputSelectedIdList)
-        return outputAlignIdList,outputSelectedIdList
+        return outputAlignIdList, outputSelectedIdList
 
     def __reAssignAlignLabelIndices(self, inAlignLabelIndices):
-        """ Re-assign alignment seqLabelId indices with next version
-        """
+        """Re-assign alignment seqLabelId indices with next version"""
         outAlignLabelIndices = {}
         outReverseAlignLabelIndices = {}
-        for seqLabelId,index in inAlignLabelIndices.items():
+        for seqLabelId, index in inAlignLabelIndices.items():
             if seqLabelId in self.__newSeqLabelIdMap:
                 outAlignLabelIndices[self.__newSeqLabelIdMap[seqLabelId]] = index
                 outReverseAlignLabelIndices[index] = self.__newSeqLabelIdMap[seqLabelId]
@@ -496,11 +485,10 @@ class AlignmentBackEndEditingTools(AlignmentTools):
                 outReverseAlignLabelIndices[index] = seqLabelId
             #
         #
-        return outAlignLabelIndices,outReverseAlignLabelIndices
+        return outAlignLabelIndices, outReverseAlignLabelIndices
 
     def __reAssignAlignIdList(self, inputSeqLabelIdList):
-        """ Update seqLabelId list with next version if exists
-        """
+        """Update seqLabelId list with next version if exists"""
         outputSeqLabelIdList = []
         for seqLabelId in inputSeqLabelIdList:
             if seqLabelId in self.__newSeqLabelIdMap:

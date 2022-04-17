@@ -1,4 +1,3 @@
-
 ##
 # File:  SequenceDataAssembleExample.py
 # Date:  05-Mar-2013
@@ -8,149 +7,146 @@
 ##
 """
 Assemble sequence and other required data to start/restart the sequence editor tool.
-     
 """
 __docformat__ = "restructuredtext en"
-__author__    = "John Westbrook"
-__email__     = "jwest@rcsb.rutgers.edu"
-__license__   = "Creative Commons Attribution 3.0 Unported"
-__version__   = "V0.09"
+__author__ = "John Westbrook"
+__email__ = "jwest@rcsb.rutgers.edu"
+__license__ = "Creative Commons Attribution 3.0 Unported"
+__version__ = "V0.09"
 
-import sys, os, string, shutil, time
+import sys
+import os
+import shutil
 
-from wwpdb.apps.seqmodule.io.SequenceDataStore       import SequenceDataStore
-from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
-from wwpdb.apps.seqmodule.util.SequenceLabel         import SequenceFeature
-from wwpdb.apps.seqmodule.util.SequenceExamples      import SequenceExamples
+from wwpdb.apps.seqmodule.io.SequenceDataStore import SequenceDataStore
+from wwpdb.apps.seqmodule.util.SequenceExamples import SequenceExamples
 
 
 class SequenceDataAssembleExample(object):
     """
-     This class loads the sequence data store with example data
-     from the SequenceExamples() class.
+    This class loads the sequence data store with example data
+    from the SequenceExamples() class.
 
-     This class is provided primarily for testing and development.
+    This class is provided primarily for testing and development.
 
-     Storage model - imported data is loaded into the sequence data store
-                     where it is managed by the SequenceDataStore() class. 
+    Storage model - imported data is loaded into the sequence data store
+                    where it is managed by the SequenceDataStore() class.
 
     """
-    def __init__(self,reqObj=None, verbose=False,log=sys.stderr):
-        self.__verbose=verbose
-        self.__reqObj=reqObj
-        self.__sessionObj=None
-        self.__lfh=log
-        self.__localTest=False
+
+    def __init__(self, reqObj=None, verbose=False, log=sys.stderr):
+        self.__verbose = verbose
+        self.__reqObj = reqObj
+        self.__sessionObj = None
+        self.__lfh = log
+        self.__localTest = False
         #
-        self.__sessionPath='.'
+        self.__sessionPath = "."
         #
         self.__setup()
-        
+
     def __setup(self):
         try:
-            self.__sessionObj  = self.__reqObj.getSessionObj()            
+            self.__sessionObj = self.__reqObj.getSessionObj()
             self.__sessionPath = self.__sessionObj.getPath()
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SequenceDataAssembleExample.__setup() - session id %s\n" % self.__sessionObj.getId())
-                self.__lfh.write("+SequenceDataAssembleExample.__setup() - session path %s\n" %  self.__sessionObj.getPath() )
-        except:
+                self.__lfh.write("+SequenceDataAssembleExample.__setup() - session path %s\n" % self.__sessionObj.getPath())
+        except:  # noqa: E722 pylint: disable=bare-except
             pass
 
-    def __copyExampleStructureFile(self,id, fileType="pdb"):
-        
-        fn=str(id).lower() + "." + fileType
-        
-        if (self.__verbose):
-            self.__lfh.write("+SequenceDataAssembleExample.__copyExampleStructureFile () - copying file name  %s\n" %  fn)                
-        dst=os.path.join(self.__sessionPath,fn)
+    def __copyExampleStructureFile(self, id, fileType="pdb"):
+
+        fn = str(id).lower() + "." + fileType
+
+        if self.__verbose:
+            self.__lfh.write("+SequenceDataAssembleExample.__copyExampleStructureFile () - copying file name  %s\n" % fn)
+        dst = os.path.join(self.__sessionPath, fn)
         topPath = self.__reqObj.getValue("TopPath")
-        src=os.path.join(topPath,'xyz',fn)
-        if (self.__verbose):
-            self.__lfh.write("+SequenceDataAssembleExample.__copyExampleStructureFile() - src  %s dst %s\n" %  (src,dst))
+        src = os.path.join(topPath, "xyz", fn)
+        if self.__verbose:
+            self.__lfh.write("+SequenceDataAssembleExample.__copyExampleStructureFile() - src  %s dst %s\n" % (src, dst))
         try:
-            shutil.copyfile(src,dst)
-        except:
+            shutil.copyfile(src, dst)
+        except:  # noqa: E722 pylint: disable=bare-except
             pass
         return dst
 
     def doImport(self):
         return self.__loadExampleData()
-    
+
     def __loadExampleData(self):
-        """ Store example sequence data in a SequenceDataStore repository
-            in the current session directory.
+        """Store example sequence data in a SequenceDataStore repository
+        in the current session directory.
         """
         #
-        if (self.__verbose):
-            self.__lfh.write("+SequenceDataAssembleExample.__loadExample()  sessionId %s\n" %
-                             (self.__sessionObj.getId()))        
+        if self.__verbose:
+            self.__lfh.write("+SequenceDataAssembleExample.__loadExample()  sessionId %s\n" % (self.__sessionObj.getId()))
 
-        # Load up some test data - 
-        sE=SequenceExamples()
+        # Load up some test data -
+        sE = SequenceExamples()
 
-        refSL ={}
-        xyzSL ={}
-        authSL={}
-        refFD ={}
+        refSL = {}
+        xyzSL = {}
+        authSL = {}
+        refFD = {}
         xyzFD = {}
-        authFD = {}        
-        for id in ['A','B']:
-            refSL[id]  = sE.getRefSequenceWithIndexList(id)
+        authFD = {}
+        for id in ["A", "B"]:
+            refSL[id] = sE.getRefSequenceWithIndexList(id)
             authSL[id] = sE.getAuthSequenceWithIndexList(id)
-            xyzSL[id]  = sE.getXyzSequenceWithIndexList(id)
-            refFD[id]  = sE.getRefFeatureDict(id)
+            xyzSL[id] = sE.getXyzSequenceWithIndexList(id)
+            refFD[id] = sE.getRefFeatureDict(id)
             authFD[id] = sE.getAuthFeatureDict(id)
-            xyzFD[id]  = sE.getXyzFeatureDict(id)            
+            xyzFD[id] = sE.getXyzFeatureDict(id)
 
-        if (self.__localTest):
+        if self.__localTest:
             #
             # Create additional auth test sequences with random insertions and deletions
             #
-            for id in ['C','D','E','F','G']:
-                refSL[id]  = sE.getRefSequenceTestWithIndexList('A')           
-                authSL[id] = sE.getAuthSequenceTestWithIndexList('A')
-                xyzSL[id]  = sE.getXyzSequenceTestWithIndexList('A')
-                refFD[id]  = sE.getRefFeatureDict('A')
-                authFD[id] = sE.getAuthFeatureDict('A')
-                xyzFD[id]  = sE.getXyzFeatureDict('A')                                    
-                
-            idList= ['A','B','C','D','E','F','G']
-            groupDict={}
-            groupDict[1]=['A','C','D','E','F','G']
-            groupDict[2]=['B']
-            
+            for id in ["C", "D", "E", "F", "G"]:
+                refSL[id] = sE.getRefSequenceTestWithIndexList("A")
+                authSL[id] = sE.getAuthSequenceTestWithIndexList("A")
+                xyzSL[id] = sE.getXyzSequenceTestWithIndexList("A")
+                refFD[id] = sE.getRefFeatureDict("A")
+                authFD[id] = sE.getAuthFeatureDict("A")
+                xyzFD[id] = sE.getXyzFeatureDict("A")
+
+            idList = ["A", "B", "C", "D", "E", "F", "G"]
+            groupDict = {}
+            groupDict[1] = ["A", "C", "D", "E", "F", "G"]
+            groupDict[2] = ["B"]
+
         else:
-            idList= ['A','B']
-            groupDict={}
-            groupDict[1]=['A']
-            groupDict[2]=['B']
-            
+            idList = ["A", "B"]
+            groupDict = {}
+            groupDict[1] = ["A"]
+            groupDict[2] = ["B"]
 
         #
-        sds=SequenceDataStore(reqObj=self.__sessionObj,verbose=self.__verbose,log=self.__lfh)
+        sds = SequenceDataStore(reqObj=self.__sessionObj, verbose=self.__verbose, log=self.__lfh)
         sds.reset()
         for id in idList:
-            sds.setSequence(authSL[id], id, 'auth', altId=1, version=1)
-            sds.setFeature( authFD[id], id, 'auth', altId=1, version=1)            
-            sds.setSequence(xyzSL[id],  id, 'xyz',  altId=1, version=1)
-            sds.setFeature( xyzFD[id],  id, 'xyz',  altId=1, version=1)            
-            for altId in range(1,10):
-                sds.setSequence(refSL[id],  id, 'ref',  altId=altId, version=1)
-                sds.setFeature( refFD[id],  id, 'ref',  altId=altId, version=1)                                    
+            sds.setSequence(authSL[id], id, "auth", altId=1, version=1)
+            sds.setFeature(authFD[id], id, "auth", altId=1, version=1)
+            sds.setSequence(xyzSL[id], id, "xyz", altId=1, version=1)
+            sds.setFeature(xyzFD[id], id, "xyz", altId=1, version=1)
+            for altId in range(1, 10):
+                sds.setSequence(refSL[id], id, "ref", altId=altId, version=1)
+                sds.setFeature(refFD[id], id, "ref", altId=altId, version=1)
         #
         #
-        entryDict={}
-        entryDict['PDB_ID']=sE.getIdCode()
-        entryDict['RCSB_ID']='RCSB054485'
+        entryDict = {}
+        entryDict["PDB_ID"] = sE.getIdCode()
+        entryDict["RCSB_ID"] = "RCSB054485"
         #
-        for k,v in groupDict.items():
-            sds.setGroup(k,v)
-        for k,v in entryDict.items():
-            sds.setEntryDetail(k,v)
+        for k, v in groupDict.items():
+            sds.setGroup(k, v)
+        for k, v in entryDict.items():
+            sds.setEntryDetail(k, v)
 
         sds.serialize()
 
-        self.__copyExampleStructureFile(id=sE.getIdCode(),fileType="pdb")
-        
-        return {}
+        self.__copyExampleStructureFile(id=sE.getIdCode(), fileType="pdb")
 
+        return {}

@@ -16,17 +16,21 @@ try:
 except ImportError:
     import pickle as pickle
 #
-import copy, os, sys, time, traceback
+import copy
+import os
+import sys
+import traceback
 from operator import itemgetter
 
-from wwpdb.apps.seqmodule.util.SequenceLabel import ResidueLabel,SequenceLabel,SequenceFeature
+from wwpdb.apps.seqmodule.util.SequenceLabel import ResidueLabel, SequenceLabel, SequenceFeature
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
 from wwpdb.apps.seqmodule.util.UpdateSequenceDataStoreUtils import UpdateSequenceDataStoreUtils
 from wwpdb.io.locator.PathInfo import PathInfo
 
+
 class AlignmentDataStore(UpdateSequenceDataStoreUtils):
-    """ Store and recover sequence alignment objects
-    """
+    """Store and recover sequence alignment objects"""
+
     def __init__(self, reqObj=None, entityId=None, pathInfo=None, seqDataStore=None, deserializeFlag=True, verbose=False, log=sys.stderr):
         super(AlignmentDataStore, self).__init__(reqObj=reqObj, seqDataStore=seqDataStore, verbose=verbose, log=log)
         self._entityId = entityId
@@ -46,8 +50,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         self.__setup()
 
     def _clearAllPersistVariables(self):
-        """ Clear all persist variables
-        """
+        """Clear all persist variables"""
         self._authLabel = ""
         self.__instIdMap = {}
         self.__partInfoDict = {}
@@ -60,8 +63,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         self._resetLogInfo()
 
     def _resetAlignmentInfo(self):
-        """ Clear current alignment info.
-        """
+        """Clear current alignment info."""
         self._hasAlignmentFlag = False
         self._seqAlignLabelIndices = {}
         self._reverseSeqAlignLabelIndices = {}
@@ -73,13 +75,11 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         self._authDefinedMutationList = []
 
     def _resetLogInfo(self):
-        """ Clear current log info.
-        """
+        """Clear current log info."""
         self.__errorMsg = ""
 
     def __setup(self):
-        """
-        """
+        """ """
         try:
             self._sessionObj = self._reqObj.getSessionObj()
             self._sessionPath = self._sessionObj.getPath()
@@ -91,21 +91,19 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
             if self.__deserializeFlag and self.__filePath and os.access(self.__filePath, os.R_OK):
                 self.deserialize()
             #
-        except:
-            if (self._verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self._verbose:
                 traceback.print_exc(file=self._lfh)
             #
             self._addErrorMessage(traceback.format_exc())
         #
 
     def getErrorMessage(self):
-        """ Return error message
-        """
+        """Return error message"""
         return self.__errorMsg
 
     def serialize(self):
-        """ Write alignment pickle file
-        """
+        """Write alignment pickle file"""
         try:
             fb = open(self.__filePath, "wb")
             pickle.dump(self._authLabel, fb)
@@ -126,26 +124,25 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
             pickle.dump(self.__refAlignIndexListIndices, fb)
             pickle.dump(self.__errorMsg, fb)
             fb.close()
-        except:
-            if (self._verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self._verbose:
                 traceback.print_exc(file=self._lfh)
             #
             self._addErrorMessage(traceback.format_exc())
         #
 
     def updateEntityId(self, oldEntityId):
-        """ Update entityId for all seqIds
-        """
+        """Update entityId for all seqIds"""
         self._authLabel = self.__replaceEntityId(self._authLabel, oldEntityId)
         #
         instIdMap = {}
-        for k,v in self.__instIdMap.items():
+        for k, v in self.__instIdMap.items():
             instIdMap[self.__replaceEntityId(k, oldEntityId)] = self.__replaceEntityId(v, oldEntityId)
         #
         self.__instIdMap = instIdMap
         #
         partInfoDict = {}
-        for k,v in self.__partInfoDict.items():
+        for k, v in self.__partInfoDict.items():
             partInfoDict[self.__replaceEntityId(k, oldEntityId)] = v
         #
         self.__partInfoDict = partInfoDict
@@ -159,8 +156,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         self._reverseXyzAlignLabelIndices = self.__updateReverseAlignLabelIndices(self._reverseXyzAlignLabelIndices, oldEntityId)
 
     def deserialize(self):
-        """ Read alignment pickle file
-        """
+        """Read alignment pickle file"""
         try:
             fb = open(self.__filePath, "rb")
             self._authLabel = pickle.load(fb)
@@ -181,17 +177,16 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
             self.__refAlignIndexListIndices = pickle.load(fb)
             self.__errorMsg = pickle.load(fb)
             fb.close()
-        except:
-            if (self._verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self._verbose:
                 traceback.print_exc(file=self._lfh)
             #
             self._clearAllPersistVariables()
-            #self._addErrorMessage(traceback.format_exc())
+            # self._addErrorMessage(traceback.format_exc())
         #
 
     def _addErrorMessage(self, errMsg):
-        """ Concatenate error message to self._errorMsg
-        """
+        """Concatenate error message to self._errorMsg"""
         if not errMsg:
             return
         #
@@ -201,18 +196,15 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         self.__errorMsg += errMsg
 
     def _insertAssociatedInstIds(self, newId, oldId):
-        """ Insert new/old instId relationship
-        """
+        """Insert new/old instId relationship"""
         self.__instIdMap[newId] = oldId
 
     def _insertPartInfoDict(self, authId, partInfo):
-        """ Insert auth sequence parts information
-        """
+        """Insert auth sequence parts information"""
         self.__partInfoDict[authId] = partInfo
 
     def _getPartInfoDict(self, authId):
-        """ Get auth sequence parts information
-        """
+        """Get auth sequence parts information"""
         if authId in self.__partInfoDict:
             return self.__partInfoDict[authId]
         else:
@@ -224,8 +216,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         return {}
 
     def _insertXyzAlignIndexList(self, alignIdList, alignIndexList):
-        """ Insert xyz align index list info.
-        """
+        """Insert xyz align index list info."""
         key = "|".join(sorted(alignIdList))
         if key in self.__xyzAlignIndexListIndices:
             self.__xyzAlignIndexListMap[self.__xyzAlignIndexListIndices[key][0]] = alignIndexList
@@ -233,17 +224,15 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         #
         pos = len(self.__xyzAlignIndexListMap)
         self.__xyzAlignIndexListMap[pos] = alignIndexList
-        self.__xyzAlignIndexListIndices[key] = ( pos, alignIdList )
+        self.__xyzAlignIndexListIndices[key] = (pos, alignIdList)
 
     def _getXyzAlignIndexList(self, alignIdList):
-        """ Get xyz align index list info.
-        """
-        oldIdList,alignIndexList = self.__getAlignIndexList(alignIdList, self.__xyzAlignIndexListMap, self.__xyzAlignIndexListIndices)
+        """Get xyz align index list info."""
+        oldIdList, alignIndexList = self.__getAlignIndexList(alignIdList, self.__xyzAlignIndexListMap, self.__xyzAlignIndexListIndices)
         return alignIndexList
 
     def _insertRefAlignIndexList(self, alignIdList, alignIndexList):
-        """ Insert ref align index list info.
-        """
+        """Insert ref align index list info."""
         key = "|".join(sorted(alignIdList))
         if key in self.__refAlignIndexListIndices:
             self.__refAlignIndexListMap[self.__refAlignIndexListIndices[key][0]] = alignIndexList
@@ -251,57 +240,59 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         #
         pos = len(self.__refAlignIndexListMap)
         self.__refAlignIndexListMap[pos] = alignIndexList
-        self.__refAlignIndexListIndices[key] = ( pos, alignIdList )
+        self.__refAlignIndexListIndices[key] = (pos, alignIdList)
 
     def _getRefAlignIndexList(self, alignIdList):
-        """ Get ref align index list info.
-        """
-        oldIdList,alignIndexList = self.__getAlignIndexList(alignIdList, self.__refAlignIndexListMap, self.__refAlignIndexListIndices)
+        """Get ref align index list info."""
+        oldIdList, alignIndexList = self.__getAlignIndexList(alignIdList, self.__refAlignIndexListMap, self.__refAlignIndexListIndices)
         return alignIndexList
 
     def _copyXyzAlignmentToSeqAlignment(self):
-        """ Copy auth/coordinate alignment(s) to overall alignment(s)
-        """
+        """Copy auth/coordinate alignment(s) to overall alignment(s)"""
         self._seqAlignLabelIndices = copy.deepcopy(self._xyzAlignLabelIndices)
         self._reverseSeqAlignLabelIndices = copy.deepcopy(self._reverseXyzAlignLabelIndices)
         self._seqAlignList = copy.deepcopy(self._xyzAlignList)
 
     def _getResLabelFromResLabelId(self, resLabelId):
-        """ Get ResidueLabel object
-        """
+        """Get ResidueLabel object"""
         if self.__resLabel.unpack(resLabelId):
             return self.__resLabel
         #
         return None
 
-    def _getResLabelId(self, seqType="ref", seqInstId="", seqAltId=1, seqVersion=1, residueCode3="", residueLabelIndex=0, \
-                       alignIndex=0, seqIndex=0, residueType="AA", seqPartId=1):
-        """ Get ResidueLabel Id 
-        """
-        self.__resLabel.set(seqType=seqType, seqInstId=seqInstId, seqAltId=seqAltId, seqVersion=seqVersion, residueCode3=residueCode3, \
-           residueLabelIndex=residueLabelIndex, alignIndex=alignIndex, seqIndex=seqIndex, residueType=residueType, seqPartId=seqPartId)
+    def _getResLabelId(self, seqType="ref", seqInstId="", seqAltId=1, seqVersion=1, residueCode3="", residueLabelIndex=0, alignIndex=0, seqIndex=0, residueType="AA", seqPartId=1):
+        """Get ResidueLabel Id"""
+        self.__resLabel.set(
+            seqType=seqType,
+            seqInstId=seqInstId,
+            seqAltId=seqAltId,
+            seqVersion=seqVersion,
+            residueCode3=residueCode3,
+            residueLabelIndex=residueLabelIndex,
+            alignIndex=alignIndex,
+            seqIndex=seqIndex,
+            residueType=residueType,
+            seqPartId=seqPartId,
+        )
         #
         return self.__resLabel.pack()
 
     def _getUnpackSeqLabel(self, seqLabelId):
-        """ Gte unpack sequence label
-        """
+        """Gte unpack sequence label"""
         if self.__seqLabel.unpack(seqLabelId):
             return self.__seqLabel.get()
         else:
-            return ( "", "", 1, 1, 1 )
+            return ("", "", 1, 1, 1)
         #
 
     def _getSeqLabelId(self, tup):
-        """ SequenceLabel Id
-        """
+        """SequenceLabel Id"""
         seqType, seqInstId, seqPartId, seqAltId, seqVersion = tup
         self.__seqLabel.set(seqType=seqType, seqInstId=seqInstId, seqPartId=seqPartId, seqAltId=seqAltId, seqVersion=seqVersion)
         return self.__seqLabel.pack()
 
     def _getSequenceByPackLabelFromDataStore(self, seqLabelId):
-        """ Get sequence from SequenceDataStore object
-        """
+        """Get sequence from SequenceDataStore object"""
         (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(seqLabelId)
         if seqType:
             return self._getSequenceByUnpackLabelFromDataStore(seqType, seqInstId, seqPartId, seqAltId, seqVersion)
@@ -310,8 +301,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         #
 
     def _getSequenceByUnpackLabelFromDataStore(self, seqType, seqInstId, seqPartId, seqAltId, seqVersion):
-        """ Get sequence from SequenceDataStore object
-        """
+        """Get sequence from SequenceDataStore object"""
         seqs = self.getSequence(seqType, seqInstId, seqPartId, seqAltId, seqVersion)
         if not seqs:
             label = "entity " + seqInstId
@@ -325,8 +315,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         return seqs
 
     def _getFeatureByPackLabelFromDataStore(self, seqLabelId):
-        """ Get feature from SequenceDataStore object
-        """
+        """Get feature from SequenceDataStore object"""
         (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(seqLabelId)
         if seqType:
             return self.getFeature(seqType, seqInstId, seqPartId, seqAltId, seqVersion)
@@ -335,8 +324,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         #
 
     def _getFeatureObjByPackLabelFromDataStore(self, seqLabelId):
-        """ Get feature object from SequenceDataStore object
-        """
+        """Get feature object from SequenceDataStore object"""
         sfObj = SequenceFeature()
         sfDic = self._getFeatureByPackLabelFromDataStore(seqLabelId)
         if sfDic:
@@ -345,8 +333,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         return sfObj
 
     def _getFeatureObjByUnpackLabelFromDataStore(self, seqType, seqInstId, seqPartId, seqAltId, seqVersion):
-        """ Get feature object from SequenceDataStore object
-        """
+        """Get feature object from SequenceDataStore object"""
         sfObj = SequenceFeature()
         sfDic = self.getFeature(seqType, seqInstId, seqPartId, seqAltId, seqVersion)
         if sfDic:
@@ -355,25 +342,24 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         return sfObj
 
     def _getProperAlignIdList(self, inputIdList, allSelectedIdList):
-        """ Check the input alignIds and return proper proper alignIds for doing alignment
-        """
+        """Check the input alignIds and return proper proper alignIds for doing alignment"""
         chainIdList = self.getGroup(self._entityId)
         #
-        inputAuthList,inputXyzMap,inputRefMap,inputSelfMap = self.__getSubSeqList(inputIdList, chainIdList)
+        inputAuthList, inputXyzMap, inputRefMap, inputSelfMap = self.__getSubSeqList(inputIdList, chainIdList)
         #
-        selectAuthList,selectXyzMap,selectRefMap,selectSelfMap = self.__getSubSeqList(allSelectedIdList, chainIdList)
+        selectAuthList, selectXyzMap, selectRefMap, selectSelfMap = self.__getSubSeqList(allSelectedIdList, chainIdList)
         #
-        currXyzMap,currRefMap = self.__getCurrentSubSeqList()
+        currXyzMap, currRefMap = self.__getCurrentSubSeqList()
         #
-        authSeqId,extraAuthIdList = self.__getSeqId("auth", self._entityId, 1, self._authLabel, inputAuthList, selectAuthList)
+        authSeqId, extraAuthIdList = self.__getSeqId("auth", self._entityId, 1, self._authLabel, inputAuthList, selectAuthList)
         (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(authSeqId)
         #
         partIdList = self.getPartIdList(seqType, seqInstId)
         #
-        retInputIdList = [ authSeqId ]
-        selectIdList = [ authSeqId ]
-        allAlignIdList = [ authSeqId ]
-        xyzAlignList = [ authSeqId ]
+        retInputIdList = [authSeqId]
+        selectIdList = [authSeqId]
+        allAlignIdList = [authSeqId]
+        xyzAlignList = [authSeqId]
         if len(extraAuthIdList) > 0:
             retInputIdList.extend(extraAuthIdList)
             allAlignIdList.extend(extraAuthIdList)
@@ -391,7 +377,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
             if chainId in currXyzMap:
                 currId = currXyzMap[chainId]
             #
-            xyzId,extraXyzList = self.__getSeqId("xyz", chainId, 1, currId, iIdList, sIdList)
+            xyzId, extraXyzList = self.__getSeqId("xyz", chainId, 1, currId, iIdList, sIdList)
             if len(xyzId) == 0:
                 continue
             #
@@ -426,7 +412,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
             if str(partId) in currRefMap:
                 currId = currRefMap[str(partId)]
             #
-            refId,extraRefList = self.__getSeqId("ref", self._entityId, partId, currId, iIdList, sIdList)
+            refId, extraRefList = self.__getSeqId("ref", self._entityId, partId, currId, iIdList, sIdList)
             if len(refId) == 0:
                 continue
             #
@@ -442,11 +428,10 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
                 refAlignList.extend(extraRefList)
             #
         #
-        return retInputIdList,selectIdList,allAlignIdList,xyzAlignList,refAlignList,selfReflist,extraAuthIdList
+        return retInputIdList, selectIdList, allAlignIdList, xyzAlignList, refAlignList, selfReflist, extraAuthIdList
 
     def _updateDefaultSelections(self, selectedIdList):
-        """ Update default selections in SequenceDataStore object for this entity
-        """
+        """Update default selections in SequenceDataStore object for this entity"""
         chainIdList = self.getGroup(self._entityId)
         #
         defaultSelectIdList = self.getSelectedIds()
@@ -457,7 +442,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
             if len(tL) < 3:
                 continue
             #
-            elif (tL[0] in ( "selfref", "auth", "ref" )) and (tL[1] == self._entityId):
+            elif (tL[0] in ("selfref", "auth", "ref")) and (tL[1] == self._entityId):
                 continue
             elif (tL[0] == "xyz") and (tL[1] in chainIdList):
                 continue
@@ -469,50 +454,45 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         self.saveSequenceDataStore()
 
     def __replaceEntityId(self, seqId, oldEntityId):
-        """
-        """
+        """ """
         tL = str(seqId).split("_")
-        if (len(tL) > 2) and (tL[0] in ( "selfref", "auth", "ref" )) and (tL[1] == oldEntityId):
+        if (len(tL) > 2) and (tL[0] in ("selfref", "auth", "ref")) and (tL[1] == oldEntityId):
             tL[1] = self._entityId
             return "_".join(tL)
         #
         return seqId
 
     def __updateAlignIndexListIndices(self, oldAlignIndexListIndices, oldEntityId):
-        """
-        """
+        """ """
         newAlignIndexListIndices = {}
-        for k,tupL in oldAlignIndexListIndices.items():
+        for k, tupL in oldAlignIndexListIndices.items():
             alignIdList = []
             for alignId in tupL[1]:
                 alignIdList.append(self.__replaceEntityId(alignId, oldEntityId))
             #
             key = "|".join(sorted(alignIdList))
-            newAlignIndexListIndices[key] = ( tupL[0], alignIdList )
+            newAlignIndexListIndices[key] = (tupL[0], alignIdList)
         #
         return newAlignIndexListIndices
 
     def __updateAlignLabelIndices(self, oldIndices, oldEntityId):
-        """
-        """
+        """ """
         newIndices = {}
-        for k,v in oldIndices.items():
+        for k, v in oldIndices.items():
             newIndices[self.__replaceEntityId(k, oldEntityId)] = v
         #
         return newIndices
 
     def __updateReverseAlignLabelIndices(self, oldIndices, oldEntityId):
-        """
-        """
+        """ """
         newIndices = {}
-        for k,v in oldIndices.items():
+        for k, v in oldIndices.items():
             newIndices[k] = self.__replaceEntityId(v, oldEntityId)
         #
         return newIndices
 
     def __searchOriginalId(self, newId):
-        """ Search associated previoud instId
-        """
+        """Search associated previoud instId"""
         if newId not in self.__instIdMap:
             return newId
         else:
@@ -520,20 +500,19 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         #
 
     def __getAlignIndexList(self, alignIdList, alignIndexListMap, alignIndexListIndices):
-        """ Get align index list info.
-        """
+        """Get align index list info."""
         if not alignIdList:
-            return [],[]
+            return [], []
         #
         # Search by key
         #
         key = "|".join(sorted(alignIdList))
         if key in alignIndexListIndices:
-            return alignIndexListIndices[key][1],alignIndexListMap[alignIndexListIndices[key][0]]
+            return alignIndexListIndices[key][1], alignIndexListMap[alignIndexListIndices[key][0]]
         #
         # Search with current instIds
         #
-        for key,tupL in alignIndexListIndices.items():
+        for key, tupL in alignIndexListIndices.items():
             found = True
             for instId in alignIdList:
                 if key.find(instId) == -1:
@@ -542,12 +521,12 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
                 #
             #
             if found:
-                return tupL[1],alignIndexListMap[tupL[0]]
+                return tupL[1], alignIndexListMap[tupL[0]]
             #
         #
         # Search with previous instIds
         #
-        for key,tupL in alignIndexListIndices.items():
+        for key, tupL in alignIndexListIndices.items():
             found = True
             idListMap = {}
             for instId in alignIdList:
@@ -569,14 +548,13 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
                         orgIdList.append(instId)
                     #
                 #
-                return orgIdList,alignIndexListMap[tupL[0]]
+                return orgIdList, alignIndexListMap[tupL[0]]
             #
         #
-        return [],[]
+        return [], []
 
     def __getSubSeqList(self, inputIdList, chainIdList):
-        """
-        """
+        """ """
         sortAuthList = []
         xyzMap = {}
         refMap = {}
@@ -590,7 +568,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
                 if tL[2] in selfMap:
                     selfMap[tL[2]].append(seqId)
                 else:
-                    selfMap[tL[2]] = [ seqId ]
+                    selfMap[tL[2]] = [seqId]
                 #
                 continue
             #
@@ -599,18 +577,18 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
                 continue
             #
             if (tL[0] == "auth") and (tL[1] == self._entityId):
-                sortAuthList.append( ( int(tL[4]), seqId ) )
+                sortAuthList.append((int(tL[4]), seqId))
             elif (tL[0] == "ref") and (tL[1] == self._entityId):
                 if tL[2] in refMap:
                     refMap[tL[2]].append(seqId)
                 else:
-                    refMap[tL[2]] = [ seqId ]
+                    refMap[tL[2]] = [seqId]
                 #
             elif (tL[0] == "xyz") and (tL[1] in chainIdList):
                 if tL[1] in xyzMap:
                     xyzMap[tL[1]].append(seqId)
                 else:
-                    xyzMap[tL[1]] = [ seqId ]
+                    xyzMap[tL[1]] = [seqId]
                 #
             #
         #
@@ -621,11 +599,10 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         for sortTup in sortAuthList:
             authList.append(sortTup[1])
         #
-        return authList,xyzMap,refMap,selfMap
+        return authList, xyzMap, refMap, selfMap
 
     def __getCurrentSubSeqList(self):
-        """
-        """
+        """ """
         xyzMap = {}
         refMap = {}
         for seqId in self._seqAlignLabelIndices.keys():
@@ -640,39 +617,37 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
                 #
             #
         #
-        return xyzMap,refMap
+        return xyzMap, refMap
 
     def __getSeqId(self, seqType, seqInstId, seqPartId, currId, inputAuthList, selectAuthList):
-        """
-        """
+        """ """
         if len(selectAuthList) == 1:
-            return selectAuthList[0],self._substractedIdList(selectAuthList[0], inputAuthList)
+            return selectAuthList[0], self._substractedIdList(selectAuthList[0], inputAuthList)
         elif len(selectAuthList) > 0:
             if (len(inputAuthList) == 1) and (inputAuthList[0] in selectAuthList):
-                return inputAuthList[0],inputAuthList[1:]
+                return inputAuthList[0], inputAuthList[1:]
             else:
-                return selectAuthList[0],self._substractedIdList(selectAuthList[0], inputAuthList)
+                return selectAuthList[0], self._substractedIdList(selectAuthList[0], inputAuthList)
             #
         elif len(inputAuthList) > 0:
-            return inputAuthList[0],inputAuthList[1:]
+            return inputAuthList[0], inputAuthList[1:]
         #
         if currId:
-            return currId,self._substractedIdList(currId, inputAuthList)
+            return currId, self._substractedIdList(currId, inputAuthList)
         #
         altIdList = self.getAlternativeIdList(seqType, seqInstId, seqPartId)
         if len(altIdList) == 0:
-            return "",inputAuthList
+            return "", inputAuthList
         #
         verList = self.getVersionIdList(seqType, seqInstId, seqPartId, altIdList[0])
         if len(verList) == 0:
-            return "",inputAuthList
+            return "", inputAuthList
         #
         seqId = self._getSeqLabelId((seqType, seqInstId, seqPartId, altIdList[0], verList[0]))
-        return seqId,self._substractedIdList(seqId, inputAuthList)
+        return seqId, self._substractedIdList(seqId, inputAuthList)
 
     def _substractedIdList(self, slectId, inputIdList):
-        """
-        """
+        """ """
         if (len(inputIdList) == 0) or (slectId not in inputIdList):
             return inputIdList
         #

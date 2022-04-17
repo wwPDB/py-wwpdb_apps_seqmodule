@@ -8,66 +8,66 @@
 # Updates:
 #
 #  18-Apr-2013  jdw  modify to handle current conventions in UNP fasta files comment lines
-#                    Extract isoform information from comment lines -- 
+#                    Extract isoform information from comment lines --
 #  19-Apr-2013  jdw  remove any identity-based filtering of output
 ##
- 
 
 
 from xml.dom import minidom
-import sys, math, getopt,  traceback
+import sys
+import traceback
+
 
 class BlastPlusReader:
-    """Read Blast+ result file (xml format)  and return the list of dictionaries containing the following -- 
+    """Read Blast+ result file (xml format)  and return the list of dictionaries containing the following --
 
-           dict['db_name']
-           dict['db_code']
-           dict['db_accession']
-           dict['db_isoform']
-           dict['identity']
-           dict['positive']
-           dict['gaps']
-           dict['midline']
-           dict['query']
-           dict['queryFrom']
-           dict['queryTo']
-           dict['subject']
-           dict['hitFrom']
-           dict['hitTo']
-           dict['alignLen']
-           dict['match_length']
+    dict['db_name']
+    dict['db_code']
+    dict['db_accession']
+    dict['db_isoform']
+    dict['identity']
+    dict['positive']
+    dict['gaps']
+    dict['midline']
+    dict['query']
+    dict['queryFrom']
+    dict['queryTo']
+    dict['subject']
+    dict['hitFrom']
+    dict['hitTo']
+    dict['alignLen']
+    dict['match_length']
 
     """
 
-    def __init__(self,verbose=True,log=sys.stderr):
-        self.__verbose=verbose
-        self.__debug=True
-        self.__lfh=log
-        self._resultList=[]
-        self.__sequenceType='polypeptide(L)'
+    def __init__(self, verbose=True, log=sys.stderr):
+        self.__verbose = verbose
+        self.__debug = True
+        self.__lfh = log
+        self._resultList = []
+        self.__sequenceType = "polypeptide(L)"
 
-    def setSequenceType(self,polyType):
-        if polyType in ['polypeptide(L)', 'polypeptide(D)','polypeptide','polyribonucleotide']:
-            self.__sequenceType=polyType
+    def setSequenceType(self, polyType):
+        if polyType in ["polypeptide(L)", "polypeptide(D)", "polypeptide", "polyribonucleotide"]:
+            self.__sequenceType = polyType
             return True
         else:
             return False
 
-    def readFile(self,filePath):
+    def readFile(self, filePath):
         try:
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+BlastPlusReader.readFile() reading %s\n" % filePath)
-            ifh=open(filePath,'r')
-            inputText=ifh.read()
+            ifh = open(filePath, "r")
+            inputText = ifh.read()
             ifh.close()
             if len(inputText) > 0:
                 domObj = minidom.parseString(inputText)
                 self._resultList = self._parse(domObj)
-        except:
-            if (self.__verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__verbose:
                 self.__lfh.write("+BlastPlusReader.readFile() failed for %s\n" % filePath)
                 traceback.print_exc(file=self.__lfh)
-
 
         return self._resultList
 
@@ -76,19 +76,18 @@ class BlastPlusReader:
 
     def _parse(self, domObj):
         resultList = []
-        list = domObj.getElementsByTagName('Hit')
+        list = domObj.getElementsByTagName("Hit")
         if not list:
             return resultList
 
         length = None
-        for node in domObj.getElementsByTagName('BlastOutput_query-len'):
+        for node in domObj.getElementsByTagName("BlastOutput_query-len"):
             if node.nodeType != node.ELEMENT_NODE:
                 continue
 
-            if node.tagName == 'BlastOutput_query-len':
+            if node.tagName == "BlastOutput_query-len":
                 length = node.firstChild.data
                 break
-
 
         for node in list:
             if node.nodeType != node.ELEMENT_NODE:
@@ -98,7 +97,7 @@ class BlastPlusReader:
             if alignlist:
                 for align in alignlist:
                     if length:
-                        align['query_length'] = length
+                        align["query_length"] = length
                     resultList.append(align)
 
         return resultList
@@ -106,79 +105,78 @@ class BlastPlusReader:
     def _ProcessHitTag(self, nodelist, length):
         resultList = []
         alignlist = []
-        description =''
-        length=''
-        hitId = ''
-        code = ''
+        description = ""
+        length = ""
+        # _code = ""
         for node in nodelist:
             if node.nodeType != node.ELEMENT_NODE:
                 continue
 
-            if node.tagName == 'Hit_id':
-                dbName,dbCode,accCode,isoForm=self._parseID(node.firstChild.data)
+            if node.tagName == "Hit_id":
+                dbName, dbCode, accCode, isoForm = self._parseID(node.firstChild.data)
                 if not accCode:
                     return resultList
-            elif node.tagName == 'Hit_accession':
-                code = node.firstChild.data
-            elif node.tagName == 'Hit_def':
+            elif node.tagName == "Hit_accession":
+                _code = node.firstChild.data  # noqa: F841
+            elif node.tagName == "Hit_def":
                 description = node.firstChild.data
-            elif node.tagName == 'Hit_len':
+            elif node.tagName == "Hit_len":
                 length = node.firstChild.data
-            elif node.tagName == 'Hit_hsps':
+            elif node.tagName == "Hit_hsps":
                 list = self._ProcessHit_hspsTag(node.childNodes, length)
                 if list:
                     for li in list:
                         alignlist.append(li)
-    
+
         if not accCode or not alignlist:
             return resultList
 
-        #dict={}
+        # dict={}
 
         for align in alignlist:
-            align['db_name'] = dbName
-            align['db_code'] = dbCode
-            align['db_accession'] = accCode
-            align['db_isoform'] = isoForm
-            align['db_description'] = description
-            align['db_length'] = length
+            align["db_name"] = dbName
+            align["db_code"] = dbCode
+            align["db_accession"] = accCode
+            align["db_isoform"] = isoForm
+            align["db_description"] = description
+            align["db_length"] = length
             resultList.append(align)
 
         return resultList
 
     def _parseID(self, data):
-        accCode = ''
-        dbCode  = ''
-        dbName  = ''
-        isoForm = ''
-        list = data.split('|')
-        if len(list) >= 2 and list[2] != 'pdb':
+        accCode = ""
+        dbCode = ""
+        dbName = ""
+        isoForm = ""
+        list = data.split("|")
+        if len(list) >= 2 and list[2] != "pdb":
             f0 = str(list[0]).upper()
-            if f0 in ['TR','SP']:
+            if f0 in ["TR", "SP"]:
                 dbName = f0
                 accCode = str(list[1])
-                dbCode  = str(list[2])
-                isoForm=''
-                if (accCode is not None and (accCode.find('-') != -1)):
-                    tL=accCode.split('-')
-                    if len(tL)>1 and len(tL[1])>0:
+                dbCode = str(list[2])
+                isoForm = ""
+                if accCode is not None and (accCode.find("-") != -1):
+                    tL = accCode.split("-")
+                    if len(tL) > 1 and len(tL[1]) > 0:
                         #  Isoform is the acession + '-' + variant #
-                        #isoForm=tL[1]
-                        isoForm=accCode
-                        accCode=tL[0]
-            elif f0 in ['GI']:
+                        # isoForm=tL[1]
+                        isoForm = accCode
+                        accCode = tL[0]
+            elif f0 in ["GI"]:
                 dbName = str(list[2]).upper()
                 accCode = str(list[1])
-                dbCode  = str(list[3])
+                dbCode = str(list[3])
 
-        return dbName,dbCode,accCode,isoForm
+        return dbName, dbCode, accCode, isoForm
 
     def _ProcessHit_hspsTag(self, nodelist, length):
         resultList = []
         for node in nodelist:
             if node.nodeType != node.ELEMENT_NODE:
                 continue
-            if node.tagName != 'Hsp':
+            if node.tagName != "Hsp":
                 continue
 
             dict = self._GetMatchAlignment(node.childNodes, length)
@@ -188,47 +186,47 @@ class BlastPlusReader:
 
     def _GetMatchAlignment(self, nodelist, length):
         dict = {}
-        hsp_num=''
+        hsp_num = ""
         for node in nodelist:
             if node.nodeType != node.ELEMENT_NODE:
                 continue
-    
-            if node.tagName == 'Hsp_identity':
-                dict['identity'] = node.firstChild.data
-            elif node.tagName == 'Hsp_positive':
-                dict['positive'] = node.firstChild.data
-            elif node.tagName == 'Hsp_gaps':
-                dict['gaps'] = node.firstChild.data 
-            elif node.tagName == 'Hsp_midline':
-                if self.__sequenceType == 'polyribonucleotide':
-                    dict['midline'] = node.firstChild.data.replace('T', 'U')
+
+            if node.tagName == "Hsp_identity":
+                dict["identity"] = node.firstChild.data
+            elif node.tagName == "Hsp_positive":
+                dict["positive"] = node.firstChild.data
+            elif node.tagName == "Hsp_gaps":
+                dict["gaps"] = node.firstChild.data
+            elif node.tagName == "Hsp_midline":
+                if self.__sequenceType == "polyribonucleotide":
+                    dict["midline"] = node.firstChild.data.replace("T", "U")
                 else:
-                    dict['midline'] = node.firstChild.data
-            elif node.tagName == 'Hsp_qseq':
-                if self.__sequenceType == 'polyribonucleotide':
-                    dict['query'] = node.firstChild.data.replace('T', 'U')
+                    dict["midline"] = node.firstChild.data
+            elif node.tagName == "Hsp_qseq":
+                if self.__sequenceType == "polyribonucleotide":
+                    dict["query"] = node.firstChild.data.replace("T", "U")
                 else:
-                    dict['query'] = node.firstChild.data
-            elif node.tagName == 'Hsp_query-from':
-                dict['queryFrom'] = node.firstChild.data
-            elif node.tagName == 'Hsp_query-to':
-                dict['queryTo'] = node.firstChild.data
-            elif node.tagName == 'Hsp_hseq':
-                if self.__sequenceType == 'polyribonucleotide':
-                    dict['subject'] = node.firstChild.data.replace('T', 'U')
+                    dict["query"] = node.firstChild.data
+            elif node.tagName == "Hsp_query-from":
+                dict["queryFrom"] = node.firstChild.data
+            elif node.tagName == "Hsp_query-to":
+                dict["queryTo"] = node.firstChild.data
+            elif node.tagName == "Hsp_hseq":
+                if self.__sequenceType == "polyribonucleotide":
+                    dict["subject"] = node.firstChild.data.replace("T", "U")
                 else:
-                    dict['subject'] = node.firstChild.data
-            elif node.tagName == 'Hsp_hit-from':
-                dict['hitFrom'] = node.firstChild.data
-            elif node.tagName == 'Hsp_hit-to':
-                dict['hitTo'] = node.firstChild.data
-            elif node.tagName == 'Hsp_align-len':
-                dict['alignLen'] = node.firstChild.data
-                dict['match_length'] = node.firstChild.data
-            elif node.tagName == 'Hsp_num':
+                    dict["subject"] = node.firstChild.data
+            elif node.tagName == "Hsp_hit-from":
+                dict["hitFrom"] = node.firstChild.data
+            elif node.tagName == "Hsp_hit-to":
+                dict["hitTo"] = node.firstChild.data
+            elif node.tagName == "Hsp_align-len":
+                dict["alignLen"] = node.firstChild.data
+                dict["match_length"] = node.firstChild.data
+            elif node.tagName == "Hsp_num":
                 hsp_num = node.firstChild.data
-                  
-        # only take the first alignment within the hit 
+
+        # only take the first alignment within the hit
         if str(hsp_num) != "1":
             dict.clear()
 

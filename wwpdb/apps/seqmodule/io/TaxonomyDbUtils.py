@@ -14,21 +14,20 @@ __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.07"
 
 
-import os,sys,traceback
+import sys
 from wwpdb.utils.wf.dbapi.WfDbApi import WfDbApi
 
+
 class TaxonomyDbUtils(object):
-    """ Get NCBI taxonomy names from "taxonomy" table in "status" database
-    """
+    """Get NCBI taxonomy names from "taxonomy" table in "status" database"""
 
     def __init__(self, verbose=True, log=sys.stderr):
         self.__verbose = verbose
         self.__lfh = log
         self.__wfApi = WfDbApi(verbose=self.__verbose)
-        
+
     def getTaxonomyNames(self, taxId):
-        """
-        """
+        """ """
         try:
             scientific_name = ""
             common_name = ""
@@ -42,13 +41,14 @@ class TaxonomyDbUtils(object):
                     common_name = str(row[1].strip())
                 #
             #
-            return scientific_name,common_name
-        except:
-            "",""
+            return scientific_name, common_name
+        except:  # noqa: E722 pylint: disable=bare-except
+            "", ""
         #
+
 
 if __name__ == "__main__":
     taxUtil = TaxonomyDbUtils()
-    scientific_name,common_name = taxUtil.getTaxonomyNames(sys.argv[1])
+    scientific_name, common_name = taxUtil.getTaxonomyNames(sys.argv[1])
     print("scientific_name=%s" % scientific_name)
     print("common_name=%s" % common_name)

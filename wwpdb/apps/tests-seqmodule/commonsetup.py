@@ -18,6 +18,7 @@ except ImportError:
 configInfo = {
     # "SITE_REFDATA_PROJ_NAME_CC": "ligand-dict-v3",
     "SITE_WEB_APPS_TOP_SESSIONS_PATH": TESTOUTPUT,
+    "SITE_WEB_APPS_TOP_PATH": HERE,  # For templates
     # "REFERENCE_PATH": os.path.join(HERE, "data"),
 }
 

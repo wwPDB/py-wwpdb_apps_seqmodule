@@ -9,39 +9,41 @@ Derived dictionary classes supporting automatic initialization and 'dot' access.
 
 """
 __docformat__ = "restructuredtext en"
-__author__    = "John Westbrook"
-__email__     = "jwest@rcsb.rutgers.edu"
-__license__   = "Creative Commons Attribution 3.0 Unported"
-__version__   = "V0.07"
+__author__ = "John Westbrook"
+__email__ = "jwest@rcsb.rutgers.edu"
+__license__ = "Creative Commons Attribution 3.0 Unported"
+__version__ = "V0.07"
+
 
 class Autodict(dict):
-    """ Derived dictionary class supporting automatic initialization.
-     
-        This will support pickle serialization/deserialization.
+    """Derived dictionary class supporting automatic initialization.
+
+    This will support pickle serialization/deserialization.
     """
+
     def __getitem__(self, name):
-        #if not name in self:
+        # if not name in self:
         #    dict.__setitem__(self, name, Autodict())
-        #return dict.__getitem__(self, name)
+        # return dict.__getitem__(self, name)
         try:
-            return dict.__getitem__(self,name)
+            return dict.__getitem__(self, name)
         except KeyError:
             value = self[name] = type(self)()
             return value
 
 
-
 class AutodictDot(dict):
-    """ Derived dictionary class supporting automatic initialization and 'dot' access.
-       
-        This will not support pickle'ng  jdw
+    """Derived dictionary class supporting automatic initialization and 'dot' access.
+
+    This will not support pickle'ng  jdw
     """
+
     def __getitem__(self, name):
-        #if not name in self:
+        # if not name in self:
         #    dict.__setitem__(self, name, Autodict())
-        #return dict.__getitem__(self, name)
+        # return dict.__getitem__(self, name)
         try:
-            return dict.__getitem__(self,name)
+            return dict.__getitem__(self, name)
         except KeyError:
             value = self[name] = type(self)()
             return value
@@ -57,4 +59,3 @@ class AutodictDot(dict):
             self.__dict__[name] = val
         else:
             self[name] = val
-
