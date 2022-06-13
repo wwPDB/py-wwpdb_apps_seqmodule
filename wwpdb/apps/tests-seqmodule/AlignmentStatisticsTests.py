@@ -21,16 +21,19 @@ __version__ = "V0.07"
 
 import sys
 import unittest
-import shutil
 import traceback
 import time
 import os
 import os.path
 import inspect
 
+if __package__ is None or __package__ == "":
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from commonsetup import HERE  # noqa:  F401 pylint: disable=import-error,unused-import
+else:
+    from .commonsetup import HERE  # noqa: F401 pylint: disable=relative-beyond-top-level
+
 from wwpdb.apps.seqmodule.align.AlignmentStatistics import AlignmentStatistics
-from wwpdb.apps.seqmodule.control.SequenceDataAssemble_v2 import SequenceDataAssemble
-from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.utils.config.ConfigInfo import ConfigInfo, getSiteId
 from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest
 
@@ -40,11 +43,9 @@ class AlignmentStatisticsTests(unittest.TestCase):
         #
         self.__verbose = True
         self.__lfh = sys.stderr
-        self.__pathExamplesRel = "../tests"
-        self.__pathExamples = os.path.abspath(self.__pathExamplesRel)
+        # self.__pathExamples = os.path.join(HERE, "data")
         #
-        # self.__exampleFileList    = ['1cbs.cif','3rer.cif','rcsb056751.cif']
-        self.__exampleFileList = ["rcsb056751.cif"]
+        self.__exampleFileList = ["1cbs.cif", "3rer.cif"]
         self.__dsList = ["D_000000"]
         #
         self.__setup()
@@ -55,7 +56,8 @@ class AlignmentStatisticsTests(unittest.TestCase):
         """
         self.__siteId = getSiteId(defaultSiteId="WWPDB_DEPOLY_TEST")
         self.__cI = ConfigInfo(self.__siteId)
-        self.__topPath = self.__cI.get("SITE_WEB_APPS_TOP_PATH")
+        # self.__topPath=self.__cI.get('SITE_WEB_APPS_TOP_PATH')
+        self.__topPath = os.path.dirname(__file__)
         self.__topSessionPath = self.__cI.get("SITE_WEB_APPS_TOP_SESSIONS_PATH")
         #
         self.__reqObj = SeqModInputRequest({}, verbose=self.__verbose, log=self.__lfh)
@@ -70,63 +72,68 @@ class AlignmentStatisticsTests(unittest.TestCase):
             self.__reqObj.setValue("sessionid", sessionId)
 
         # self.__sessionId = self.__reqObj.getSessionId()
-        self.__sessionObj = self.__reqObj.newSessionObj()
-        self.__sessionPath = self.__sessionObj.getPath()
+        # self.__sessionObj = self.__reqObj.newSessionObj()
+        # self.__sessionPath = self.__sessionObj.getPath()
 
-    def testSearchAndAssembleFromUpload(self):
-        """Test search each entity sequence against appropriate reference sequence database
-        service storing the matching sequences.
+    # def testSearchAndAssembleFromUpload(self):
+    #     """ Test search each entity sequence against appropriate reference sequence database
+    #         service storing the matching sequences.
 
-        Using upload file source.
-        """
-        startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+    #         Using upload file source.
+    #     """
+    #     startTime=time.time()
+    #     self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
+    #                                                    inspect.currentframe().f_code.co_name,
+    #                                                    time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
-        try:
-            pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
-            for f in self.__exampleFileList:
-                (idCode, _fExt) = os.path.splitext(f)
-                pdbxFilePath = pI.getModelPdbxFilePath(idCode, fileSource="session")
-                inpFilePath = os.path.join(self.__pathExamples, f)
-                shutil.copyfile(inpFilePath, pdbxFilePath)
-                self.__reqObj.setValue("identifier", idCode)
-                #
-                sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                sda.doAssemble()
-        except:  # noqa: E722 pylint: disable=bare-except
-            traceback.print_exc(file=self.__lfh)
-            self.fail()
+    #     try:
+    #         pI=PathInfo(siteId=self.__siteId,sessionPath=self.__sessionPath,verbose=self.__verbose,log=self.__lfh)
+    #         for f in self.__exampleFileList:
+    #             (idCode,fExt)=os.path.splitext(f)
+    #             pdbxFilePath=pI.getModelPdbxFilePath(idCode,fileSource='session')
+    #             inpFilePath=os.path.join(self.__pathExamples,f)
+    #             shutil.copyfile(inpFilePath,pdbxFilePath)
+    #             self.__reqObj.setValue("identifier", idCode)
+    #             #
+    #             sda=SequenceDataAssemble(reqObj=self.__reqObj,verbose=self.__verbose,log=self.__lfh)
+    #             sda.doAssemble(fileSource='local-upload')
+    #     except:
+    #         traceback.print_exc(file=self.__lfh)
+    #         self.fail()
 
-        endTime = time.time()
-        self.__lfh.write(
-            "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
-        )
+    #     endTime=time.time()
+    #     self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
+    #                                                                  inspect.currentframe().f_code.co_name,
+    #                                                                  time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
+    #                                                                  endTime-startTime))
 
-    def testSearchAndAssembleFromArchive(self):
-        """Test search each entity sequence against appropriate reference sequence database
-        service storing the matching sequences.
+    # def testSearchAndAssembleFromArchive(self):
+    #     """ Test search each entity sequence against appropriate reference sequence database
+    #         service storing the matching sequences.
 
-        Using archive file source.
-        """
-        startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+    #         Using archive file source.
+    #     """
+    #     startTime=time.time()
+    #     self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
+    #                                                    inspect.currentframe().f_code.co_name,
+    #                                                    time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
-        try:
-            for dsId in self.__dsList:
-                self.__reqObj.setValue("identifier", dsId)
-                #
-                sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                sda.doAssemble()
-        except:  # noqa: E722 pylint: disable=bare-except
-            traceback.print_exc(file=self.__lfh)
-            self.fail()
+    #     try:
+    #         for dsId in self.__dsList:
+    #             self.__reqObj.setValue("identifier", dsId)
+    #             #
+    #             sda=SequenceDataAssemble(reqObj=self.__reqObj,verbose=self.__verbose,log=self.__lfh)
+    #             sda.doAssemble(fileSource='archive')
+    #     except:
+    #         traceback.print_exc(file=self.__lfh)
+    #         self.fail()
 
-        endTime = time.time()
-        self.__lfh.write(
-            "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
-        )
+    #     endTime=time.time()
+    #     self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
+    #                                                                  inspect.currentframe().f_code.co_name,
+    #                                                                  time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
+
+    #                                                                 endTime-startTime))
 
     def testAlignStatsFromUpload(self):
         """Test compute the sequence alignment statistics between author sequence and coordinate sequences
@@ -143,7 +150,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
                 self.__reqObj.setValue("identifier", idCode)
                 alstat = AlignmentStatistics(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
                 alstat.doUpdate()
-        except:  # noqa: E722 pylint: disable=bare-except
+        except Exception as _e:  # noqa: F841
             traceback.print_exc(file=self.__lfh)
             self.fail()
 
@@ -167,7 +174,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
                 self.__reqObj.setValue("identifier", dsId)
                 alstat = AlignmentStatistics(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
                 alstat.doUpdate()
-        except:  # noqa: E722 pylint: disable=bare-except
+        except Exception as _e:  # noqa: F841
             traceback.print_exc(file=self.__lfh)
             self.fail()
 

@@ -34,11 +34,15 @@ try:
 except ImportError:
     import pickle as pickle
 #
-import multiprocessing, os, sys, time, traceback
+import multiprocessing
+import os
+import sys
+import time
+import traceback
 from operator import itemgetter
 
 from wwpdb.apps.seqmodule.io.BlastPlusReader import BlastPlusReader
-from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import fetchNcbiSummary,fetchUniProt
+from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import fetchNcbiSummary, fetchUniProt
 from wwpdb.apps.seqmodule.io.TaxonomyUtils import TaxonomyUtils
 from wwpdb.apps.seqmodule.util.FetchReferenceSequenceUtils import FetchReferenceSequenceUtils
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
@@ -46,12 +50,11 @@ from rcsb.utils.multiproc.MultiProcUtil import MultiProcUtil
 from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
 
-class LocalBlastSearchUtils(object):
-    """ Execute search service and assemble reference sequence data.
-    """
 
-    def __init__(self, siteId="WWPDB_DEPLOY_TEST", sessionPath=".", pathInfo=None, doRefSearchFlag=False, verbose=False, log=sys.stderr,
-                ncbilock=None):
+class LocalBlastSearchUtils(object):
+    """Execute search service and assemble reference sequence data."""
+
+    def __init__(self, siteId="WWPDB_DEPLOY_TEST", sessionPath=".", pathInfo=None, doRefSearchFlag=False, verbose=False, log=sys.stderr, ncbilock=None):
         self.__verbose = verbose
         self.__lfh = log
         self.__siteId = siteId
@@ -67,15 +70,15 @@ class LocalBlastSearchUtils(object):
         self.__cleanUp = True
         self.__debug = False
         #
-        self.__dataSetId = ''
+        self.__dataSetId = ""
         self.__entityD = {}
         self.__authRefIdList = []
         self.__authRefDataList = []
         self.__fullOneLetterSeq = []
-        self.__seqType = ''
-        self.__entityId = ''
-        self.__entitySeq = ''
-        self.__blastResultFile = ''
+        self.__seqType = ""
+        self.__entityId = ""
+        self.__entitySeq = ""
+        self.__blastResultFile = ""
         #
         if not self.__pI:
             self.__pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
@@ -83,16 +86,48 @@ class LocalBlastSearchUtils(object):
         self.__taxUtils = TaxonomyUtils(siteId=self.__siteId, verbose=self.__verbose, log=self.__lfh)
         self.__srd = SequenceReferenceData(self.__verbose, self.__lfh)
         #
-        self.__matchEntityAttribNameList = ['id', 'fragment_id', 'beg_seq_num', 'end_seq_num', 'sort_order', 'sort_metric', 'db_name', 'db_code', \
-                                            'db_accession', 'db_isoform', 'match_length', 'queryFrom', 'queryTo', 'hitFrom', 'hitTo', 'identity', \
-                                            'positive', 'gaps', 'alignLen', 'query', 'subject', 'midline', 'query_length', 'name', \
-                                            'source_scientific', 'source_common', 'taxonomy_id', 'gene', 'synonyms', 'comments', 'keyword', 'ec', \
-                                            'db_length', 'db_description', 'db_isoform_description']
+        self.__matchEntityAttribNameList = [
+            "id",
+            "fragment_id",
+            "beg_seq_num",
+            "end_seq_num",
+            "sort_order",
+            "sort_metric",
+            "db_name",
+            "db_code",
+            "db_accession",
+            "db_isoform",
+            "match_length",
+            "queryFrom",
+            "queryTo",
+            "hitFrom",
+            "hitTo",
+            "identity",
+            "positive",
+            "gaps",
+            "alignLen",
+            "query",
+            "subject",
+            "midline",
+            "query_length",
+            "name",
+            "source_scientific",
+            "source_common",
+            "taxonomy_id",
+            "gene",
+            "synonyms",
+            "comments",
+            "keyword",
+            "ec",
+            "db_length",
+            "db_description",
+            "db_isoform_description",
+        ]
         #
 
     def searchSeqReference(self, dataSetId=None, entityD=None, authRefList=()):
-        """ Reference sequence search process for the entity described in the input dictionary.
-            Return a list of hitLists for matching reference sequences extracted from the BLAST search results
+        """Reference sequence search process for the entity described in the input dictionary.
+        Return a list of hitLists for matching reference sequences extracted from the BLAST search results
         """
         self.__dataSetId = dataSetId
         self.__entityD = entityD
@@ -110,130 +145,137 @@ class LocalBlastSearchUtils(object):
         rD = self.__runBlastSearch()
         if rD:
             self.__writeSearchResult(rD)
-            #self.__writeBlastSearchResultCifFile(rD)
+            # self.__writeBlastSearchResultCifFile(rD)
         #
         return rD
 
     def __getExistingSearchResult(self):
-        """ Get prvious blast search result
-        """
-        self.__entityId = self.__entityD['ENTITY_ID']
-        currSeq = self.__entityD['SEQ_ENTITY_1']
-        self.__entitySeq = currSeq.replace(' ', '').replace('\n', '').replace('\t', '')
-        self.__blastResultFile = self.__pI.getFilePath(self.__dataSetId, contentType='seqdb-match', formatType='pic', fileSource='session', \
-                                                       partNumber=self.__entityId)
+        """Get prvious blast search result"""
+        self.__entityId = self.__entityD["ENTITY_ID"]
+        currSeq = self.__entityD["SEQ_ENTITY_1"]
+        self.__entitySeq = currSeq.replace(" ", "").replace("\n", "").replace("\t", "")
+        self.__blastResultFile = self.__pI.getFilePath(self.__dataSetId, contentType="seqdb-match", formatType="pic", fileSource="session", partNumber=self.__entityId)
         #
         if (not self.__doRefSearchFlag) and os.access(self.__blastResultFile, os.R_OK):
-            if (self.__verbose):
-                self.__lfh.write("+LocalBlastSearchUtils.__getExistingSearchResult() found previous ReferenceSequenceFile %s for entity id %s\n" \
-                              % (self.__blastResultFile, self.__entityId))
+            if self.__verbose:
+                self.__lfh.write(
+                    "+LocalBlastSearchUtils.__getExistingSearchResult() found previous ReferenceSequenceFile %s for entity id %s\n" % (self.__blastResultFile, self.__entityId)
+                )
             #
             pickleObj = {}
             try:
-                fb = open(self.__blastResultFile, 'rb')
+                fb = open(self.__blastResultFile, "rb")
                 pickleObj = pickle.load(fb)
                 fb.close()
-            except:
+            except:  # noqa: E722 pylint: disable=bare-except
                 pickleObj = {}
             #
-            if ('sequence' not in pickleObj) or ('part_info' not in pickleObj) or ('ref_data' not in pickleObj) or \
-               (self.__entitySeq != pickleObj['sequence']) or (len(self.__entityD['PART_LIST']) != len(pickleObj['part_info'])):
+            if (
+                ("sequence" not in pickleObj)
+                or ("part_info" not in pickleObj)
+                or ("ref_data" not in pickleObj)
+                or (self.__entitySeq != pickleObj["sequence"])
+                or (len(self.__entityD["PART_LIST"]) != len(pickleObj["part_info"]))
+            ):
                 return {}
             #
-            for partNum, fD in enumerate(self.__entityD['PART_LIST'], start=1):
-                if (partNum not in pickleObj['part_info']) or (fD['SEQ_NUM_BEG'] != pickleObj['part_info'][partNum][0]) or \
-                   (fD['SEQ_NUM_END'] != pickleObj['part_info'][partNum][1]):
+            for partNum, fD in enumerate(self.__entityD["PART_LIST"], start=1):
+                if (
+                    (partNum not in pickleObj["part_info"])
+                    or (fD["SEQ_NUM_BEG"] != pickleObj["part_info"][partNum][0])
+                    or (fD["SEQ_NUM_END"] != pickleObj["part_info"][partNum][1])
+                ):
                     return {}
                 #
             #
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+LocalBlastSearchUtils.__getExistingSearchResult() using previous search result for entity id %s\n" % self.__entityId)
             #
-            return self.__getReSortHitInfo(pickleObj['ref_data'])
+            return self.__getReSortHitInfo(pickleObj["ref_data"])
         #
         return {}
 
     def __getReSortHitInfo(self, inD):
-        """
-        """
+        """ """
         try:
             outD = {}
-            for partNum, fD in enumerate(self.__entityD['PART_LIST'], start=1):
+            for partNum, fD in enumerate(self.__entityD["PART_LIST"], start=1):
                 partId = str(partNum)
                 if partId not in inD:
                     continue
                 #
-                start_index,hitList = self.__sortHitList(inD[partId], fD['SOURCE_TAXID'], False)
+                _start_index, hitList = self.__sortHitList(inD[partId], fD["SOURCE_TAXID"], False)
                 outD[partId] = hitList
             #
             return outD
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return {}
         #
 
     def __runBlastSearch(self):
-        """ Perform sequence search for each entity part in the input feature list described in the input dictionary.
-        """
-        oneLetterCodeSeq = str(self.__entityD['SEQ_ENTITY_1_CAN']).strip().upper()
+        """Perform sequence search for each entity part in the input feature list described in the input dictionary."""
+        oneLetterCodeSeq = str(self.__entityD["SEQ_ENTITY_1_CAN"]).strip().upper()
         #
-        if 'SEQ_ENTITY_1_SEARCH' in self.__entityD:
-            oneLetterSearchSeq = str(self.__entityD['SEQ_ENTITY_1_SEARCH']).strip().upper()
+        if "SEQ_ENTITY_1_SEARCH" in self.__entityD:
+            oneLetterSearchSeq = str(self.__entityD["SEQ_ENTITY_1_SEARCH"]).strip().upper()
         else:
             # for backward compatible
             oneLetterSearchSeq = oneLetterCodeSeq
         #
         self.__fullOneLetterSeq = self.__srd.toList(oneLetterCodeSeq)
-        self.__seqType = self.__entityD['POLYMER_LINKING_TYPE']
+        self.__seqType = self.__entityD["POLYMER_LINKING_TYPE"]
         #
         if self.__verbose:
             self.__lfh.write("\n+LocalBlastSearchUtils.__runBlastSearch() STARTING with polymer type  %s sequence = %s\n" % (self.__seqType, oneLetterCodeSeq))
         #
         authRefD = {}
-        if not self.__checkPartRange(len(self.__fullOneLetterSeq), self.__entityD['PART_LIST']):
+        if not self.__checkPartRange(len(self.__fullOneLetterSeq), self.__entityD["PART_LIST"]):
             return authRefD
         #
         partIdList = []
         partDataList = []
-        for partNum, fD in enumerate(self.__entityD['PART_LIST'], start=1):
-            seqPartType = fD['SEQ_PART_TYPE']
-            seqPartId = fD['SEQ_PART_ID']
-            if not str(seqPartType).lower().startswith('biol'):
+        for partNum, fD in enumerate(self.__entityD["PART_LIST"], start=1):
+            seqPartType = fD["SEQ_PART_TYPE"]
+            seqPartId = fD["SEQ_PART_ID"]
+            if not str(seqPartType).lower().startswith("biol"):
                 if self.__verbose:
-                    self.__lfh.write("+LocalBlastSearchUtils.__runBlastSearch() skipping sequence entity %r part %r type %r\n" %
-                                    (self.__entityId, seqPartId, seqPartType))
+                    self.__lfh.write("+LocalBlastSearchUtils.__runBlastSearch() skipping sequence entity %r part %r type %r\n" % (self.__entityId, seqPartId, seqPartType))
                 #
                 continue
             #
-            seqNumBeg = fD['SEQ_NUM_BEG']
-            seqNumEnd = fD['SEQ_NUM_END']
+            seqNumBeg = fD["SEQ_NUM_BEG"]
+            seqNumEnd = fD["SEQ_NUM_END"]
             if (int(seqNumBeg) < 1) or (int(seqNumEnd) > len(self.__fullOneLetterSeq)):
                 if self.__verbose:
-                    self.__lfh.write("+LocalBlastSearchUtils.__runBlastSearch() skipping sequence entity %r part %r type %r BegNum %r EndNum %r\n" % \
-                                    (self.__entityId, seqPartId, seqPartType, seqNumBeg, seqNumEnd))
+                    self.__lfh.write(
+                        "+LocalBlastSearchUtils.__runBlastSearch() skipping sequence entity %r part %r type %r BegNum %r EndNum %r\n"
+                        % (self.__entityId, seqPartId, seqPartType, seqNumBeg, seqNumEnd)
+                    )
                 #
                 continue
             #
             # Skip blast search for UNK sequence DAOTHER-3639
             countUNK = 0
             countTotal = 0
-            for oneLetterCode in self.__fullOneLetterSeq[(int(seqNumBeg) - 1):int(seqNumEnd)]:
+            for oneLetterCode in self.__fullOneLetterSeq[(int(seqNumBeg) - 1) : int(seqNumEnd)]:
                 if oneLetterCode == "X":
                     countUNK += 1
                 #
                 countTotal += 1
             #
             if (10 * countUNK) > (9 * countTotal):
-                 if self.__verbose:
-                     self.__lfh.write("+LocalBlastSearchUtils.__runBlastSearch() skipping unknown sequence part %r type %r BegNum %r EndNum %r\n" % \
-                                     (seqPartId, seqPartType, seqNumBeg, seqNumEnd))
-                 #
-                 continue
+                if self.__verbose:
+                    self.__lfh.write(
+                        "+LocalBlastSearchUtils.__runBlastSearch() skipping unknown sequence part %r type %r BegNum %r EndNum %r\n" % (seqPartId, seqPartType, seqNumBeg, seqNumEnd)
+                    )
+                #
+                continue
             #
             partIdList.append(str(partNum))
             #
-            taxId = fD['SOURCE_TAXID']
-            sequence = oneLetterCodeSeq[(int(seqNumBeg) - 1):int(seqNumEnd)]
-            searchSequence = oneLetterSearchSeq[(int(seqNumBeg) - 1):int(seqNumEnd)]
+            taxId = fD["SOURCE_TAXID"]
+            sequence = oneLetterCodeSeq[(int(seqNumBeg) - 1) : int(seqNumEnd)]
+            searchSequence = oneLetterSearchSeq[(int(seqNumBeg) - 1) : int(seqNumEnd)]
             #
             authHitList = self.__fetchAuthProvidedRefSequence(sequence, seqNumBeg, seqNumEnd, str(partNum))
             if authHitList:
@@ -246,7 +288,7 @@ class LocalBlastSearchUtils(object):
             if os.access(xmlFilePath, os.F_OK):
                 os.remove(xmlFilePath)
             #
-            partDataList.append(( str(partNum), searchSequence, seqNumBeg, seqNumEnd, taxId, xmlFilePath ))
+            partDataList.append((str(partNum), searchSequence, seqNumBeg, seqNumEnd, taxId, xmlFilePath))
         #
         if not partDataList:
             return authRefD
@@ -254,44 +296,43 @@ class LocalBlastSearchUtils(object):
         rD = {}
         try:
             numProc = int(multiprocessing.cpu_count() / 2)
-            mpu = MultiProcUtil(verbose = True)
-            mpu.set(workerObj = self, workerMethod = "runMultiLocalBlasts")
+            mpu = MultiProcUtil(verbose=True)
+            mpu.set(workerObj=self, workerMethod="runMultiLocalBlasts")
             mpu.setWorkingDir(self.__sessionPath)
-            mpu.setOptions({'ncbilock' : self.__ncbilock})
-            ok,failList,retLists,diagList = mpu.runMulti(dataList = partDataList, numProc = numProc, numResults = 1)
+            mpu.setOptions({"ncbilock": self.__ncbilock})
+            _ok, _failList, _retLists, _diagList = mpu.runMulti(dataList=partDataList, numProc=numProc, numResults=1)
             id_count = 1
             for partTup in partDataList:
                 if not os.access(partTup[5], os.F_OK):
                     continue
                 #
-                hitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0], authTaxId=partTup[4], \
-                                                        blastResultXmlPath=partTup[5])
+                hitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0], authTaxId=partTup[4], blastResultXmlPath=partTup[5])
                 #
                 if hitList:
                     SeqAlignmentMap = self.__getRefSeqAlignments(hitList)
                     for hit in hitList:
-                        if not hit['sort_order'] in SeqAlignmentMap:
+                        if not hit["sort_order"] in SeqAlignmentMap:
                             continue
                         #
-                        hit['alignment'] = SeqAlignmentMap[hit['sort_order']][0]
-                        hit['seq_tup_list'] = SeqAlignmentMap[hit['sort_order']][1]
-                        hit['statistics'] = ( SeqAlignmentMap[hit['sort_order']][2], SeqAlignmentMap[hit['sort_order']][3], SeqAlignmentMap[hit['sort_order']][4] )
+                        hit["alignment"] = SeqAlignmentMap[hit["sort_order"]][0]
+                        hit["seq_tup_list"] = SeqAlignmentMap[hit["sort_order"]][1]
+                        hit["statistics"] = (SeqAlignmentMap[hit["sort_order"]][2], SeqAlignmentMap[hit["sort_order"]][3], SeqAlignmentMap[hit["sort_order"]][4])
                         #
-                        hit['id'] = id_count
+                        hit["id"] = id_count
                         id_count += 1
                         for key in self.__matchEntityAttribNameList:
-                            if not key in hit:
-                                hit[key] = ''
+                            if key not in hit:
+                                hit[key] = ""
                             #
                         #
-                        hit['seq_sim'] = 0.0
-                        if ('alignLen' in hit) and hit['alignLen']:
-                            hit['seq_sim'] = float(hit['identity']) / float(hit['alignLen'])
+                        hit["seq_sim"] = 0.0
+                        if ("alignLen" in hit) and hit["alignLen"]:
+                            hit["seq_sim"] = float(hit["identity"]) / float(hit["alignLen"])
                         #
                         if partTup[0] in rD:
                             rD[partTup[0]].append(hit)
                         else:
-                            rD[partTup[0]] = [ hit ]
+                            rD[partTup[0]] = [hit]
                         #
                     #
                 #
@@ -299,8 +340,8 @@ class LocalBlastSearchUtils(object):
             if self.__verbose:
                 self.__lfh.write("+LocalBlastSearchUtils.__runBlastSearch() COMPLETED search for entity %r\n" % self.__entityId)
         #
-        except:
-            if (self.__verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__verbose:
                 traceback.print_exc(file=self.__lfh)
                 self.__lfh.write("+LocalBlastSearchUtils.__runBlastSearch() search for entity %r failed\n" % self.__entityId)
             #
@@ -315,8 +356,7 @@ class LocalBlastSearchUtils(object):
         return rD
 
     def __fetchAuthProvidedRefSequence(self, sequence, seqNumBeg, seqNumEnd, seqPartId):
-        """ Fetch reference sequence based on author provided ref IDs
-        """
+        """Fetch reference sequence based on author provided ref IDs"""
         if not self.__authRefDataList:
             return []
         #
@@ -328,99 +368,97 @@ class LocalBlastSearchUtils(object):
                 if not hitD:
                     continue
                 #
-                hitD['beg_seq_num'] = seqNumBeg
-                hitD['end_seq_num'] = seqNumEnd
-                hitD['fragment_id'] = seqPartId
+                hitD["beg_seq_num"] = seqNumBeg
+                hitD["end_seq_num"] = seqNumEnd
+                hitD["fragment_id"] = seqPartId
                 #
-                alignIndex,sTup3L,alignLength,seqSim,seqSimWithGaps,error = self.__getSeqAlignIndex(hitD)
+                alignIndex, sTup3L, alignLength, seqSim, seqSimWithGaps, error = self.__getSeqAlignIndex(hitD)
                 if error:
                     break
                 #
-                hitD['alignment'] = alignIndex
-                hitD['seq_tup_list'] = sTup3L
-                hitD['statistics'] = ( alignLength, seqSim, seqSimWithGaps )
-                return [ hitD ]
+                hitD["alignment"] = alignIndex
+                hitD["seq_tup_list"] = sTup3L
+                hitD["statistics"] = (alignLength, seqSim, seqSimWithGaps)
+                return [hitD]
             #
         #
         return []
 
     def __writeSearchResult(self, rD):
-        """ Write out the current search result pickle file
-        """
+        """Write out the current search result pickle file"""
         partInfoD = {}
-        for partNum, fD in enumerate(self.__entityD['PART_LIST'], start=1):
-            partInfoD[partNum] = ( fD['SEQ_NUM_BEG'], fD['SEQ_NUM_END'] )
+        for partNum, fD in enumerate(self.__entityD["PART_LIST"], start=1):
+            partInfoD[partNum] = (fD["SEQ_NUM_BEG"], fD["SEQ_NUM_END"])
         #
         pickleObj = {}
-        pickleObj['sequence'] = self.__entitySeq
-        pickleObj['ref_data'] = rD
-        pickleObj['part_info'] = partInfoD
+        pickleObj["sequence"] = self.__entitySeq
+        pickleObj["ref_data"] = rD
+        pickleObj["part_info"] = partInfoD
         #
-        fb = open(self.__blastResultFile, 'wb')
+        fb = open(self.__blastResultFile, "wb")
         pickle.dump(pickleObj, fb)
         fb.close()
 
-    def __writeBlastSearchResultCifFile(self, rD):
-        """ Write out the current search result mmcif file for debuging purpose
-        """
-        #
-        mR = []
-        for partId,rList in rD.items():
-            mR.append(rList)
-        #
-        fn = self.__pI.getReferenceSequenceFilePath(self.__dataSetId, entityId=self.__entityId, fileSource='session')
-        #
-        from wwpdb.apps.seqmodule.io.PdbxIoUtils import ReferenceSequenceIo
-        rsio = ReferenceSequenceIo(verbose=self.__verbose, log=self.__lfh)
-        rsio.writeMatchResults(self.__entityD, outFilePath=fn, matchResults=mR)
+    # def __writeBlastSearchResultCifFile(self, rD):
+    #     """Write out the current search result mmcif file for debuging purpose"""
+    #     #
+    #     mR = []
+    #     for _partId, rList in rD.items():
+    #         mR.append(rList)
+    #     #
+    #     fn = self.__pI.getReferenceSequenceFilePath(self.__dataSetId, entityId=self.__entityId, fileSource="session")
+    #     #
+    #     from wwpdb.apps.seqmodule.io.PdbxIoUtils import ReferenceSequenceIo
+
+    #     rsio = ReferenceSequenceIo(verbose=self.__verbose, log=self.__lfh)
+    #     rsio.writeMatchResults(self.__entityD, outFilePath=fn, matchResults=mR)
 
     def __checkPartRange(self, seqLength, partList):
-        """ Check part range definition
-        """
+        """Check part range definition"""
         if len(partList) < 1:
             return False
         #
         try:
             for i in range(0, len(partList)):
-                seqNumBeg = int(partList[i]['SEQ_NUM_BEG'])
-                seqNumEnd = int(partList[i]['SEQ_NUM_END'])
+                seqNumBeg = int(partList[i]["SEQ_NUM_BEG"])
+                seqNumEnd = int(partList[i]["SEQ_NUM_END"])
                 if seqNumEnd < seqNumBeg:
                     return False
                 if (i == 0) and (seqNumBeg != 1):
                     return False
                 if (i == (len(partList) - 1)) and (seqNumEnd != seqLength):
                     return False
-                if i > 0: 
-                    prevNumEnd = int(partList[i-1]['SEQ_NUM_END'])
+                if i > 0:
+                    prevNumEnd = int(partList[i - 1]["SEQ_NUM_END"])
                     if seqNumBeg != (prevNumEnd + 1):
                         return False
                     #
                 #
             #
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
         #
 
-    def runMultiLocalBlasts(self, dataList, procName, optionsD, workingDir):
-        """ Multiple blast search processing API
-        """
+    def runMultiLocalBlasts(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
+        """Multiple blast search processing API"""
         rList = []
-        ncbilock = optionsD.get('ncbilock', None)
+        ncbilock = optionsD.get("ncbilock", None)
         for tupL in dataList:
             if self.__verbose:
-                self.__lfh.write("\n+LocalBlastSearchUtils.runMultiLocalBlasts() starting database search for entityId %r partId %r range begin %r end %r taxId %r sequence length = %d\n" \
-                              % (self.__entityId, tupL[0], tupL[2], tupL[3], tupL[4], len(tupL[1])))
+                self.__lfh.write(
+                    "\n+LocalBlastSearchUtils.runMultiLocalBlasts() starting database search for entityId %r partId %r range begin %r end %r taxId %r sequence length = %d\n"
+                    % (self.__entityId, tupL[0], tupL[2], tupL[3], tupL[4], len(tupL[1]))
+                )
                 self.__lfh.write("+LocalBlastSearchUtils.runMultiLocalBlasts() ncbilock %s\n" % ncbilock)
             #
             self.__runSingleLocalBlast(oneLetterCodeSeq=tupL[1], blastResultXmlPath=tupL[5], partNum=tupL[0], taxId=tupL[4])
             rList.append(tupL[0])
         #
-        return rList,rList,[]
+        return rList, rList, []
 
     def __runSingleLocalBlast(self, oneLetterCodeSeq, blastResultXmlPath, partNum, taxId):
-        """ Internal method to execute the sequence search according to input polymer type.
-        """
+        """Internal method to execute the sequence search according to input polymer type."""
         if self.__verbose:
             self.__lfh.write("+LocalBlastSearchUtils.__runSingleLocalBlast() STARTING %s Launch search for %s sequence = %s\n" % (self.__siteId, self.__seqType, oneLetterCodeSeq))
             self.__lfh.flush()
@@ -429,7 +467,7 @@ class LocalBlastSearchUtils(object):
         resultPath = os.path.abspath(blastResultXmlPath)
         tmpPathAbs = os.path.abspath(self.__sessionPath)
         #
-        if self.__seqType in ['polypeptide(L)', 'polypeptide(D)', 'polypeptide']:
+        if self.__seqType in ["polypeptide(L)", "polypeptide(D)", "polypeptide"]:
             dp = RcsbDpUtility(tmpPath=tmpPathAbs, siteId=self.__siteId, verbose=True)
             dp.addInput(name="one_letter_code_sequence", value=oneLetterCodeSeq)
             dp.addInput(name="db_name", value="my_uniprot_all")
@@ -437,12 +475,12 @@ class LocalBlastSearchUtils(object):
             dp.addInput(name="max_hits", value=self.__maxHitsSearch)
             dp.op("seq-blastp")
             dp.exp(resultPath)
-            if (self.__cleanUp and not self.__debug):
+            if self.__cleanUp and not self.__debug:
                 dp.cleanup()
             #
-        #elif self.__seqType == 'polyribonucleotide':
-        #for DAOTHER-6304
-        elif self.__seqType in ['polydeoxyribonucleotide', 'polyribonucleotide']:
+        # elif self.__seqType == 'polyribonucleotide':
+        # for DAOTHER-6304
+        elif self.__seqType in ["polydeoxyribonucleotide", "polyribonucleotide"]:
             if len(oneLetterCodeSeq) > self.__minRnaSequenceSearchLength:
                 dp = RcsbDpUtility(tmpPath=tmpPathAbs, siteId=self.__siteId, verbose=True)
                 dp.addInput(name="one_letter_code_sequence", value=oneLetterCodeSeq)
@@ -451,7 +489,7 @@ class LocalBlastSearchUtils(object):
                 dp.addInput(name="max_hits", value=self.__maxHitsSearch)
                 dp.op("seq-blastn")
                 dp.exp(resultPath)
-                if (self.__cleanUp and not self.__debug):
+                if self.__cleanUp and not self.__debug:
                     dp.cleanup()
                 #
             #
@@ -466,69 +504,68 @@ class LocalBlastSearchUtils(object):
         #
 
     def __readBlastResultXmlFile(self, seqNumBeg, seqNumEnd, seqPartId, authTaxId, blastResultXmlPath):
-        """ Read blast result
-        """
+        """Read blast result"""
         hitList = []
         bpr = BlastPlusReader(verbose=self.__verbose, log=self.__lfh)
-        if self.__seqType == 'polyribonucleotide':
+        if self.__seqType == "polyribonucleotide":
             bpr.setSequenceType(self.__seqType)
         searchHitList = bpr.readFile(filePath=blastResultXmlPath)
         #
-        if self.__seqType in ['polypeptide(L)', 'polypeptide(D)', 'polypeptide']:
+        if self.__seqType in ["polypeptide(L)", "polypeptide(D)", "polypeptide"]:
             idCodeList = []
             for hit in searchHitList:
-                hit['non_isoform_score'] = 1
-                if 'db_accession' in hit and 'db_name' in hit:
+                hit["non_isoform_score"] = 1
+                if "db_accession" in hit and "db_name" in hit:
                     try:
                         start = int(str(hit["hitFrom"]))
-                    except:
+                    except:  # noqa: E722 pylint: disable=bare-except
                         start = 0
                     #
                     try:
                         end = int(str(hit["hitTo"]))
-                    except:
+                    except:  # noqa: E722 pylint: disable=bare-except
                         end = 0
                     #
-                    if 'db_isoform' in hit and (len(hit['db_isoform']) > 0) and (hit['db_isoform'] not in ['.', '?']):
-                        idCodeList.append( ( hit['db_isoform'], start, end ) )
+                    if "db_isoform" in hit and (len(hit["db_isoform"]) > 0) and (hit["db_isoform"] not in [".", "?"]):
+                        idCodeList.append((hit["db_isoform"], start, end))
                     else:
-                        idCodeList.append( ( hit['db_accession'], start, end ) )
+                        idCodeList.append((hit["db_accession"], start, end))
                     #
                 #
             #
             # Incorporate non-overlapping additional details about each matching sequence entry.
             #   ( Still using the REST API to get the entry information )
             #
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+LocalBlastSearchUtils.__readBlastResultXmlFile() Fetch sequence database entries for %d filtered reference idcodes\n" % len(idCodeList))
             if len(idCodeList) > 0:
                 unpD = fetchUniProt(idTupleList=idCodeList, verbose=self.__verbose, log=self.__lfh)
                 for hit in searchHitList:
                     acId = None
                     isIso = False
-                    if 'db_isoform' in hit and (len(hit['db_isoform']) > 0) and (hit['db_isoform'] not in ['.', '?']):
-                        acId = hit['db_isoform']
-                        hit['non_isoform_score'] = 0
+                    if "db_isoform" in hit and (len(hit["db_isoform"]) > 0) and (hit["db_isoform"] not in [".", "?"]):
+                        acId = hit["db_isoform"]
+                        hit["non_isoform_score"] = 0
                         isIso = True
-                    elif 'db_accession' in hit:
-                        acId = hit['db_accession']
+                    elif "db_accession" in hit:
+                        acId = hit["db_accession"]
                     #
                     if acId is not None:
                         try:
                             start = int(str(hit["hitFrom"]))
-                        except:
+                        except:  # noqa: E722 pylint: disable=bare-except
                             start = 0
                         #
                         try:
                             end = int(str(hit["hitTo"]))
-                        except:
+                        except:  # noqa: E722 pylint: disable=bare-except
                             end = 0
                         #
                         dd = {}
-                        if ( acId, start, end ) in unpD:
-                            dd = unpD[( acId, start, end )]
-                        elif isIso and ( ( hit['db_accession'], start, end ) in unpD):
-                            dd = unpD[( hit['db_accession'], start, end )]
+                        if (acId, start, end) in unpD:
+                            dd = unpD[(acId, start, end)]
+                        elif isIso and ((hit["db_accession"], start, end) in unpD):
+                            dd = unpD[(hit["db_accession"], start, end)]
                         #
                         for (k, v) in dd.items():
                             if (k != "sequence") and (k not in hit):
@@ -539,15 +576,15 @@ class LocalBlastSearchUtils(object):
                     #
                 #
             #
-        #elif self.__seqType == 'polyribonucleotide':
+        # elif self.__seqType == 'polyribonucleotide':
         # for DAOTHER-6304
-        elif self.__seqType in ['polydeoxyribonucleotide', 'polyribonucleotide']:
+        elif self.__seqType in ["polydeoxyribonucleotide", "polyribonucleotide"]:
             hitList = searchHitList
             idCodeList = []
             for hit in hitList:
-                hit['non_isoform_score'] = 1
-                if 'db_accession' in hit:
-                    idCodeList.append(hit['db_accession'])
+                hit["non_isoform_score"] = 1
+                if "db_accession" in hit:
+                    idCodeList.append(hit["db_accession"])
                 #
             #
             idCodeList = list(set(idCodeList))
@@ -564,8 +601,8 @@ class LocalBlastSearchUtils(object):
                     giD[idCode] = fetchNcbiSummary(idCode, siteId=self.__siteId)
                 #
                 for hit in hitList:
-                    if 'db_accession' in hit:
-                        acId = hit['db_accession']
+                    if "db_accession" in hit:
+                        acId = hit["db_accession"]
                         if acId in giD:
                             dd = giD[acId]
                             for (k, v) in dd.items():
@@ -575,121 +612,126 @@ class LocalBlastSearchUtils(object):
                             #
                         #
                     #
-                    if (('source_scientific' not in hit or len(hit['source_scientific']) < 2) and 'taxonomy_id' in hit):
+                    if ("source_scientific" not in hit or len(hit["source_scientific"]) < 2) and "taxonomy_id" in hit:
                         # try to lookup the scientific name - Take the first hit --
-                        snL = self.__taxUtils.lookUpSource(taxId=hit['taxonomy_id'])
-                        hit['source_scientific'] = ''
+                        snL = self.__taxUtils.lookUpSource(taxId=hit["taxonomy_id"])
+                        hit["source_scientific"] = ""
                         if len(snL) > 0:
-                            hit['source_scientific'] = snL[0]
+                            hit["source_scientific"] = snL[0]
                         #
                     #
                 #
             #
         #
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+LocalBlastSearchUtils.__readBlastResultXmlFile() hit list length is %d\n" % len(hitList))
         #
         for hit in hitList:
-            hit['beg_seq_num'] = seqNumBeg
-            hit['end_seq_num'] = seqNumEnd
-            hit['fragment_id'] = seqPartId
+            hit["beg_seq_num"] = seqNumBeg
+            hit["end_seq_num"] = seqNumEnd
+            hit["fragment_id"] = seqPartId
         #
         return self.__getHitList(hitList, authTaxId)
 
     def __getHitList(self, hitList, authTaxId):
-        """
-        """
+        """ """
         if not hitList:
             return []
         #
-        start_index,finalList = self.__sortHitList(hitList, authTaxId, True)
+        start_index, finalList = self.__sortHitList(hitList, authTaxId, True)
         cutoff_length = len(finalList) - start_index
         if cutoff_length > self.__maxHitsSave:
             cutoff_length = self.__maxHitsSave
         #
         if len(finalList) > cutoff_length:
-            return finalList[(len(finalList) - cutoff_length):]
+            return finalList[(len(finalList) - cutoff_length) :]
         else:
             return finalList
         #
 
     def __sortHitList(self, hitList, authTaxId, fullScoreFlag):
-        """ Add a sorting index to the dictionary of sequence correspondence hitLists obtained from
-            the BLAST search.   The sort index is based on heurestic which includes sequence matching
-            metrics and taxonomy data.
+        """Add a sorting index to the dictionary of sequence correspondence hitLists obtained from
+        the BLAST search.   The sort index is based on heurestic which includes sequence matching
+        metrics and taxonomy data.
 
-            Return hitList[]=d{}  -> with additional keys 'sort_order' & 'sort_metric'
-                                     ordered by increasing (better matchint) score.
+        Return hitList[]=d{}  -> with additional keys 'sort_order' & 'sort_metric'
+                                 ordered by increasing (better matchint) score.
 
         """
         authAncestorD = self.__taxUtils.getAncestors(authTaxId)
-        if (self.__debug):
+        if self.__debug:
             self.__lfh.write("+LocalBlastSearchUtils.__sortHitList() length %d authTaxId %s authAncestorD %r\n" % (len(hitList), authTaxId, authAncestorD.items()))
         #
         highest_identity_score_with_taxid_match = 0
         lowest_identity_score_with_taxid_match = 101
         lowest_identity_score_with_refid_match = 101
         for i, hit in enumerate(hitList):
-            if 'non_isoform_score' not in hit:
-                hit['non_isoform_score'] = 1
+            if "non_isoform_score" not in hit:
+                hit["non_isoform_score"] = 1
             #
             if fullScoreFlag or ("identity_score" not in hit):
-                hit['identity_score'] = (float(hit['identity']) - float(hit['gaps'])) * 100.0 / float(hit['query_length'])
+                hit["identity_score"] = (float(hit["identity"]) - float(hit["gaps"])) * 100.0 / float(hit["query_length"])
                 if self.__debug:
-                    self.__lfh.write("+ReferencSequenceUtils.__sortHitList() i %r  identity %r gaps %r query_length %r  score %r\n" % \
-                                     (i, hit['identity'], hit['gaps'], hit['query_length'], hit['identity_score']))
+                    self.__lfh.write(
+                        "+ReferencSequenceUtils.__sortHitList() i %r  identity %r gaps %r query_length %r  score %r\n"
+                        % (i, hit["identity"], hit["gaps"], hit["query_length"], hit["identity_score"])
+                    )
                     #
-                if hit['db_name'] == 'SP':
-                    hit['db_score'] = 1
+                if hit["db_name"] == "SP":
+                    hit["db_score"] = 1
                 else:
-                    hit['db_score'] = 0
+                    hit["db_score"] = 0
                 #
             #
-            if self.__authRefIdList and ((hit['db_code'].strip().upper() in self.__authRefIdList) or (hit['db_accession'].strip().upper() in self.__authRefIdList)):
-                if hit['identity_score'] < lowest_identity_score_with_refid_match:
-                    lowest_identity_score_with_refid_match = hit['identity_score']
+            if self.__authRefIdList and ((hit["db_code"].strip().upper() in self.__authRefIdList) or (hit["db_accession"].strip().upper() in self.__authRefIdList)):
+                if hit["identity_score"] < lowest_identity_score_with_refid_match:
+                    lowest_identity_score_with_refid_match = hit["identity_score"]
                 #
-                hit['code_score'] = 1
+                hit["code_score"] = 1
             else:
-                hit['code_score'] = 0
+                hit["code_score"] = 0
             #
             targetAncestorD = {}
-            taxonomy_id = ''
-            if 'taxonomy_id' in hit:
-                taxonomy_id = hit['taxonomy_id']
-                targetAncestorD = self.__taxUtils.getAncestors(hit['taxonomy_id'])
+            taxonomy_id = ""
+            if "taxonomy_id" in hit:
+                taxonomy_id = hit["taxonomy_id"]
+                targetAncestorD = self.__taxUtils.getAncestors(hit["taxonomy_id"])
             #
             taxidMatch = 0
-            if authAncestorD and targetAncestorD and 'id' in authAncestorD and 'id' in targetAncestorD:
-                if authAncestorD['id'] == targetAncestorD['id']:
+            if authAncestorD and targetAncestorD and "id" in authAncestorD and "id" in targetAncestorD:
+                if authAncestorD["id"] == targetAncestorD["id"]:
                     taxidMatch = 3
-                elif 'p_id' in authAncestorD and authAncestorD['p_id'] == targetAncestorD['id']:
+                elif "p_id" in authAncestorD and authAncestorD["p_id"] == targetAncestorD["id"]:
                     taxidMatch = 2
-                elif 'p_id' in targetAncestorD and targetAncestorD['p_id'] == authAncestorD['id']:
+                elif "p_id" in targetAncestorD and targetAncestorD["p_id"] == authAncestorD["id"]:
                     taxidMatch = 2
-                elif 'gp_id' in authAncestorD and authAncestorD['gp_id'] == targetAncestorD['id']:
+                elif "gp_id" in authAncestorD and authAncestorD["gp_id"] == targetAncestorD["id"]:
                     taxidMatch = 1
-                elif 'gp_id' in targetAncestorD and targetAncestorD['gp_id'] == authAncestorD['id']:
+                elif "gp_id" in targetAncestorD and targetAncestorD["gp_id"] == authAncestorD["id"]:
                     taxidMatch = 1
                 #
             #
-            hit['taxid_match'] = taxidMatch
+            hit["taxid_match"] = taxidMatch
             if fullScoreFlag and (taxidMatch == 3):
-                if hit['identity_score'] > highest_identity_score_with_taxid_match:
-                    highest_identity_score_with_taxid_match = hit['identity_score']
+                if hit["identity_score"] > highest_identity_score_with_taxid_match:
+                    highest_identity_score_with_taxid_match = hit["identity_score"]
                 #
-                if hit['identity_score'] < lowest_identity_score_with_taxid_match:
-                    lowest_identity_score_with_taxid_match = hit['identity_score']
+                if hit["identity_score"] < lowest_identity_score_with_taxid_match:
+                    lowest_identity_score_with_taxid_match = hit["identity_score"]
                 #
             #
-            hit['sort_metric'] = (hit['identity_score'] + hit['code_score']) * 4 + taxidMatch + hit['db_score']
+            hit["sort_metric"] = (hit["identity_score"] + hit["code_score"]) * 4 + taxidMatch + hit["db_score"]
             #
             if self.__debug:
-                self.__lfh.write("+ReferencSequenceUtils.__sortHitList() hit i=%d db_code=%s authTaxId=%s taxonomy_id=%s taxidMatch=%d sp_score=%d score=%.2f\n" % \
-                        (i, hit['db_code'], authTaxId, taxonomy_id, taxidMatch, hit['db_score'], hit['sort_metric']))
-                if authAncestorD and targetAncestorD and 'id' in authAncestorD and 'id' in targetAncestorD:
-                    self.__lfh.write("+ReferencSequenceUtils.__sortHitList() taxidMatch %d  authAncestorD[id] %s targetAncestorD[id] %s final score %r\n" % \
-                                     (taxidMatch, authAncestorD['id'], targetAncestorD['id'], hit['sort_metric']))
+                self.__lfh.write(
+                    "+ReferencSequenceUtils.__sortHitList() hit i=%d db_code=%s authTaxId=%s taxonomy_id=%s taxidMatch=%d sp_score=%d score=%.2f\n"
+                    % (i, hit["db_code"], authTaxId, taxonomy_id, taxidMatch, hit["db_score"], hit["sort_metric"])
+                )
+                if authAncestorD and targetAncestorD and "id" in authAncestorD and "id" in targetAncestorD:
+                    self.__lfh.write(
+                        "+ReferencSequenceUtils.__sortHitList() taxidMatch %d  authAncestorD[id] %s targetAncestorD[id] %s final score %r\n"
+                        % (taxidMatch, authAncestorD["id"], targetAncestorD["id"], hit["sort_metric"])
+                    )
                 #
             #
         #
@@ -704,12 +746,12 @@ class LocalBlastSearchUtils(object):
                 cutoff_identity_score = lowest_identity_score_with_taxid_match
             #
         #
-        hitList.sort(key=itemgetter('identity_score', 'taxid_match', 'code_score', 'db_score', 'non_isoform_score'))
+        hitList.sort(key=itemgetter("identity_score", "taxid_match", "code_score", "db_score", "non_isoform_score"))
         #
         first = True
         for i, hit in enumerate(hitList):
             hit["sort_order"] = str(i + 1)
-            if first and (hit['identity_score'] > cutoff_identity_score):
+            if first and (hit["identity_score"] > cutoff_identity_score):
                 start_index = i
                 first = False
             #
@@ -725,137 +767,134 @@ class LocalBlastSearchUtils(object):
                 if "db_code" in hit:
                     db_code = hit["db_code"]
                 #
-                self.__lfh.write("+ReferencSequenceUtils.__sortHitList() final hit sort_order=%r sort_metric=%r db_code=%r authTaxId=%r taxonomy_id=%r\n" \
-                                 % (hit["sort_order"], hit["sort_metric"], db_code, authTaxId, taxonomy_id))
+                self.__lfh.write(
+                    "+ReferencSequenceUtils.__sortHitList() final hit sort_order=%r sort_metric=%r db_code=%r authTaxId=%r taxonomy_id=%r\n"
+                    % (hit["sort_order"], hit["sort_metric"], db_code, authTaxId, taxonomy_id)
+                )
             self.__lfh.flush()
             #
         #
-        return start_index,hitList
+        return start_index, hitList
 
     def __getRefSeqAlignments(self, hitList):
-        """ Get Auth/Ref sequence alignments
-        """
+        """Get Auth/Ref sequence alignments"""
         alignMap = {}
         try:
             numProc = int(multiprocessing.cpu_count() / 2)
-            mpu = MultiProcUtil(verbose = True)
-            mpu.set(workerObj = self, workerMethod = 'getMultiSeqAlignmentProcess')
+            mpu = MultiProcUtil(verbose=True)
+            mpu.set(workerObj=self, workerMethod="getMultiSeqAlignmentProcess")
             mpu.setWorkingDir(self.__sessionPath)
-            ok,failList,retLists,diagList = mpu.runMulti(dataList = hitList, numProc = numProc, numResults = 1)
+            _ok, _failList, retLists, _diagList = mpu.runMulti(dataList=hitList, numProc=numProc, numResults=1)
             #
             for tupList in retLists:
                 for tup in tupList:
-                    alignMap[tup[0]] = ( tup[1], tup[2], tup[3], tup[4], tup[5] )
+                    alignMap[tup[0]] = (tup[1], tup[2], tup[3], tup[4], tup[5])
                 #
             #
-        except:
-            if (self.__verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__verbose:
                 traceback.print_exc(file=self.__lfh)
             #
         #
         return alignMap
 
-    def getMultiSeqAlignmentProcess(self, dataList, procName, optionsD, workingDir):
-        """ Get Auth/Ref sequence alignments MultiProcUtil API
-        """
+    def getMultiSeqAlignmentProcess(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
+        """Get Auth/Ref sequence alignments MultiProcUtil API"""
         rList = []
         eList = []
         for hitD in dataList:
-            alignIndex,sTup3L,alignLength,seqSim,seqSimWithGaps,error = self.__getSeqAlignIndex(hitD)
+            alignIndex, sTup3L, alignLength, seqSim, seqSimWithGaps, error = self.__getSeqAlignIndex(hitD)
             if error:
-                eList.append((hitD['sort_order'], error))
+                eList.append((hitD["sort_order"], error))
             else:
-                rList.append(( hitD['sort_order'], alignIndex, sTup3L, alignLength, seqSim, seqSimWithGaps ))
+                rList.append((hitD["sort_order"], alignIndex, sTup3L, alignLength, seqSim, seqSimWithGaps))
             #
         #
-        return rList,rList,eList
+        return rList, rList, eList
 
     def __getSeqAlignIndex(self, hitD):
-        """ Get Auth/Ref sequence alignment
-        """
-        querySeq = self.__srd.toList(hitD['query'])
-        refSeq = self.__srd.toList(hitD['subject'])
+        """Get Auth/Ref sequence alignment"""
+        querySeq = self.__srd.toList(hitD["query"])
+        refSeq = self.__srd.toList(hitD["subject"])
         if len(querySeq) != len(refSeq):
-            return [],[],0,0.0,0.0,'Alignment length error'
+            return [], [], 0, 0.0, 0.0, "Alignment length error"
         #
-        hBegin = int(hitD['hitFrom'])
-        hEnd = int(hitD['hitTo'])
+        hBegin = int(hitD["hitFrom"])
+        hEnd = int(hitD["hitTo"])
         if hBegin < hEnd:
-            sTup3L = self.__srd.cnv1To3ListIdx(hitD['subject'], hBegin, self.__entityD['POLYMER_TYPE_CODE'])
+            sTup3L = self.__srd.cnv1To3ListIdx(hitD["subject"], hBegin, self.__entityD["POLYMER_TYPE_CODE"])
         else:
-            sTup3L = self.__srd.cnv1To3ListIdx(hitD['subject'], hBegin, self.__entityD['POLYMER_TYPE_CODE'], indexStep=-1)
+            sTup3L = self.__srd.cnv1To3ListIdx(hitD["subject"], hBegin, self.__entityD["POLYMER_TYPE_CODE"], indexStep=-1)
         #
-        align_start_position = int(hitD['beg_seq_num']) - 1
-        align_end_position = align_start_position + (int(hitD['queryFrom']) - int(hitD['beg_seq_num']))
+        align_start_position = int(hitD["beg_seq_num"]) - 1
+        align_end_position = align_start_position + (int(hitD["queryFrom"]) - int(hitD["beg_seq_num"]))
         #
-        qIndexBegin = int(hitD['beg_seq_num']) + int(hitD['queryFrom']) - 2
+        qIndexBegin = int(hitD["beg_seq_num"]) + int(hitD["queryFrom"]) - 2
         alignIndex = []
         for i in range(0, qIndexBegin):
-            alignIndex.append([ i, -1 ])
+            alignIndex.append([i, -1])
         #
         usedCount = 0
         hIndexBegin = 0
         for i in range(0, len(querySeq)):
-            if (querySeq[i] == '-') and (refSeq[i] == '-'):
+            if (querySeq[i] == "-") and (refSeq[i] == "-"):
                 continue
             #
-            if (querySeq[i] != '-') and (querySeq[i] != self.__fullOneLetterSeq[qIndexBegin]) and (self.__fullOneLetterSeq[qIndexBegin] != 'X'):
-                return [],[],0,0.0,0.0,'query sequence mismatch'
+            if (querySeq[i] != "-") and (querySeq[i] != self.__fullOneLetterSeq[qIndexBegin]) and (self.__fullOneLetterSeq[qIndexBegin] != "X"):
+                return [], [], 0, 0.0, 0.0, "query sequence mismatch"
             #
-            if (refSeq[i] != '-') and (refSeq[i] != sTup3L[hIndexBegin][4]):
-                return [],[],0,0.0,0.0,'hit sequence mismatch'
+            if (refSeq[i] != "-") and (refSeq[i] != sTup3L[hIndexBegin][4]):
+                return [], [], 0, 0.0, 0.0, "hit sequence mismatch"
             #
             align_end_position += 1
-            if querySeq[i] == '-':
-                alignIndex.append([ -1, hIndexBegin ])
+            if querySeq[i] == "-":
+                alignIndex.append([-1, hIndexBegin])
                 hIndexBegin += 1
-            elif refSeq[i] == '-':
-                alignIndex.append([ qIndexBegin, -1 ])
+            elif refSeq[i] == "-":
+                alignIndex.append([qIndexBegin, -1])
                 qIndexBegin += 1
                 usedCount += 1
             else:
-                alignIndex.append([ qIndexBegin, hIndexBegin ])
+                alignIndex.append([qIndexBegin, hIndexBegin])
                 qIndexBegin += 1
                 hIndexBegin += 1
                 usedCount += 1
             #
         #
-        align_end_position += (int(hitD['end_seq_num']) - int(hitD['queryFrom']) - usedCount) + 1
+        align_end_position += (int(hitD["end_seq_num"]) - int(hitD["queryFrom"]) - usedCount) + 1
         #
         for i in range(qIndexBegin, len(self.__fullOneLetterSeq)):
-            alignIndex.append([ i, -1 ])
+            alignIndex.append([i, -1])
         #
-        beg_pos,end_pos = self.__getAlignmentPositionIndex(alignIndex, int(hitD['beg_seq_num']) - 1, int(hitD['end_seq_num']) - 1)
+        beg_pos, end_pos = self.__getAlignmentPositionIndex(alignIndex, int(hitD["beg_seq_num"]) - 1, int(hitD["end_seq_num"]) - 1)
         if (beg_pos < 0) or (end_pos < 0):
-            return [],[],0,0.0,0.0,'Alignment length error'
+            return [], [], 0, 0.0, 0.0, "Alignment length error"
         #
         refSeq = []
         for sTup in sTup3L:
             refSeq.append(sTup[4])
         #
         self.__processTerminalMismatch(alignIndex, beg_pos, end_pos, refSeq)
-        alignLength,seqSim,seqSimWithGaps = self.__getAlignmentStatistics(alignIndex, beg_pos, end_pos, refSeq)
+        alignLength, seqSim, seqSimWithGaps = self.__getAlignmentStatistics(alignIndex, beg_pos, end_pos, refSeq)
         #
-        return alignIndex,sTup3L,alignLength,seqSim,seqSimWithGaps,''
+        return alignIndex, sTup3L, alignLength, seqSim, seqSimWithGaps, ""
 
     def __getAlignmentPositionIndex(self, alignIndex, beg_seq_num, end_seq_num):
-        """ Get the starting & ending aligned positions
-        """
+        """Get the starting & ending aligned positions"""
         beg_pos = -1
         end_pos = -1
         for i in range(0, len(alignIndex)):
-            if (alignIndex[i][0] != '') and (int(alignIndex[i][0]) == beg_seq_num):
+            if (alignIndex[i][0] != "") and (int(alignIndex[i][0]) == beg_seq_num):
                 beg_pos = i
             #
-            if (alignIndex[i][0] != '') and (int(alignIndex[i][0]) == end_seq_num):
+            if (alignIndex[i][0] != "") and (int(alignIndex[i][0]) == end_seq_num):
                 end_pos = i
             #
         #
-        return beg_pos,end_pos
+        return beg_pos, end_pos
 
     def __processTerminalMismatch(self, alignIndex, beg_pos, end_pos, refSeq):
-        """ Re-align with previous residue (for N-terminal) or next residue (for C-terminal) if they are the same
-        """
+        """Re-align with previous residue (for N-terminal) or next residue (for C-terminal) if they are the same"""
         first = -1
         for i in range(beg_pos, end_pos):
             if (alignIndex[i][0] != -1) and (alignIndex[i][1] != -1):
@@ -865,8 +904,12 @@ class LocalBlastSearchUtils(object):
                 break
             #
         #
-        if (first > beg_pos) and (alignIndex[first - 1][0] >= 0) and (alignIndex[first - 1][1] < 0) and \
-           (self.__fullOneLetterSeq[alignIndex[first - 1][0]] == refSeq[alignIndex[first][1]]):
+        if (
+            (first > beg_pos)
+            and (alignIndex[first - 1][0] >= 0)
+            and (alignIndex[first - 1][1] < 0)
+            and (self.__fullOneLetterSeq[alignIndex[first - 1][0]] == refSeq[alignIndex[first][1]])
+        ):
             alignIndex[first - 1][1] = alignIndex[first][1]
             alignIndex[first][1] = -1
         #
@@ -879,15 +922,18 @@ class LocalBlastSearchUtils(object):
                 break
             #
         #
-        if (last < end_pos) and (alignIndex[last + 1][0] >= 0) and (alignIndex[last + 1][1] < 0) and \
-           (self.__fullOneLetterSeq[alignIndex[last + 1][0]] == refSeq[alignIndex[last][1]]):
-            alignIndex[last + 1][1] = alignIndex[last][1];
-            alignIndex[last][1] = -1;
+        if (
+            (last < end_pos)
+            and (alignIndex[last + 1][0] >= 0)
+            and (alignIndex[last + 1][1] < 0)
+            and (self.__fullOneLetterSeq[alignIndex[last + 1][0]] == refSeq[alignIndex[last][1]])
+        ):
+            alignIndex[last + 1][1] = alignIndex[last][1]
+            alignIndex[last][1] = -1
         #
 
     def __getAlignmentStatistics(self, alignIndex, beg_pos, end_pos, refSeq):
-        """ Get alignment length and similarities
-        """
+        """Get alignment length and similarities"""
         alignLength = 0
         numMatch = 0
         numMatchGaps = 0
@@ -906,7 +952,7 @@ class LocalBlastSearchUtils(object):
             #
         #
         if alignLength == 0:
-            return 0,0.0,0.0
+            return 0, 0.0, 0.0
         else:
-            return alignLength,float(numMatch) / float(alignLength),float(numMatchGaps) / float(alignLength)
+            return alignLength, float(numMatch) / float(alignLength), float(numMatchGaps) / float(alignLength)
         #

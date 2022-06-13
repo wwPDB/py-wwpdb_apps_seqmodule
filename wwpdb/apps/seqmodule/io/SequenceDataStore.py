@@ -43,8 +43,6 @@ except ImportError:
 
 import sys
 import time
-import os
-import os.path
 import pprint
 import traceback
 
@@ -55,70 +53,70 @@ from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceFeature
 
 class SequenceDataStore(object):
 
-    """ All sequences are stored as lists and features are stored in dictionaries -
-      - These objects are opaque to this class which only manages their storage.
+    """All sequences are stored as lists and features are stored in dictionaries -
+    - These objects are opaque to this class which only manages their storage.
 
-      Objects are identified by  -
+    Objects are identified by  -
 
-        dataType:  Supported data types are 'sequence', 'feature', 'link-distance'
-        seqType:   Sequence types are: auth (author provided), xyz (coordinate),
-                   ref (from reference sequence database).
-        seqId:     Identifies an instance of a sequence or a feature object within a
-                   sequence type.  Sequence and feature instances are versioned.  This
-                   identifier serves can be a PDB ChainId or the PDBx (_struct_asym.id)
-                   for the author and coordinate sequence types.
-        partId:    Distinguishes continuous regions of a sequence with unique/separately
-                   specified features. This identifier is used to maintain correpondences
-                   between portions of an author provided sequence and related reference
-                   sequences.    This is an integer value with default value 1.
-        altId:     Distinguishes alternatives associated with a particular sequence
-                   instance.   This may be used to support micro-hetereogeneity and
-                   alternative reference sequences (default=1)
-        version:   integer revision id where 1 is the original version.
+      dataType:  Supported data types are 'sequence', 'feature', 'link-distance'
+      seqType:   Sequence types are: auth (author provided), xyz (coordinate),
+                 ref (from reference sequence database).
+      seqId:     Identifies an instance of a sequence or a feature object within a
+                 sequence type.  Sequence and feature instances are versioned.  This
+                 identifier serves can be a PDB ChainId or the PDBx (_struct_asym.id)
+                 for the author and coordinate sequence types.
+      partId:    Distinguishes continuous regions of a sequence with unique/separately
+                 specified features. This identifier is used to maintain correpondences
+                 between portions of an author provided sequence and related reference
+                 sequences.    This is an integer value with default value 1.
+      altId:     Distinguishes alternatives associated with a particular sequence
+                 instance.   This may be used to support micro-hetereogeneity and
+                 alternative reference sequences (default=1)
+      version:   integer revision id where 1 is the original version.
 
-        self.__I[dataType][seqType][seqId][partId][altId][version]=((dataId,timeStamp)
+      self.__I[dataType][seqType][seqId][partId][altId][version]=((dataId,timeStamp)
 
-        self.__D[dataId] = sequence list [...] or  feature dictionary {...}
+      self.__D[dataId] = sequence list [...] or  feature dictionary {...}
 
-        where dataId is a concatenated identifier= seqType_dataType_seqId_partId_altId_version
+      where dataId is a concatenated identifier= seqType_dataType_seqId_partId_altId_version
 
-        Sequence instance groups  (e.g. entity->instance,... ) identify groups of related
-        sequence instances:
+      Sequence instance groups  (e.g. entity->instance,... ) identify groups of related
+      sequence instances:
 
-           Group Id/entity Id -> [seqId1, seqId2, ...]
+         Group Id/entity Id -> [seqId1, seqId2, ...]
 
-           self.__G[groupId] = [seqId List]
+         self.__G[groupId] = [seqId List]
 
-        Group sub-subsequences (parts):
+      Group sub-subsequences (parts):
 
-           self.__P[groupId/entityId] = [partId1, partId2,...]
-
-
-        Sequence id selections:
-
-        self.__S[]= [seqId label list]
+         self.__P[groupId/entityId] = [partId1, partId2,...]
 
 
-        Sequence Id selections:
+      Sequence id selections:
 
-        self.__S[]= [seqId label list]
+      self.__S[]= [seqId label list]
 
-        Sequence Alignment Id lists:
 
-        self.__L[]= [seqId label list]
+      Sequence Id selections:
 
-        Entry features are stored in a dictoinary of key value pairs. The provides a
-        container for storing features of the entry -
+      self.__S[]= [seqId label list]
 
-        self.__E={}
+      Sequence Alignment Id lists:
 
-        Depositor sequence assignment and conflict annotation -
+      self.__L[]= [seqId label list]
 
-        self.__depositorAssignD={<entityId>}
+      Entry features are stored in a dictoinary of key value pairs. The provides a
+      container for storing features of the entry -
 
-        Archive sequence assignment and conflict annotation -
+      self.__E={}
 
-        self.__assignD={<entityId>}
+      Depositor sequence assignment and conflict annotation -
+
+      self.__depositorAssignD={<entityId>}
+
+      Archive sequence assignment and conflict annotation -
+
+      self.__assignD={<entityId>}
 
     """
 
@@ -137,14 +135,24 @@ class SequenceDataStore(object):
         #
         self.__clear()
         #
-        #self.__pickleProtocol = pickle.HIGHEST_PROTOCOL
+        # self.__pickleProtocol = pickle.HIGHEST_PROTOCOL
         self.__pickleProtocol = 0
+        #
+        # Declar for pylint
+        self.__D = {}
+        self.__I = Autodict()
+        self.__E = {}
+        self.__G = {}
+        self.__P = {}
+        self.__S = []
+        self.__L = []
+        self.__depositorAssignD = {}
+        self.__assignD = {}
         #
         self.__setup()
 
     def __clear(self):
-        """
-        """
+        """ """
         self.__D = {}
         self.__I = Autodict()
         self.__E = {}
@@ -162,20 +170,19 @@ class SequenceDataStore(object):
             self.__identifier = self.__reqObj.getValue("identifier")
             self.__pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
             if self.__fileName is not None:
-                #self.__filePath = os.path.join(self.__sessionPath, self.__fileName)
+                # self.__filePath = os.path.join(self.__sessionPath, self.__fileName)
                 # Using full path file name instead
                 self.__filePath = self.__fileName
             else:
-                self.__filePath = seqDataStatsPath = self.__pI.getSequenceStatsFilePath(self.__identifier, fileSource='session')
+                self.__filePath = self.__pI.getSequenceStatsFilePath(self.__identifier, fileSource="session")
 
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SequenceDataStore.__setup() - Starting with session id %s \n" % self.__sessionObj.getId())
                 self.__lfh.write("+SequenceDataStore.__setup() - using data store path %s\n" % self.__filePath)
 
             self.deserialize()
-        except:
-            self.__lfh.write("+SequenceDataStore.__setup() - Failed to open data store for session id %s data store path %s\n" %
-                             (self.__sessionObj.getId(), self.__filePath))
+        except:  # noqa: E722 pylint: disable=bare-except
+            self.__lfh.write("+SequenceDataStore.__setup() - Failed to open data store for session id %s data store path %s\n" % (self.__sessionObj.getId(), self.__filePath))
             traceback.print_exc(file=self.__lfh)
 
     def reset(self):
@@ -188,7 +195,7 @@ class SequenceDataStore(object):
 
     def serialize(self):
         try:
-            fb = open(self.__filePath, 'wb')
+            fb = open(self.__filePath, "wb")
             pickle.dump(self.__E, fb, self.__pickleProtocol)
             pickle.dump(self.__G, fb, self.__pickleProtocol)
             pickle.dump(self.__P, fb, self.__pickleProtocol)
@@ -199,8 +206,8 @@ class SequenceDataStore(object):
             pickle.dump(self.__depositorAssignD, fb, self.__pickleProtocol)
             pickle.dump(self.__assignD, fb, self.__pickleProtocol)
             fb.close()
-        except:
-            if (self.__verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__verbose:
                 self.__lfh.write("+SequenceDataStore.__serialize() - failing for %s\n" % self.__filePath)
                 traceback.print_exc(file=self.__lfh)
             #
@@ -208,7 +215,7 @@ class SequenceDataStore(object):
 
     def deserialize(self):
         try:
-            fb = open(self.__filePath, 'rb')
+            fb = open(self.__filePath, "rb")
             self.__E = pickle.load(fb)
             self.__G = pickle.load(fb)
             self.__P = pickle.load(fb)
@@ -219,8 +226,8 @@ class SequenceDataStore(object):
             self.__depositorAssignD = pickle.load(fb)
             self.__assignD = pickle.load(fb)
             fb.close()
-        except:
-            if (self.__debug):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__debug:
                 self.__lfh.write("+SequenceDataStore.__deserialize() - failing for %s\n" % self.__filePath)
                 traceback.print_exc(file=self.__lfh)
             #
@@ -228,137 +235,138 @@ class SequenceDataStore(object):
         #
 
     def __makeId(self, dataType, seqType, seqId, partId=1, altId=1, version=1):
-        id = "%s_%s_%s_%d_%d_%d" % (dataType, seqType, seqId, int(partId), int(altId), int(version))
-        return id
+        rid = "%s_%s_%s_%d_%d_%d" % (dataType, seqType, seqId, int(partId), int(altId), int(version))
+        return rid
 
-    def __updateIndex(self, id, dataType, seqType, seqId, partId=1, altId=1, version=1):
+    def __updateIndex(self, tid, dataType, seqType, seqId, partId=1, altId=1, version=1):
         lt = time.strftime("%Y %m %d %H:%M:%S", time.localtime())
 
-        self.__I[dataType][seqType][seqId][int(partId)][int(altId)][int(version)] = (id, lt)
+        self.__I[dataType][seqType][seqId][int(partId)][int(altId)][int(version)] = (tid, lt)
 
     def setSequence(self, sL, seqId, seqType, partId=1, altId=1, version=1):
         try:
-            id = self.__makeId(dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            self.__updateIndex(id, dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            if (sL is None or len(sL) == 0):
+            rid = self.__makeId(dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            self.__updateIndex(rid, dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            if sL is None or len(sL) == 0:
                 if self.__verbose:
-                    self.__lfh.write("+SequenceDataStore.__setSequence() - empty object seqId %s seqType %s partId %d altId %d version %d\n" %
-                                     (seqId, seqType, partId, altId, version))
-            self.__D[id] = sL
+                    self.__lfh.write(
+                        "+SequenceDataStore.__setSequence() - empty object seqId %s seqType %s partId %d altId %d version %d\n" % (seqId, seqType, partId, altId, version)
+                    )
+            self.__D[rid] = sL
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
 
     def getSequence(self, seqId, seqType, partId=1, altId=1, version=1):
         try:
-            id = self.__makeId(dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            return self.__D[id]
-        except:
+            sid = self.__makeId(dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            return self.__D[sid]
+        except:  # noqa: E722 pylint: disable=bare-except
             return []
 
     def dumpSequence(self, seqId, seqType, partId=1, altId=1, version=1):
         try:
-            id = self.__makeId(dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            sTupL = self.__D[id]
-            self.__lfh.write("+SequenceDataStore.dumpSequence() - seqId %s seqType %s partId %d altId %d version %d\n" %
-                             (seqId, seqType, partId, altId, version))
+            sid = self.__makeId(dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            sTupL = self.__D[sid]
+            self.__lfh.write("+SequenceDataStore.dumpSequence() - seqId %s seqType %s partId %d altId %d version %d\n" % (seqId, seqType, partId, altId, version))
             for sTup in sTupL:
                 self.__lfh.write("         ++ %5s %6s %d (%s)\n" % (sTup[0], sTup[1], sTup[3], sTup[2]))
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
 
     def setFeature(self, fD, seqId, seqType, partId=1, altId=1, version=1):
         try:
-            id = self.__makeId(dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            self.__updateIndex(id, dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            self.__D[id] = fD
+            fid = self.__makeId(dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            self.__updateIndex(fid, dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            self.__D[fid] = fD
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
 
     def setFeatureObj(self, sfObj, seqId, seqType, partId=1, altId=1, version=1):
         try:
             idx = self.__makeId(dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            self.__updateIndex(id, dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            self.__updateIndex(idx, dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
             self.__D[idx] = sfObj.get()
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             self.__lfh.write("+SequenceDataStore.setFeatureObj() - failing for seqId %s seqType %s\n" % (seqId, seqType))
             traceback.print_exc(file=self.__lfh)
             return False
 
     def getFeature(self, seqId, seqType, partId=1, altId=1, version=1):
         try:
-            id = self.__makeId(dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            return self.__D[id]
-        except:
+            fid = self.__makeId(dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            return self.__D[fid]
+        except:  # noqa: E722 pylint: disable=bare-except
             return {}
 
     def getFeatureObj(self, seqId, seqType, partId=1, altId=1, version=1):
         sf = SequenceFeature()
         try:
-            id = self.__makeId(dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            sf.set(self.__D[id])
+            fid = self.__makeId(dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            sf.set(self.__D[fid])
             return sf
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return sf
 
-    def getSequenceTypes(self, dataType='sequence'):
+    def getSequenceTypes(self, dataType="sequence"):
         try:
-            return(list(self.__I[dataType].keys()))
-        except:
+            return list(self.__I[dataType].keys())
+        except:  # noqa: E722 pylint: disable=bare-except
             return []
 
     def getSelectedIds(self):
         try:
-            return (self.__S)
-        except:
+            return self.__S
+        except:  # noqa: E722 pylint: disable=bare-except
             return []
 
-    def addSelectedId(self, id):
+    def addSelectedId(self, id):  # pylint: disable=redefined-builtin
         try:
             self.__S.append(id)
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
 
-    def setSelectedIds(self, idList=[]):
+    def setSelectedIds(self, idList=None):
+        if idList is None:
+            idList = []
         try:
             self.__S = []
             self.__S.extend(idList)
             return True
-        except:
-            if (self.__verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__verbose:
                 self.__lfh.write("+SequenceDataStore.setSelectedIds() - failing for %r\n" % idList)
                 traceback.print_exc(file=self.__lfh)
             return False
 
     def getDataTypes(self):
         try:
-            return(list(self.__I.keys()))
-        except:
+            return list(self.__I.keys())
+        except:  # noqa: E722 pylint: disable=bare-except
             return []
 
     def getIds(self, dataType="sequence", seqType="ref"):
         try:
-            return(list(self.__I[dataType][seqType].keys()))
-        except:
+            return list(self.__I[dataType][seqType].keys())
+        except:  # noqa: E722 pylint: disable=bare-except
             return []
 
     def getPartIds(self, seqId, dataType="sequence", seqType="ref"):
-        """ Return the list of part ids in "ascending" order (smallest id  first).
-        """
+        """Return the list of part ids in "ascending" order (smallest id  first)."""
         try:
             pL = sorted(self.__I[dataType][seqType][seqId].keys())
-            return(pL)
-        except:
+            return pL
+        except:  # noqa: E722 pylint: disable=bare-except
             return []
 
     def getPartIdsForVersion(self, seqId, dataType="sequence", seqType="ref", altId=1, version=1):
-        """ Return the list of part ids in "ascending" order (smallest id  first).
+        """Return the list of part ids in "ascending" order (smallest id  first).
 
-            return parts for the input version only.
+        return parts for the input version only.
         """
         try:
             pL = []
@@ -367,71 +375,68 @@ class SequenceDataStore(object):
                 if int(version) in self.__I[dataType][seqType][seqId][int(p)][int(altId)]:
                     pL.append(p)
             pL.sort()
-            return(pL)
-        except:
+            return pL
+        except:  # noqa: E722 pylint: disable=bare-except
             return []
 
     def removePartId(self, seqId, dataType="sequence", seqType="auth", partId=2):
-        """
-        """
+        """ """
         try:
             if int(partId) in self.__I[dataType][seqType][seqId]:
                 del self.__I[dataType][seqType][seqId][int(partId)]
                 return True
             #
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
         #
         return False
 
     def clearIndex(self, seqId, dataType="sequence", seqType="ref"):
-        """ Clear index below the sequence id.
-        """
+        """Clear index below the sequence id."""
         try:
             self.__I[dataType][seqType][seqId] = {}
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
 
     def getAlternativeIds(self, seqId, dataType="sequence", seqType="ref", partId=1):
-        """ Return the list of alternative ids in "descending" order (largest id  first).
-        """
+        """Return the list of alternative ids in "descending" order (largest id  first)."""
         try:
             aL = list(self.__I[dataType][seqType][seqId][int(partId)].keys())
             aL.sort(reverse=True)
-            return(aL)
-        except:
+            return aL
+        except:  # noqa: E722 pylint: disable=bare-except
             return []
 
     def getVersionIds(self, seqId, partId=1, altId=1, dataType="sequence", seqType="ref"):
-        """ Return the list of version ids in "descending" order (highest version first).
-        """
+        """Return the list of version ids in "descending" order (highest version first)."""
         try:
             vers = list(self.__I[dataType][seqType][seqId][int(partId)][int(altId)].keys())
             vers.sort(reverse=True)
-            return(vers)
-        except:
+            return vers
+        except:  # noqa: E722 pylint: disable=bare-except
             return []
 
-    def setGroup(self, groupId, seqIdList=[]):
+    def setGroup(self, groupId, seqIdList=None):
+        if seqIdList is None:
+            seqIdList = []
         try:
             if seqIdList is not None:
                 self.__G[groupId] = seqIdList
             else:
                 self.__G[groupId] = []
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
 
     def getGroup(self, groupId):
         try:
-            return(self.__G[groupId])
-        except:
+            return self.__G[groupId]
+        except:  # noqa: E722 pylint: disable=bare-except
             return []
 
     def getGroupId(self, seqId):
-        """ Return the entity/groupID corresponding to the input instance seqId. or None.
-        """
+        """Return the entity/groupID corresponding to the input instance seqId. or None."""
         for groupId, idList in self.__G.items():
             if seqId in idList:
                 return groupId
@@ -441,82 +446,82 @@ class SequenceDataStore(object):
         try:
             keys = list(self.__G.keys())
             keys.sort(key=int)
-            return(keys)
-        except:
+            return keys
+        except:  # noqa: E722 pylint: disable=bare-except
             return []
 
     def setEntryDetail(self, detailKey, detailValue):
         try:
             self.__E[detailKey] = detailValue
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
 
     def getEntryDetail(self, detailKey):
         try:
-            return(self.__E[detailKey])
-        except:
-            return ''
+            return self.__E[detailKey]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def setAlignIdList(self, alignIdList):
-        """Set the list of identifiers for aligned sequences.
-        """
+        """Set the list of identifiers for aligned sequences."""
         self.__L = alignIdList
 
     def getAlignIdList(self):
-        """Return the list of identifiers for the stored aligned sequences.
-        """
+        """Return the list of identifiers for the stored aligned sequences."""
         return self.__L
 
-    def setGroupParts(self, groupId, partIdList=[]):
+    def setGroupParts(self, groupId, partIdList=None):
+        if partIdList is None:
+            partIdList = []
         try:
             self.__P[groupId] = partIdList
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
 
     def getGroupParts(self, groupId):
         try:
-            return(self.__P[groupId])
-        except:
+            return self.__P[groupId]
+        except:  # noqa: E722 pylint: disable=bare-except
             return []
 
     def getGroupPartCount(self, groupId):
         try:
-            return(len(self.__P[groupId]))
-        except:
+            return len(self.__P[groupId])
+        except:  # noqa: E722 pylint: disable=bare-except
             return 0
 
     def setDepositorReferenceAssignments(self, assignD=None):
         try:
             self.__depositorAssignD = assignD if assignD is not None else {}
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
 
     def setReferenceAssignments(self, assignD=None):
         try:
             self.__assignD = assignD if assignD is not None else {}
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
 
     def getDepositorReferenceAssignments(self):
         try:
-            return(self.__depositorAssignD)
-        except:
+            return self.__depositorAssignD
+        except:  # noqa: E722 pylint: disable=bare-except
             return {}
 
     def getReferenceAssignments(self):
         try:
-            return(self.__assignD)
-        except:
+            return self.__assignD
+        except:  # noqa: E722 pylint: disable=bare-except
             return {}
 
     def filterIndex(self, seqId, dataType="sequence", seqType="ref"):
-        """  Copy indexes -
+        """Copy indexes -
 
-             self.__I[dataType][seqType][seqId][partId][altId][version]=((dataId,timeStamp)
+        self.__I[dataType][seqType][seqId][partId][altId][version]=((dataId,timeStamp)
 
         """
         J = Autodict()
@@ -526,26 +531,27 @@ class SequenceDataStore(object):
                     for partId0, v3 in v2.items():
                         for altId0, v4 in v3.items():
                             for verId0, vtup in v4.items():
-                                if ((dataType == dataType0) and (seqType == seqType0) and (seqId == seqId0)):
+                                if (dataType == dataType0) and (seqType == seqType0) and (seqId == seqId0):
                                     continue
                                 else:
                                     J[dataType0][seqType0][seqId0][partId0][altId0][verId0] = vtup
 
-        if (self.__debug):
+        if self.__debug:
             self.__lfh.write("\n  + %s index:\n" % dataType)
-            for type, v0 in J[dataType].items():
-                for id, v1a in v0.items():
+            for vtype, v0 in J[dataType].items():
+                for vid, v1a in v0.items():
                     for pId, v1b in v1a.items():
                         for altId, v2 in v1b.items():
                             for ver, ival in v2.items():
-                                self.__lfh.write("   type %5s id %4s partId %d verId %2s altId %4d updated %12s seq len %10d\n" %
-                                                 (type, id, pId, ver, altId, ival[1], len(self.__D[ival[0]])))
+                                self.__lfh.write(
+                                    "   type %5s id %4s partId %d verId %2s altId %4d updated %12s seq len %10d\n" % (vtype, vid, pId, ver, altId, ival[1], len(self.__D[ival[0]]))
+                                )
         self.__I = J
 
     def dump(self, ofh):
-        """  Dump indexes -
+        """Dump indexes -
 
-             self.__I[dataType][seqType][seqId][partId][altId][version]=((dataId,timeStamp)
+        self.__I[dataType][seqType][seqId][partId][altId][version]=((dataId,timeStamp)
 
         """
         ofh.write("\n+BEGIN++BEGIN++BEGIN++BEGIN++BEGIN+  SequenceDataStore.dump() +BEGIN++BEGIN++BEGIN++BEGIN++BEGIN++BEGIN++BEGIN+\n")
@@ -553,8 +559,8 @@ class SequenceDataStore(object):
         #
         #
         nItems = 0
-        for type, v0 in self.__I["sequence"].items():
-            for id, v1a in v0.items():
+        for _type, v0 in self.__I["sequence"].items():
+            for _id, v1a in v0.items():
                 for pId, v1b in v1a.items():
                     for altId, v2 in v1b.items():
                         for ver, ival in v2.items():
@@ -562,18 +568,19 @@ class SequenceDataStore(object):
 
         ofh.write("\n  +Sequence Index contains %d items\n" % nItems)
 
-        if (self.__debug):
+        if self.__debug:
             ofh.write("\n  +Sequence Index:\n")
-            for type, v0 in self.__I["sequence"].items():
-                for id, v1a in v0.items():
+            for vtype, v0 in self.__I["sequence"].items():
+                for vid, v1a in v0.items():
                     for pId, v1b in v1a.items():
                         for altId, v2 in v1b.items():
                             for ver, ival in v2.items():
-                                ofh.write("   type %5s id %4s partId %d verId %2s altId %4d updated %12s seq len %10d\n" %
-                                          (type, id, pId, ver, altId, ival[1], len(self.__D[ival[0]])))
+                                ofh.write(
+                                    "   type %5s id %4s partId %d verId %2s altId %4d updated %12s seq len %10d\n" % (vtype, vid, pId, ver, altId, ival[1], len(self.__D[ival[0]]))
+                                )
         nItems = 0
-        for type, v0 in self.__I['feature'].items():
-            for id, v1a in v0.items():
+        for _type, v0 in self.__I["feature"].items():
+            for _id, v1a in v0.items():
                 for pId, v1b in v1a.items():
                     for altId, v2 in v1b.items():
                         for ver, ival in v2.items():
@@ -581,28 +588,30 @@ class SequenceDataStore(object):
 
         ofh.write("\n  +Feature Index contains %d items\n" % nItems)
 
-        if (self.__debug):
+        if self.__debug:
             ofh.write("\n  +Feature Index:\n")
-            for type, v0 in self.__I['feature'].items():
-                for id, v1a in v0.items():
+            for vtype, v0 in self.__I["feature"].items():
+                for vid, v1a in v0.items():
                     for pId, v1b in v1a.items():
                         for altId, v2 in v1b.items():
                             for ver, ival in v2.items():
-                                ofh.write("   type %5s id %4s partID %2d verId %2s altId %4d updated %12s feat len %10d\n" %
-                                          (type, id, pId, ver, altId, ival[1], len(self.__D[ival[0]])))
+                                ofh.write(
+                                    "   type %5s id %4s partID %2d verId %2s altId %4d updated %12s feat len %10d\n"
+                                    % (vtype, vid, pId, ver, altId, ival[1], len(self.__D[ival[0]]))
+                                )
 
         ofh.write("\n  +Sequence Group/Entity Index:\n")
         for gId, seqIdList in self.__G.items():
             ofh.write("  +Sequence group:  %5s\n" % gId)
-            for id in seqIdList:
-                ofh.write("   %2s" % id)
+            for sid in seqIdList:
+                ofh.write("   %2s" % sid)
             ofh.write("\n")
 
         ofh.write("\n  +Sequence Group/Entity Subpart Index:\n")
         for gId, partIdList in self.__P.items():
             ofh.write("   +Sequence group:  %5s\n" % gId)
-            for id in partIdList:
-                ofh.write("   %2s" % id)
+            for pid in partIdList:
+                ofh.write("   %2s" % pid)
             ofh.write("\n")
 
         ofh.write("\n  +Entry Details:\n")
@@ -632,11 +641,10 @@ class SequenceDataStore(object):
 
     def dumpData(self, ofh, seqId, seqType, dataType="sequence", partId=1):
         for altId, vOb in self.__I[dataType][seqType][seqId][partId].items():
-            for ver, ival in vOb.items():
-                id = self.__makeId(dataType=dataType, seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=ver)
-                ofh.write("Data contents for %10s type %5s id %5s part %d alternative %2d version %2d\n" %
-                          (dataType, seqType, seqId, partId, altId, ver))
-                if id in self.__D:
-                    pprint.pprint(self.__D[id], stream=ofh)
+            for ver, _ival in vOb.items():
+                did = self.__makeId(dataType=dataType, seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=ver)
+                ofh.write("Data contents for %10s type %5s id %5s part %d alternative %2d version %2d\n" % (dataType, seqType, seqId, partId, altId, ver))
+                if did in self.__D:
+                    pprint.pprint(self.__D[did], stream=ofh)
                 else:
                     ofh.write(" NO DATA FOUND\n")

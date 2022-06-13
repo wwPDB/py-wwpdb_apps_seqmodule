@@ -49,12 +49,12 @@ from wwpdb.io.misc.FormatOut import FormatOut
 
 
 class SummaryView(object):
-    """ Controlling class for the production of data for the summary sequence view.
+    """Controlling class for the production of data for the summary sequence view.
 
-        Supported operations:
+    Supported operations:
 
-         load             = load summary from current sequence data store using default sequence selection.
-         reload           = reload summary using current sequence data and current user selections.
+     load             = load summary from current sequence data store using default sequence selection.
+     reload           = reload summary using current sequence data and current user selections.
 
     """
 
@@ -67,39 +67,41 @@ class SummaryView(object):
         #
         # placeholders for sequence identifiers picked on the summary page as selected and/or to be aligned.
         self.__summarySeqAlignList = []
+        self.__summarySeqSelectList = ""
         #
         self.__natureSourceTaxIds = {}
         self.__partRangeErrorMsg = ""
+        self.__sds = None
+
         self.__setup()
 
     def __setup(self):
         try:
             self.__sessionObj = self.__reqObj.getSessionObj()
-            self.__sessionPath = self.__sessionObj.getPath()
+            # self.__sessionPath = self.__sessionObj.getPath()
             self.__sds = SequenceDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
             self.__sdu = UpdatePolymerEntitySourceDetails(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
             #
             # Selections coming from the the web request --
             #
-            #self.__summarySeqAlignList = self.__reqObj.getSummaryAlignList(usingRevAllAlignIds=False)
-            #self.__summarySeqSelectList = self.__reqObj.getSummarySelectList(usingRevSlectIds=False)
+            # self.__summarySeqAlignList = self.__reqObj.getSummaryAlignList(usingRevAllAlignIds=False)
+            # self.__summarySeqSelectList = self.__reqObj.getSummarySelectList(usingRevSlectIds=False)
             self.__summarySeqAlignList = str(self.__reqObj.getValue("allalignids")).split(",")
             self.__summarySeqSelectList = str(self.__reqObj.getValue("selectids")).split(",")
             self.__updateSelectList()
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SummaryView.__setup() request input align list  %r\n" % (self.__summarySeqAlignList))
                 self.__lfh.write("+SummaryView._setup()  request input select list %r\n" % (self.__summarySeqSelectList))
             #
             # Reset any newly loaded reference sequence id as it is included above --
-            self.__reqObj.setNewRefId('')
-        except:
-            if (self.__verbose):
+            self.__reqObj.setNewRefId("")
+        except Exception as _e:  # noqa: F841
+            if self.__verbose:
                 self.__lfh.write("+SummaryView.__setup() sessionId %s failed\n" % (self.__sessionObj.getId()))
                 traceback.print_exc(file=self.__lfh)
 
     def __updateSelectList(self):
-        """
-        """
+        """ """
         updatedids = str(self.__reqObj.getValue("updatedids"))
         if not updatedids:
             return
@@ -113,7 +115,7 @@ class SummaryView(object):
             if len(tL) < 3:
                 continue
             #
-            elif (tL[0] in ( "selfref", "auth", "ref" )) and (tL[1] == entityId):
+            elif (tL[0] in ("selfref", "auth", "ref")) and (tL[1] == entityId):
                 continue
             elif (tL[0] == "xyz") and (tL[1] in chainIdList):
                 continue
@@ -129,46 +131,34 @@ class SummaryView(object):
             self.__reqObj.setSummaryAlignList(self.__summarySeqAlignList)
             self.__sds.setSelectedIds(idList=self.__summarySeqSelectList)
             self.__sds.serialize()
-        except:
-            if (self.__verbose):
+        except Exception as _e:  # noqa: F841
+            if self.__verbose:
                 self.__lfh.write("+SummaryView.__finish() sessionId %s failed\n" % (self.__sessionObj.getId()))
                 traceback.print_exc(file=self.__lfh)
 
-    def __findId(self, qId, idList):
-        """  find matching '[self]ref_id_part_' in idList.
-        """
-        try:
-            fL = qId.split('_')
-            ss = '_'.join(fL[:3])
-            ss1 = 'selfref' + '_'.join(fL[1:3])
-            for tId in idList:
-                if tId.startswith(ss) or tId.startswith(ss1):
-                    return tId
-        except:
-            pass
+    def getEntryDetails(self, kyList=None):
+        if kyList is None:
+            kyList = ["STRUCT_TITLE", "CITATION_TITLE", "PDB_ID"]
 
-        return None
-
-    def getEntryDetails(self, kyList=['STRUCT_TITLE', 'CITATION_TITLE', 'PDB_ID']):
         eD = {}
         for ky in kyList:
             eD[ky] = self.__sds.getEntryDetail(detailKey=ky)
         #
         return eD
 
-    def loadSummary(self, operation='load'):
+    def loadSummary(self, operation="load"):
         """Create the data structure to populate the HTML pages containing alignment summary --
 
-           Options for operation:
-           + load   - Performs a default selection of the best matching reference sequences then
-                      creates the summary data structure.
-           + reload - reloads current data from the sequence and alignment data stores.
+        Options for operation:
+        + load   - Performs a default selection of the best matching reference sequences then
+                   creates the summary data structure.
+        + reload - reloads current data from the sequence and alignment data stores.
         """
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SummaryView.loadSummary() operation %s : sessionId %s\n" % (operation, self.__sessionObj.getId()))
             self.__lfh.write("+SummaryView.loadSummary() request input align list  %r\n" % (self.__summarySeqAlignList))
             self.__lfh.write("+SummaryView.loadSummary() request input select list %r\n" % (self.__summarySeqSelectList))
-        if (operation == "load"):
+        if operation == "load":
             # Using coming from persisted data only here
             #  -- ignore user selections from web context as these may not exist or may need to be overridden --
             self.__summarySeqSelectList = self.__sds.getSelectedIds()
@@ -182,30 +172,28 @@ class SummaryView(object):
     def getGroupIdList(self):
         return self.__sds.getGroupIds()
 
-    def __loadSummary(self, op='load'):
-        """ Assemble the data for sequence summary view using current contents of the session sequence data store.
+    def __loadSummary(self, op="load"):
+        """Assemble the data for sequence summary view using current contents of the session sequence data store.
 
-            Returns:  summaryDataObj [<entity/groupId>]  ['auth'|'xyz'] ->  {data dict}
-                                                         ['ref']        -> [(partId,{data dict}),(partId,{data dict}),...]
-                                   {data dict}  with keys
+        Returns:  summaryDataObj [<entity/groupId>]  ['auth'|'xyz'] ->  {data dict}
+                                                     ['ref']        -> [(partId,{data dict}),(partId,{data dict}),...]
+                               {data dict}  with keys
 
-                                   dT['ROW_IDS']       =rowIdList
-                                   dT['ROW_STATUS']    =rowStatusList
-                                   dT['ROW_DATA_DICT'] =rowDataDictList
-                                   dT['SELF_REFERENCE_FLAG']=Boolean
+                               dT['ROW_IDS']       =rowIdList
+                               dT['ROW_STATUS']    =rowStatusList
+                               dT['ROW_DATA_DICT'] =rowDataDictList
+                               dT['SELF_REFERENCE_FLAG']=Boolean
         """
         #
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SummaryView.__loadSummary() with sessionId %s\n" % self.__sessionObj.getId())
 
         #
-        seqLabel = SequenceLabel()
-        seqFeature = SequenceFeature()
         summaryDataObj = {}
 
         gIdList = self.__sds.getGroupIds()
 
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SummaryView.__loadSummary() group list is %r\n" % gIdList)
             self.__lfh.write("+SummaryView.__loadSummary() starting selection list %r\n" % self.__summarySeqSelectList)
             self.__lfh.write("+SummaryView.__loadSummary() starting alignment list %r\n" % self.__summarySeqAlignList)
@@ -216,23 +204,23 @@ class SummaryView(object):
             #
             summaryDataObj[gId] = {}
             #
-            dT,polyALA_assignment = self.__buildAuthSection(groupId=gId, op=op)
+            dT, polyALA_assignment = self.__buildAuthSection(groupId=gId, op=op)
             if polyALA_assignment > 0:
-                polyAlaCaseList.append(( gId, polyALA_assignment ))
+                polyAlaCaseList.append((gId, polyALA_assignment))
             #
-            summaryDataObj[gId]['auth'] = dT
+            summaryDataObj[gId]["auth"] = dT
 
             rL = self.__buildReferenceSection(groupId=gId)
-            summaryDataObj[gId]['ref'] = rL
+            summaryDataObj[gId]["ref"] = rL
 
-            summaryDataObj[gId]['xyz'] = self.__buildCoordinateSection(groupId=gId)
+            summaryDataObj[gId]["xyz"] = self.__buildCoordinateSection(groupId=gId)
         #
         self.__finish()
         #
         warningMsg = ""
         if len(self.__natureSourceTaxIds) > 1:
             warningMsg += "Entry contains multiple natural sources:<br />\n"
-            for k,v in self.__natureSourceTaxIds.items():
+            for k, v in self.__natureSourceTaxIds.items():
                 if len(v) > 1:
                     warningMsg += "Entities '" + "', '".join(v) + "' have "
                 else:
@@ -260,22 +248,20 @@ class SummaryView(object):
                 #
             #
         #
-        return summaryDataObj,warningMsg
+        return summaryDataObj, warningMsg
 
-    def __buildAuthSection(self, groupId=None, op='load'):
-        """ Assemble the data content for the author sequence summary view.
+    def __buildAuthSection(self, groupId=None, op="load"):
+        """Assemble the data content for the author sequence summary view.
 
-            Returns: summaryDataObject)
+        Returns: summaryDataObject)
 
-            ** Always show a single full sequence for each entity and store multi-part information as details
+        ** Always show a single full sequence for each entity and store multi-part information as details
 
         """
 
         seqLabel = SequenceLabel()
 
-        taxD = {}
         rowIdList = []
-        rowDataList = []
         rowStatusList = []
         rowDataDictList = []
         #
@@ -287,58 +273,58 @@ class SummaryView(object):
             self.__lfh.write("SummaryView.__buildAuthSection() groupId %r op %s \n" % (groupId, op))
         #
         altId = 1
-        partIdList = self.__sds.getPartIds(seqId0, dataType='sequence', seqType='auth')
+        partIdList = self.__sds.getPartIds(seqId0, dataType="sequence", seqType="auth")
         partId0 = partIdList[0]
         detailsD = self.__getAuthFeaturesAll(groupId, seqId0, partIdList)
 
-        verList = self.__sds.getVersionIds(seqId0, partId=partId0, altId=altId, dataType="sequence", seqType='auth')
+        verList = self.__sds.getVersionIds(seqId0, partId=partId0, altId=altId, dataType="sequence", seqType="auth")
 
         first = True
         polyALA_assignment = 0
         for ver in verList:
-            seqAuth = self.__sds.getSequence(seqId=seqId0, seqType='auth', partId=partId0, altId=altId, version=ver)
+            seqAuth = self.__sds.getSequence(seqId=seqId0, seqType="auth", partId=partId0, altId=altId, version=ver)
             if first:
-                authFObj = self.__sds.getFeatureObj(seqId0, 'auth', partId=partId0, altId=altId, version=ver)
+                authFObj = self.__sds.getFeatureObj(seqId0, "auth", partId=partId0, altId=altId, version=ver)
                 polymerTypeCode = authFObj.getPolymerType()
-                if polymerTypeCode == 'AA':
+                if polymerTypeCode == "AA":
                     polyALA_assignment = self.__checkPolyAlaAssignment(seqAuth)
                 #
             #
-            seqLabel.set(seqType='auth', seqInstId=seqId0, seqPartId=partId0, seqAltId=altId, seqVersion=ver)
+            seqLabel.set(seqType="auth", seqInstId=seqId0, seqPartId=partId0, seqAltId=altId, seqVersion=ver)
             seqAuthId = seqLabel.pack()
             rowIdList.append(seqAuthId)
             #
             isSelected = seqAuthId in self.__summarySeqSelectList
             isAligned = seqAuthId in self.__summarySeqAlignList
             #
-            """
-            if op == 'reload':
-                isSelected = (ver == max(verList))
-                isAligned = (ver == max(verList))
             #
-            """
+            # if op == 'reload':
+            #     isSelected = (ver == max(verList))
+            #     isAligned = (ver == max(verList))
+            # #
+            #
             rowStatusList.append((isSelected, isAligned))
             #
             rowDataDict = {}
-            rowDataDict['ROW_VERSION'] = ver
-            rowDataDict['ROW_SEQ_LENGTH'] = len(seqAuth)
-            rowDataDict['ROW_DETAIL_STRING'] = ''
+            rowDataDict["ROW_VERSION"] = ver
+            rowDataDict["ROW_SEQ_LENGTH"] = len(seqAuth)
+            rowDataDict["ROW_DETAIL_STRING"] = ""
             rowDataDict.update(detailsD[ver])
             rowDataDictList.append(rowDataDict)
             first = False
         #
         dT = {}
-        dT['ROW_IDS'] = rowIdList
-        dT['ROW_STATUS'] = rowStatusList
-        dT['ROW_DATA_DICT'] = rowDataDictList
-        dT['ENTITY_NUM_PARTS'] = len(partIdList)
+        dT["ROW_IDS"] = rowIdList
+        dT["ROW_STATUS"] = rowStatusList
+        dT["ROW_DATA_DICT"] = rowDataDictList
+        dT["ENTITY_NUM_PARTS"] = len(partIdList)
         #
-        return dT,polyALA_assignment
+        return dT, polyALA_assignment
 
     def __buildCoordinateSection(self, groupId=None):
-        """ Assemble the data content for the coordinate sequence summary view.
+        """Assemble the data content for the coordinate sequence summary view.
 
-            Returns: summaryDataObject
+        Returns: summaryDataObject
 
         """
         seqLabel = SequenceLabel()
@@ -356,11 +342,11 @@ class SummaryView(object):
         partId = 1
         altId = 1
         for seqId in seqIdList:
-            verList = self.__sds.getVersionIds(seqId=seqId, partId=partId, altId=altId, dataType="sequence", seqType='xyz')
+            verList = self.__sds.getVersionIds(seqId=seqId, partId=partId, altId=altId, dataType="sequence", seqType="xyz")
             if len(verList) < 1:
                 continue
             maxVrsnNum = verList[0]
-            seqLabel.set(seqType='xyz', seqInstId=seqId, seqPartId=partId, seqAltId=altId, seqVersion=maxVrsnNum)
+            seqLabel.set(seqType="xyz", seqInstId=seqId, seqPartId=partId, seqAltId=altId, seqVersion=maxVrsnNum)
             maxSeqXyzId = seqLabel.pack()
 
             # select the highest version sequence
@@ -369,9 +355,9 @@ class SummaryView(object):
                 self.__summarySeqAlignList.append(maxSeqXyzId)
 
             for ver in verList:
-                seqXyz = self.__sds.getSequence(seqId, 'xyz', partId=partId, altId=altId, version=ver)
-                seqXyzFD = self.__sds.getFeature(seqId, 'xyz', partId=partId, altId=altId, version=ver)
-                seqLabel.set(seqType='xyz', seqInstId=seqId, seqPartId=partId, seqAltId=altId, seqVersion=ver)
+                seqXyz = self.__sds.getSequence(seqId, "xyz", partId=partId, altId=altId, version=ver)
+                seqXyzFD = self.__sds.getFeature(seqId, "xyz", partId=partId, altId=altId, version=ver)
+                seqLabel.set(seqType="xyz", seqInstId=seqId, seqPartId=partId, seqAltId=altId, seqVersion=ver)
                 seqXyzId = seqLabel.pack()
                 #
                 seqFeature.set(seqXyzFD)
@@ -384,39 +370,39 @@ class SummaryView(object):
                 # unselect any selected lower version for this sequence -
                 if (ver < maxVrsnNum) and (seqXyzId in self.__summarySeqSelectList):
                     self.__summarySeqSelectList.remove(seqXyzId)
-                    if (seqXyzId in self.__summarySeqAlignList):
+                    if seqXyzId in self.__summarySeqAlignList:
                         self.__summarySeqAlignList.remove(seqXyzId)
                 #
                 isSelected = seqXyzId in self.__summarySeqSelectList
                 isAligned = seqXyzId in self.__summarySeqAlignList
                 # JDW add instance here to provide a selection group
-                if (ver == maxVrsnNum):
-                    rowStatusList.append((isSelected, isAligned, seqId, 'maxver'))
+                if ver == maxVrsnNum:
+                    rowStatusList.append((isSelected, isAligned, seqId, "maxver"))
                 else:
-                    rowStatusList.append((isSelected, isAligned, seqId, ''))
+                    rowStatusList.append((isSelected, isAligned, seqId, ""))
                 #
                 rowDataDict = {}
-                rowDataDict['ROW_ID_CODE'] = rowLabel
-                rowDataDict['ROW_VERSION'] = ver
-                rowDataDict['ROW_SEQ_LENGTH'] = len(seqXyz)
-                rowDataDict['ROW_DETAIL_STRING'] = detailString
+                rowDataDict["ROW_ID_CODE"] = rowLabel
+                rowDataDict["ROW_VERSION"] = ver
+                rowDataDict["ROW_SEQ_LENGTH"] = len(seqXyz)
+                rowDataDict["ROW_DETAIL_STRING"] = detailString
                 rowDataDict.update(seqXyzFD)
                 rowDataDictList.append(rowDataDict)
         #
         dT = {}
-        dT['ROW_IDS'] = rowIdList
-        dT['ROW_STATUS'] = rowStatusList
-        dT['ROW_DATA_DICT'] = rowDataDictList
+        dT["ROW_IDS"] = rowIdList
+        dT["ROW_STATUS"] = rowStatusList
+        dT["ROW_DATA_DICT"] = rowDataDictList
         return dT
 
     def __buildReferenceSection(self, groupId=None):
-        """ Assemble the data content for the reference sequence summary view.
+        """Assemble the data content for the reference sequence summary view.
 
-            Returns: [(partId,summaryDataObject),]
+        Returns: [(partId,summaryDataObject),]
 
-                   where:
-                      partId is the integer identifier for pieces of a multipart entity sequence
-                      summaryDataObject contains the 'ref' sequence summary data for the input groupId.
+               where:
+                  partId is the integer identifier for pieces of a multipart entity sequence
+                  summaryDataObject contains the 'ref' sequence summary data for the input groupId.
         """
         rL = []
         seqLabel = SequenceLabel()
@@ -427,57 +413,56 @@ class SummaryView(object):
         seqIdRef = groupId
         #
         partInfoList = []
-        partIdList = self.__sds.getPartIds(seqIdRef, dataType='sequence', seqType='auth')
+        partIdList = self.__sds.getPartIds(seqIdRef, dataType="sequence", seqType="auth")
         for partId in partIdList:
             #
-            authVerList = self.__sds.getVersionIds(seqId=seqIdRef, partId=partId, altId=1, dataType="feature", seqType='auth')
+            authVerList = self.__sds.getVersionIds(seqId=seqIdRef, partId=partId, altId=1, dataType="feature", seqType="auth")
             # Changed to original tax ID ( DAOTHER-6126 )
             OrigTaxId = ""
             skipPart = False
-            if (len(authVerList) > 0):
-                authFObj = self.__sds.getFeatureObj(seqIdRef, 'auth', partId=partId, altId=1, version=authVerList[0])
+            if len(authVerList) > 0:
+                authFObj = self.__sds.getFeatureObj(seqIdRef, "auth", partId=partId, altId=1, version=authVerList[0])
                 sourceInfo = authFObj.getEntitySourceMethod().upper()
                 OrigTaxId = authFObj.getSourceTaxIdOrig()
                 TaxId = authFObj.getSourceTaxId()
-                if (sourceInfo == 'NAT') and TaxId:
-                     if TaxId in self.__natureSourceTaxIds:
-                         self.__natureSourceTaxIds[TaxId].append(groupId)
-                     else:
-                         self.__natureSourceTaxIds[TaxId] = [ groupId ]
-                     #
+                if (sourceInfo == "NAT") and TaxId:
+                    if TaxId in self.__natureSourceTaxIds:
+                        self.__natureSourceTaxIds[TaxId].append(groupId)
+                    else:
+                        self.__natureSourceTaxIds[TaxId] = [groupId]
+                    #
                 #
                 authPartId, authSeqBeg, authSeqEnd, authSeqPartType = authFObj.getAuthPartDetails()
-                partInfoList.append( ( authPartId, authSeqBeg, authSeqEnd ) )
-                skipPart = len(authSeqPartType) > 1 and authSeqPartType.lower() != 'biological sequence'
+                partInfoList.append((authPartId, authSeqBeg, authSeqEnd))
+                skipPart = len(authSeqPartType) > 1 and authSeqPartType.lower() != "biological sequence"
             #
             if skipPart:
                 self.__lfh.write("+SummaryView.__buildReferenceSection() entity %s skipping part %s type %s\n" % (groupId, partId, authSeqPartType))
                 continue
             #
             rowIdList = []
-            rowDataList = []
             rowStatusList = []
             rowDataDictList = []
             # List of reference sequences for this group only for the leading sequence -
             #
             altIdList = self.__sds.getAlternativeIds(seqIdRef, dataType="sequence", seqType="ref", partId=partId)
 
-            srId = 'selfref_' + str(groupId) + '_' + str(partId)
+            srId = "selfref_" + str(groupId) + "_" + str(partId)
             if srId in self.__summarySeqSelectList:
-                if (self.__verbose):
+                if self.__verbose:
                     self.__lfh.write("+SummaryView.__buildReferenceSection() using self-refereence for entity %s part %s\n" % (groupId, partId))
                 selfRefFlag = True
             else:
                 selfRefFlag = False
             #
-            for altId in altIdList[:self.__maxRefAlign]:
+            for altId in altIdList[: self.__maxRefAlign]:
                 #
-                verList = self.__sds.getVersionIds(seqId=seqIdRef, partId=partId, altId=altId, dataType="sequence", seqType='ref')
+                verList = self.__sds.getVersionIds(seqId=seqIdRef, partId=partId, altId=altId, dataType="sequence", seqType="ref")
                 for ver in verList:
                     #
-                    seqRefFD = self.__sds.getFeature(seqIdRef, 'ref', partId=partId, altId=altId, version=ver)
+                    seqRefFD = self.__sds.getFeature(seqIdRef, "ref", partId=partId, altId=altId, version=ver)
                     seqFeature.set(seqRefFD)
-                    seqLabel.set(seqType='ref', seqInstId=seqIdRef, seqPartId=partId, seqAltId=altId, seqVersion=ver)
+                    seqLabel.set(seqType="ref", seqInstId=seqIdRef, seqPartId=partId, seqAltId=altId, seqVersion=ver)
                     seqRefId = seqLabel.pack()
                     #
                     taxIdWarningFlag = False
@@ -496,23 +481,23 @@ class SummaryView(object):
                     rowIdList.append(seqRefId)
 
                     lengthRefSeq = seqFeature.getMatchLength()
-                    #authSimWithGaps = seqFeature.getAuthRefSimWithGaps()
+                    # authSimWithGaps = seqFeature.getAuthRefSimWithGaps()
                     #
                     #
                     rowDataDict = {}
-                    rowDataDict['ROW_ID_CODE'] = rowLabel
-                    rowDataDict['ROW_VERSION'] = ver
-                    rowDataDict['ROW_SEQ_LENGTH'] = lengthRefSeq
-                    #rowDataDict['ROW_AUTH_REF_SIM'] = "%.3f" % authSimWithGaps
-                    rowDataDict['ROW_AUTH_REF_SIM'] = sfd.markupReferenceSimilarttFeatures()
-                    rowDataDict['ROW_DETAIL_STRING'] = detailString
-                    rowDataDict['ROW_FEATURE_STRING'] = featureString
-                    rowDataDict['ROW_IS_SELECTED'] = isSelected
-                    rowDataDict['ROW_IS_ALIGNED'] = isAligned
-                    #rowDataDict.update(seqRefFD)
-                    for key,val in seqRefFD.items():
+                    rowDataDict["ROW_ID_CODE"] = rowLabel
+                    rowDataDict["ROW_VERSION"] = ver
+                    rowDataDict["ROW_SEQ_LENGTH"] = lengthRefSeq
+                    # rowDataDict['ROW_AUTH_REF_SIM'] = "%.3f" % authSimWithGaps
+                    rowDataDict["ROW_AUTH_REF_SIM"] = sfd.markupReferenceSimilarttFeatures()
+                    rowDataDict["ROW_DETAIL_STRING"] = detailString
+                    rowDataDict["ROW_FEATURE_STRING"] = featureString
+                    rowDataDict["ROW_IS_SELECTED"] = isSelected
+                    rowDataDict["ROW_IS_ALIGNED"] = isAligned
+                    # rowDataDict.update(seqRefFD)
+                    for key, _val in seqRefFD.items():
                         if (key == "SOURCE_TAXID") and taxIdWarningFlag:
-                            rowDataDict[key] = '<span style="color:red">' + seqRefFD[key] + '</span>'
+                            rowDataDict[key] = '<span style="color:red">' + seqRefFD[key] + "</span>"
                         else:
                             rowDataDict[key] = seqRefFD[key]
                         #
@@ -520,10 +505,10 @@ class SummaryView(object):
                     rowDataDictList.append(rowDataDict)
             #
             dT = {}
-            dT['ROW_IDS'] = rowIdList
-            dT['ROW_STATUS'] = rowStatusList
-            dT['ROW_DATA_DICT'] = rowDataDictList
-            dT['SELF_REFERENCE_FLAG'] = selfRefFlag
+            dT["ROW_IDS"] = rowIdList
+            dT["ROW_STATUS"] = rowStatusList
+            dT["ROW_DATA_DICT"] = rowDataDictList
+            dT["SELF_REFERENCE_FLAG"] = selfRefFlag
             rL.append((partId, dT))
         #
         self.__checkPartRange(groupId, partInfoList)
@@ -531,20 +516,19 @@ class SummaryView(object):
         return rL
 
     def __getAuthFeaturesAll(self, entityId, seqId0, partIdList):
-        """  Consolidate the feature data for the author sequences entity sequence respecting
-             potential mutiple source details.
+        """Consolidate the feature data for the author sequences entity sequence respecting
+        potential mutiple source details.
 
-             Original and current features are assembled.
+        Original and current features are assembled.
 
-             Returns a dictionaries of features for each sequence version.
+        Returns a dictionaries of features for each sequence version.
 
-             Details[ver][partId]['current']={'partdetails','sourceAndStrain','description','hostorg'}
-             Details[ver][partId]['author']={'partdetails','sourceAndStrain','description','hostorg'}
+        Details[ver][partId]['current']={'partdetails','sourceAndStrain','description','hostorg'}
+        Details[ver][partId]['author']={'partdetails','sourceAndStrain','description','hostorg'}
         """
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SummaryView.__getAuthFeaturesAll() entityId %r seqId0 %r partIdList %r\n" % (entityId, seqId0, partIdList))
 
-        spStr = "<br />"
         #
         authRefAssignText = self.__markupAuthorAssignments(entityId)
         #
@@ -552,29 +536,29 @@ class SummaryView(object):
         altId = 1
         detailsD = {}
         for partId in partIdList:
-            verList = self.__sds.getVersionIds(seqId0, partId=partId, altId=altId, dataType="sequence", seqType='auth')
+            verList = self.__sds.getVersionIds(seqId0, partId=partId, altId=altId, dataType="sequence", seqType="auth")
             for ver in verList:
                 if ver not in detailsD:
                     detailsD[ver] = {}
 
-                sfObj = self.__sds.getFeatureObj(seqId=seqId0, seqType='auth', partId=partId, altId=altId, version=ver)
+                sfObj = self.__sds.getFeatureObj(seqId=seqId0, seqType="auth", partId=partId, altId=altId, version=ver)
                 sfd = SequenceFeatureDepict(sfObj=sfObj, verbose=self.__verbose, log=self.__lfh)
 
                 if partId not in detailsD[ver]:
                     detailsD[ver][partId] = {}
 
-                detailsD[ver][partId]['current'] = sfd.markupCurrentEntityDetails()
-                detailsD[ver][partId]['author'] = sfd.markupAuthorEntityDetails()
+                detailsD[ver][partId]["current"] = sfd.markupCurrentEntityDetails()
+                detailsD[ver][partId]["author"] = sfd.markupAuthorEntityDetails()
 
                 if len(authRefAssignText) > 0:
-                    detailsD[ver][partId]['author']['description'] += authRefAssignText
+                    detailsD[ver][partId]["author"]["description"] += authRefAssignText
 
         for ver in detailsD.keys():
             np = 0
             for partId in partIdList:
                 if partId in detailsD[ver]:
                     np += 1
-            detailsD[ver]['numparts'] = np
+            detailsD[ver]["numparts"] = np
         if self.__debug:
             self.__lfh.write("+SummaryView.__getAuthFeaturesAll() detailsD entity %r seqId %r partIdList %r\n" % (entityId, seqId0, partIdList))
             fOut = FormatOut()
@@ -585,18 +569,17 @@ class SummaryView(object):
         return detailsD
 
     def __checkPolyAlaAssignment(self, seqAuth):
-        """ Check if the sequence contains 10 or more consecutive ALA residues
-        """
+        """Check if the sequence contains 10 or more consecutive ALA residues"""
         has_consecutive_ALA = False
         count = 0
         for seqTupL in seqAuth:
-            if seqTupL[0] == 'ALA':
+            if seqTupL[0] == "ALA":
                 count += 1
             else:
                 if count > 9:
                     has_consecutive_ALA = True
                 #
-                count = 0;
+                count = 0
             #
         #
         if count > 9:
@@ -610,16 +593,15 @@ class SummaryView(object):
         return 0
 
     def __markupAuthorAssignments(self, entityId):
-        """  Markup the author provided reference assignments -
-        """
+        """Markup the author provided reference assignments -"""
         spStr = "<br />"
-        authRefAssignText = ''
+        authRefAssignText = ""
         depSeqAssignD = self.__sds.getDepositorReferenceAssignments()
         sADep = SequenceAssignDepositor(verbose=self.__verbose, log=self.__lfh)
         sADep.set(depSeqAssignD)
         refSeqAssignL = sADep.getReferenceList(entityId)
 
-        if (self.__debug):
+        if self.__debug:
             self.__lfh.write("+SummaryView.__markupAuthorAssignments() for entityId %r author reference count is %d\n" % (entityId, sADep.getReferenceCount(entityId)))
             sADep.printIt(log=self.__lfh)
             for ii, rsa in enumerate(refSeqAssignL):
@@ -629,35 +611,34 @@ class SummaryView(object):
 
         for rsa in refSeqAssignL:
             dbName, dbCode, dbAccession = rsa.getDbReference()
-            if ((len(dbAccession) > 0 and (dbAccession not in ['.', '?'])) or (len(dbCode) > 0 and (dbCode not in ['.', '?']))):
+            if (len(dbAccession) > 0 and (dbAccession not in [".", "?"])) or (len(dbCode) > 0 and (dbCode not in [".", "?"])):
                 tRef = "Depositor reference: %s %s %s" % (dbName, dbAccession, dbCode)
-                sp = spStr if len(authRefAssignText) > 0 else ''
-                authRefAssignText += (sp + tRef)
+                sp = spStr if len(authRefAssignText) > 0 else ""
+                authRefAssignText += sp + tRef
 
             refDetails = rsa.getDetails()
-            if ((len(refDetails) > 0 and refDetails not in ['.', '?'])):
+            if len(refDetails) > 0 and refDetails not in [".", "?"]:
                 tDetails = "Depositor details: %s" % refDetails
-                sp = spStr if len(authRefAssignText) > 0 else ''
-                authRefAssignText += (sp + tDetails)
+                sp = spStr if len(authRefAssignText) > 0 else ""
+                authRefAssignText += sp + tDetails
         #
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SummaryView.__markupAuthorAssignments() depositor reference assignments for entity %s : %s\n" % (entityId, authRefAssignText))
         #
         return authRefAssignText
 
     def __checkPartRange(self, entityId, partInfoList):
-        """ Check part range definition and write out the warning message if there are errors
-        """
+        """Check part range definition and write out the warning message if there are errors"""
         seqLength = 0
         authVerList = self.__sds.getVersionIds(seqId=entityId, partId=1, altId=1, dataType="sequence", seqType="auth")
-        if (len(authVerList) > 0):
+        if len(authVerList) > 0:
             seq = self.__sds.getSequence(seqId=entityId, seqType="auth", partId=1, altId=1, version=authVerList[0])
             seqLength = len(seq)
         #
         if seqLength == 0:
             return
         #
-        ok,partText = self.__checkPartRangeError(seqLength, partInfoList)
+        ok, partText = self.__checkPartRangeError(seqLength, partInfoList)
         if ok:
             return
         #
@@ -667,10 +648,9 @@ class SummaryView(object):
         self.__partRangeErrorMsg += "Entity '" + str(entityId) + "' (seq. length=" + str(seqLength) + ") : " + partText
 
     def __checkPartRangeError(self, seqLength, partList):
-        """ Check part range definition
-        """
+        """Check part range definition"""
         if len(partList) < 1:
-            return False,"No part information defined."
+            return False, "No part information defined."
         #
         try:
             status = True
@@ -690,14 +670,14 @@ class SummaryView(object):
                 if (i == (len(partList) - 1)) and (seqNumEnd != seqLength):
                     status = False
                 if i > 0:
-                    prevNumEnd = int(partList[i-1][2])
+                    prevNumEnd = int(partList[i - 1][2])
                     if seqNumBeg != (prevNumEnd + 1):
                         status = False
                     #
                 #
             #
-            return status,text
-        except:
+            return status, text
+        except Exception as _e:  # noqa: F841
             text = ""
             for i in range(0, len(partList)):
                 if text:
@@ -705,8 +685,9 @@ class SummaryView(object):
                 #
                 text += "Part '" + str(partList[i][0]) + "' - ( " + str(partList[i][1]) + ", " + str(partList[i][2]) + " )"
             #
-            return False,text
+            return False, text
         #
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     pass

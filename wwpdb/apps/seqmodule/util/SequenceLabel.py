@@ -1,3 +1,5 @@
+# There are some "global" variables and cannot determine if we "own" them
+# pylint: disable=attribute-defined-outside-init
 ##
 # File:    SequenceLabel.py
 # Date:    16-Dec-2009
@@ -54,108 +56,110 @@ import traceback
 
 from wwpdb.apps.seqmodule.io.TaxonomyDbUtils import TaxonomyDbUtils
 
-class SequenceFeatureMap(object):
 
+class SequenceFeatureMap(object):
     def __init__(self, verbose=False, log=sys.stderr):
         self.__verbose = verbose
         self.__lfh = log
         self.__debug = False
 
     def updateAuth(self, authFD, refFD):
-        """  Map editable reference values to current author values --
-        """
-        mapTupList = [('ENTITY_DESCRIPTION', 'DB_MOLECULE_NAME'),
-                      ('ENTITY_SYNONYMS', 'DB_MOLECULE_SYNONYMS'),
-                      ('SOURCE_GENE_NAME', 'DB_GENE_NAME'),
-                     #('SOURCE_TAXID', 'SOURCE_TAXID'),
-                     #('SOURCE_ORGANISM', 'SOURCE_ORGANISM'),
-                      ('SOURCE_STRAIN', 'SOURCE_STRAIN'),
-                     #('SOURCE_COMMON_NAME', 'SOURCE_COMMON_NAME'),
-                      ('ENTITY_ENZYME_CLASS', 'DB_MOLECULE_EC')]
-        if (self.__debug):
+        """Map editable reference values to current author values --"""
+        mapTupList = [
+            ("ENTITY_DESCRIPTION", "DB_MOLECULE_NAME"),
+            ("ENTITY_SYNONYMS", "DB_MOLECULE_SYNONYMS"),
+            ("SOURCE_GENE_NAME", "DB_GENE_NAME"),
+            # ('SOURCE_TAXID', 'SOURCE_TAXID'),
+            # ('SOURCE_ORGANISM', 'SOURCE_ORGANISM'),
+            ("SOURCE_STRAIN", "SOURCE_STRAIN"),
+            # ('SOURCE_COMMON_NAME', 'SOURCE_COMMON_NAME'),
+            ("ENTITY_ENZYME_CLASS", "DB_MOLECULE_EC"),
+        ]
+        if self.__debug:
             for mapTup in mapTupList:
-                self.__lfh.write('++++Before Mapping %30s : %-40r  %30s:  %r\n' % (mapTup[0], authFD[mapTup[0]], mapTup[1], refFD[mapTup[0]]))
+                self.__lfh.write("++++Before Mapping %30s : %-40r  %30s:  %r\n" % (mapTup[0], authFD[mapTup[0]], mapTup[1], refFD[mapTup[0]]))
         #
         if ("SOURCE_TAXID" in authFD) and authFD["SOURCE_TAXID"]:
             taxInfoUtil = TaxonomyDbUtils(verbose=self.__verbose, log=self.__lfh)
-            scientific_name,common_name = taxInfoUtil.getTaxonomyNames(authFD["SOURCE_TAXID"])
+            scientific_name, common_name = taxInfoUtil.getTaxonomyNames(authFD["SOURCE_TAXID"])
             if scientific_name:
                 authFD["SOURCE_ORGANISM"] = scientific_name
                 authFD["SOURCE_COMMON_NAME"] = common_name
             #
         #
         for mapTup in mapTupList:
-            if mapTup[0] == 'ENTITY_DESCRIPTION':
+            if mapTup[0] == "ENTITY_DESCRIPTION":
                 updateFlag = False
                 # Keep the original author provided name for DNA/RNA entities
-                if ('DB_NAME' in refFD) and (refFD['DB_NAME'] in ['GB','DBJ','EMB','EMBL','REF']):
+                if ("DB_NAME" in refFD) and (refFD["DB_NAME"] in ["GB", "DBJ", "EMB", "EMBL", "REF"]):
                     if ((mapTup[0] not in authFD) or (not authFD[mapTup[0]])) and (mapTup[1] in refFD) and len(refFD[mapTup[1]]) > 1:
                         authFD[mapTup[0]] = refFD[mapTup[1]]
                         updateFlag = True
                     #
                 elif refFD[mapTup[1]] is not None and len(refFD[mapTup[1]]) > 1:
-                    if (refFD[mapTup[1]].strip().upper() != 'UNCHARACTERIZED PROTEIN') and (refFD[mapTup[1]].strip().upper() != 'PREDICTED PROTEIN'):
+                    if (refFD[mapTup[1]].strip().upper() != "UNCHARACTERIZED PROTEIN") and (refFD[mapTup[1]].strip().upper() != "PREDICTED PROTEIN"):
                         authFD[mapTup[0]] = refFD[mapTup[1]]
                         updateFlag = True
                     #
                 #
                 if not updateFlag:
-                    if (authFD['ENTITY_DESCRIPTION_ORIG'] is not None) and (len(authFD['ENTITY_DESCRIPTION_ORIG']) > 1):
-                        authFD[mapTup[0]] = authFD['ENTITY_DESCRIPTION_ORIG']
+                    if (authFD["ENTITY_DESCRIPTION_ORIG"] is not None) and (len(authFD["ENTITY_DESCRIPTION_ORIG"]) > 1):
+                        authFD[mapTup[0]] = authFD["ENTITY_DESCRIPTION_ORIG"]
                     else:
-                        authFD[mapTup[0]] = ''
+                        authFD[mapTup[0]] = ""
                     #
                 #
             elif refFD[mapTup[1]] is not None and len(refFD[mapTup[1]]) > 1:
                 authFD[mapTup[0]] = refFD[mapTup[1]]
             else:
-                authFD[mapTup[0]] = ''
+                authFD[mapTup[0]] = ""
             #
         #
-        if ('REF_SEQ_FRAGMENT_DETAILS' in refFD) and (len(refFD['REF_SEQ_FRAGMENT_DETAILS']) > 1):
-            authFD['ENTITY_FRAGMENT_DETAILS'] = refFD['REF_SEQ_FRAGMENT_DETAILS']
+        if ("REF_SEQ_FRAGMENT_DETAILS" in refFD) and (len(refFD["REF_SEQ_FRAGMENT_DETAILS"]) > 1):
+            authFD["ENTITY_FRAGMENT_DETAILS"] = refFD["REF_SEQ_FRAGMENT_DETAILS"]
         #
-        if (self.__debug):
+        if self.__debug:
             for mapTup in mapTupList:
-                self.__lfh.write('++++After %30s  %r\n' % (mapTup[0], authFD[mapTup[0]]))
+                self.__lfh.write("++++After %30s  %r\n" % (mapTup[0], authFD[mapTup[0]]))
         #
         return True
 
     def updateAuthOrig(self, authFD):
-        """  Map editable original author values to current author values --
-        """
-        mapTupList = [('ENTITY_DESCRIPTION', 'ENTITY_DESCRIPTION_ORIG'),
-                      ('ENTITY_SYNONYMS', 'ENTITY_SYNONYMS_ORIG'),
-                      ('SOURCE_GENE_NAME', 'SOURCE_GENE_NAME_ORIG'),
-                      ('SOURCE_TAXID', 'SOURCE_TAXID_ORIG'),
-                      ('SOURCE_ORGANISM', 'SOURCE_ORGANISM_ORIG'),
-                      ('SOURCE_STRAIN', 'SOURCE_STRAIN_ORIG'),
-                      ('SOURCE_COMMON_NAME', 'SOURCE_COMMON_NAME_ORIG'),
-                      ('ENTITY_ENZYME_CLASS', 'ENTITY_ENZYME_CLASS_ORIG')]
-        if (self.__debug):
+        """Map editable original author values to current author values --"""
+        mapTupList = [
+            ("ENTITY_DESCRIPTION", "ENTITY_DESCRIPTION_ORIG"),
+            ("ENTITY_SYNONYMS", "ENTITY_SYNONYMS_ORIG"),
+            ("SOURCE_GENE_NAME", "SOURCE_GENE_NAME_ORIG"),
+            ("SOURCE_TAXID", "SOURCE_TAXID_ORIG"),
+            ("SOURCE_ORGANISM", "SOURCE_ORGANISM_ORIG"),
+            ("SOURCE_STRAIN", "SOURCE_STRAIN_ORIG"),
+            ("SOURCE_COMMON_NAME", "SOURCE_COMMON_NAME_ORIG"),
+            ("ENTITY_ENZYME_CLASS", "ENTITY_ENZYME_CLASS_ORIG"),
+        ]
+        if self.__debug:
             for mapTup in mapTupList:
-                self.__lfh.write('++++Before Mapping %30s : %-40r  %30s:  %r\n' % (mapTup[0], authFD[mapTup[0]], mapTup[1], authFD[mapTup[0]]))
+                self.__lfh.write("++++Before Mapping %30s : %-40r  %30s:  %r\n" % (mapTup[0], authFD[mapTup[0]], mapTup[1], authFD[mapTup[0]]))
         #
         for mapTup in mapTupList:
             if authFD[mapTup[1]] is not None and len(authFD[mapTup[1]]) > 1:
                 authFD[mapTup[0]] = authFD[mapTup[1]]
             else:
-                authFD[mapTup[0]] = ''
+                authFD[mapTup[0]] = ""
         #
-        if (self.__debug):
+        if self.__debug:
             for mapTup in mapTupList:
-                self.__lfh.write('++++After %30s  %r\n' % (mapTup[0], authFD[mapTup[0]]))
+                self.__lfh.write("++++After %30s  %r\n" % (mapTup[0], authFD[mapTup[0]]))
         #
         return True
 
 
 class SequenceFeature(object):
 
-    """  Manages access to sequence feature data -
+    """Manages access to sequence feature data -
 
-         Storage model is dictionary of key value pairs -
+    Storage model is dictionary of key value pairs -
 
-         Content include database identifiers, source details, and sequence comparison statistics.
+    Content include database identifiers, source details, and sequence comparison statistics.
     """
 
     def __init__(self, verbose=False, log=sys.stderr):
@@ -163,43 +167,111 @@ class SequenceFeature(object):
         self.__lfh = log
         self.__debug = False
         #
-        self.__fListStr = ['DB_NAME', 'DB_CODE', 'DB_ACCESSION', 'DB_ISOFORM', 'DB_ISOFORM_DESCRIPTION', 'ANNO_EDIT_DB_NAME',
-                           'ANNO_EDIT_DB_CODE', 'ANNO_EDIT_DB_ACCESSION', 'ANNO_EDIT_DB_ALIGN_BEGIN', 'ANNO_EDIT_DB_ALIGN_END',
-                           'SOURCE_ORGANISM', 'SOURCE_STRAIN', 'SOURCE_TAXID', 'SOURCE_GENE_NAME', 'SOURCE_VARIANT', 'SOURCE_METHOD',
-                           'POLYMER_TYPE', 'POLYMER_LINKING_TYPE', 'AUTH_SEQ_PART_TYPE',
-                           'ENTITY_SYNONYMS', 'ENTITY_DESCRIPTION', 'ENTITY_ENZYME_CLASS', 'ENTITY_FRAGMENT_DETAILS',
-                           'SOURCE_ORGANISM_ORIG', 'SOURCE_STRAIN_ORIG', 'SOURCE_TAXID_ORIG', 'SOURCE_GENE_NAME_ORIG', 'SOURCE_VARIANT_ORIG',
-                           'SOURCE_METHOD_ORIG', 'SOURCE_COMMON_NAME', 'SOURCE_COMMON_NAME_ORIG',
-                           'ENTITY_SYNONYMS_ORIG', 'ENTITY_DESCRIPTION_ORIG', 'ENTITY_ENZYME_CLASS_ORIG', 'ENTITY_FRAGMENT_DETAILS_ORIG',
-                           'ENTITY_MUTATION_DETAILS_ORIG', 'ENTITY_MUTATION_DETAILS', 'ENTITY_DETAILS_ORIG', 'ENTITY_DETAILS',
-                           'AUTH_SEQ_PART_TYPE_ORIG',
-                           'HOST_ORG_SOURCE', 'HOST_ORG_STRAIN', 'HOST_ORG_TAXID', 'HOST_ORG_VECTOR', 'HOST_ORG_VECTOR_TYPE', 'HOST_ORG_PLASMID',
-                           'HOST_ORG_COMMON_NAME', 'HOST_ORG_CELL_LINE',
-                           'HOST_ORG_SOURCE_ORIG', 'HOST_ORG_STRAIN_ORIG', 'HOST_ORG_TAXID_ORIG', 'HOST_ORG_VECTOR_ORIG', 'HOST_ORG_VECTOR_TYPE_ORIG',
-                           'HOST_ORG_VARIANT', 'HOST_ORG_VARIANT_ORIG',
-                           'HOST_ORG_PLASMID_ORIG', 'HOST_ORG_COMMON_NAME_ORIG', 'HOST_ORG_CELL_LINE_ORIG',
-                           'DB_MOLECULE_NAME', 'DB_MOLECULE_SYNONYMS', 'DB_GENE_NAME',
-                           'DB_MOLECULE_EC', 'DB_MOLECULE_DESCRIPTION', 'DB_MOLECULE_COMMENTS', 'DB_MOLECULE_KEYWORDS', 'REF_SEQ_FRAGMENT_DETAILS',
-                           'REF_ENTRY_ID', 'REF_ENTRY_ENTITY_ID', 'REF_ENTRY_STATUS', 'REF_ENTRY_ANN', 
-                           'AUTH_XYZ_SEQ_BEGIN', 'AUTH_XYZ_SEQ_END', 'CURRENT_AUTH_SELECT_ID', 'CURRENT_REF_SELECT_ID']
+        self.__fListStr = [
+            "DB_NAME",
+            "DB_CODE",
+            "DB_ACCESSION",
+            "DB_ISOFORM",
+            "DB_ISOFORM_DESCRIPTION",
+            "ANNO_EDIT_DB_NAME",
+            "ANNO_EDIT_DB_CODE",
+            "ANNO_EDIT_DB_ACCESSION",
+            "ANNO_EDIT_DB_ALIGN_BEGIN",
+            "ANNO_EDIT_DB_ALIGN_END",
+            "SOURCE_ORGANISM",
+            "SOURCE_STRAIN",
+            "SOURCE_TAXID",
+            "SOURCE_GENE_NAME",
+            "SOURCE_VARIANT",
+            "SOURCE_METHOD",
+            "POLYMER_TYPE",
+            "POLYMER_LINKING_TYPE",
+            "AUTH_SEQ_PART_TYPE",
+            "ENTITY_SYNONYMS",
+            "ENTITY_DESCRIPTION",
+            "ENTITY_ENZYME_CLASS",
+            "ENTITY_FRAGMENT_DETAILS",
+            "SOURCE_ORGANISM_ORIG",
+            "SOURCE_STRAIN_ORIG",
+            "SOURCE_TAXID_ORIG",
+            "SOURCE_GENE_NAME_ORIG",
+            "SOURCE_VARIANT_ORIG",
+            "SOURCE_METHOD_ORIG",
+            "SOURCE_COMMON_NAME",
+            "SOURCE_COMMON_NAME_ORIG",
+            "ENTITY_SYNONYMS_ORIG",
+            "ENTITY_DESCRIPTION_ORIG",
+            "ENTITY_ENZYME_CLASS_ORIG",
+            "ENTITY_FRAGMENT_DETAILS_ORIG",
+            "ENTITY_MUTATION_DETAILS_ORIG",
+            "ENTITY_MUTATION_DETAILS",
+            "ENTITY_DETAILS_ORIG",
+            "ENTITY_DETAILS",
+            "AUTH_SEQ_PART_TYPE_ORIG",
+            "HOST_ORG_SOURCE",
+            "HOST_ORG_STRAIN",
+            "HOST_ORG_TAXID",
+            "HOST_ORG_VECTOR",
+            "HOST_ORG_VECTOR_TYPE",
+            "HOST_ORG_PLASMID",
+            "HOST_ORG_COMMON_NAME",
+            "HOST_ORG_CELL_LINE",
+            "HOST_ORG_SOURCE_ORIG",
+            "HOST_ORG_STRAIN_ORIG",
+            "HOST_ORG_TAXID_ORIG",
+            "HOST_ORG_VECTOR_ORIG",
+            "HOST_ORG_VECTOR_TYPE_ORIG",
+            "HOST_ORG_VARIANT",
+            "HOST_ORG_VARIANT_ORIG",
+            "HOST_ORG_PLASMID_ORIG",
+            "HOST_ORG_COMMON_NAME_ORIG",
+            "HOST_ORG_CELL_LINE_ORIG",
+            "DB_MOLECULE_NAME",
+            "DB_MOLECULE_SYNONYMS",
+            "DB_GENE_NAME",
+            "DB_MOLECULE_EC",
+            "DB_MOLECULE_DESCRIPTION",
+            "DB_MOLECULE_COMMENTS",
+            "DB_MOLECULE_KEYWORDS",
+            "REF_SEQ_FRAGMENT_DETAILS",
+            "REF_ENTRY_ID",
+            "REF_ENTRY_ENTITY_ID",
+            "REF_ENTRY_STATUS",
+            "REF_ENTRY_ANN",
+            "AUTH_XYZ_SEQ_BEGIN",
+            "AUTH_XYZ_SEQ_END",
+            "CURRENT_AUTH_SELECT_ID",
+            "CURRENT_REF_SELECT_ID",
+        ]
         #
-        self.__fListInt = ['FULL_LENGTH', 'ALIGN_LENGTH', 'MATCH_LENGTH', 'REF_MATCH_BEGIN', 'REF_MATCH_END', 'ORG_ORDER_ID',
-                           'AUTH_SEQ_NUM_BEGIN', 'AUTH_SEQ_NUM_END', 'AUTH_SEQ_PART_ID', 'AUTH_SEQ_NUM_BEGIN_ORIG', 'AUTH_SEQ_NUM_END_ORIG', 'AUTH_SEQ_PART_ID',
-                           'REF_SORT_ORDER_INDEX', 'AUTH_SEQ_PART_ID_ORIG']
+        self.__fListInt = [
+            "FULL_LENGTH",
+            "ALIGN_LENGTH",
+            "MATCH_LENGTH",
+            "REF_MATCH_BEGIN",
+            "REF_MATCH_END",
+            "ORG_ORDER_ID",
+            "AUTH_SEQ_NUM_BEGIN",
+            "AUTH_SEQ_NUM_END",
+            "AUTH_SEQ_PART_ID",
+            "AUTH_SEQ_NUM_BEGIN_ORIG",
+            "AUTH_SEQ_NUM_END_ORIG",
+            "AUTH_SEQ_PART_ID",
+            "REF_SORT_ORDER_INDEX",
+            "AUTH_SEQ_PART_ID_ORIG",
+        ]
 
-        self.__fListFloat = ['AUTH_XYZ_SEQ_SIM', 'AUTH_XYZ_SEQ_SIM_WITH_GAPS',
-                             'AUTH_REF_SEQ_SIM', 'AUTH_REF_SEQ_SIM_WITH_GAPS',
-                             'AUTH_REF_SEQ_SIM_BLAST', 'REF_SORT_METRIC']
-        self.__fListBool = ['HAS_MANUAL_EDIT']
+        self.__fListFloat = ["AUTH_XYZ_SEQ_SIM", "AUTH_XYZ_SEQ_SIM_WITH_GAPS", "AUTH_REF_SEQ_SIM", "AUTH_REF_SEQ_SIM_WITH_GAPS", "AUTH_REF_SEQ_SIM_BLAST", "REF_SORT_METRIC"]
+        self.__fListBool = ["HAS_MANUAL_EDIT"]
 
-        #self.__fIndex={k:k for k in  self.__fListStr + self.__fListInt + self.__fListBool}
+        # self.__fIndex={k:k for k in  self.__fListStr + self.__fListInt + self.__fListBool}
         self.__fD = {}
         self.__reset()
 
     def __reset(self):
         self.__fD = {}
         for ff in self.__fListStr:
-            self.__fD[ff] = ''
+            self.__fD[ff] = ""
         for ff in self.__fListInt:
             self.__fD[ff] = 0
         for ff in self.__fListFloat:
@@ -223,609 +295,613 @@ class SequenceFeature(object):
         if resetAll:
             self.__reset()
         for k, v in featureDictionary.items():
-            if (k in self.__fListStr):
+            if k in self.__fListStr:
                 self.__fD[k] = str(v)
-            elif (k in self.__fListInt):
+            elif k in self.__fListInt:
                 self.__fD[k] = int(str(v))
-            elif (k in self.__fListFloat):
+            elif k in self.__fListFloat:
                 self.__fD[k] = float(str(v))
-            elif (k in self.__fListBool):
+            elif k in self.__fListBool:
                 try:
                     self.__fD[k] = bool(v)
-                except:
+                except:  # noqa: E722 pylint: disable=bare-except
                     self.__fD[k] = False
 
     def setItem(self, ky, val):
-        if (ky in self.__fListStr):
+        if ky in self.__fListStr:
             self.__fD[ky] = str(val)
-        elif (ky in self.__fListInt):
+        elif ky in self.__fListInt:
             self.__fD[ky] = int(str(val))
-        elif (ky in self.__fListFloat):
+        elif ky in self.__fListFloat:
             self.__fD[ky] = float(str(val))
-        elif (ky in self.__fListBool):
+        elif ky in self.__fListBool:
             try:
                 self.__fD[ky] = bool(val)
-            except:
+            except:  # noqa: E722 pylint: disable=bare-except
                 self.__fD[ky] = False
 
     def getItem(self, ky):
         if ky in self.__fD:
             return self.__fD[ky]
         else:
-            return ''
+            return ""
 
-    def setPolymerType(self, type):
-        self.__fD['POLYMER_TYPE'] = type
+    def setPolymerType(self, type):  # pylint: disable=redefined-builtin
+        self.__fD["POLYMER_TYPE"] = type
 
     def getPolymerType(self):
-        """  One of - AA, NA, RNA, DNA, SAC, XNA (i.e.hybrid)
-        """
-        if 'POLYMER_TYPE' in self.__fD:
-            return (self.__fD['POLYMER_TYPE'])
+        """One of - AA, NA, RNA, DNA, SAC, XNA (i.e.hybrid)"""
+        if "POLYMER_TYPE" in self.__fD:
+            return self.__fD["POLYMER_TYPE"]
         else:
-            return ''
+            return ""
 
     def setPolymerLinkingType(self, linkingType):
-        self.__fD['POLYMER_LINKING_TYPE'] = linkingType
+        self.__fD["POLYMER_LINKING_TYPE"] = linkingType
 
     def getPolymerLinkingType(self):
-        """  One of the Pdbx full polymer linking types ...
-        """
-        if 'POLYMER_LINKING_TYPE' in self.__fD:
-            return (self.__fD['POLYMER_LINKING_TYPE'])
+        """One of the Pdbx full polymer linking types ..."""
+        if "POLYMER_LINKING_TYPE" in self.__fD:
+            return self.__fD["POLYMER_LINKING_TYPE"]
         else:
-            return ''
+            return ""
 
-    def setId(self, dbName='', dbCode='', dbAccession='', dbIsoform=''):
-        self.__fD['DB_NAME'] = str(dbName)
-        self.__fD['DB_CODE'] = str(dbCode)
-        self.__fD['DB_ACCESSION'] = str(dbAccession)
-        self.__fD['DB_ISOFORM'] = str(dbIsoform)
+    def setId(self, dbName="", dbCode="", dbAccession="", dbIsoform=""):
+        self.__fD["DB_NAME"] = str(dbName)
+        self.__fD["DB_CODE"] = str(dbCode)
+        self.__fD["DB_ACCESSION"] = str(dbAccession)
+        self.__fD["DB_ISOFORM"] = str(dbIsoform)
 
     #
-    def setDbIsoformDescription(self, description=''):
-        self.__fD['DB_ISOFORM_DESCRIPTION'] = str(description)
+    def setDbIsoformDescription(self, description=""):
+        self.__fD["DB_ISOFORM_DESCRIPTION"] = str(description)
+
     #
 
     def getDbIsoformDescription(self):
-        return self.__fD['DB_ISOFORM_DESCRIPTION']
+        return self.__fD["DB_ISOFORM_DESCRIPTION"]
 
-    def setEntitySynonyms(self, synonyms=''):
-        self.__fD['ENTITY_SYNONYMS'] = str(synonyms)
+    def setEntitySynonyms(self, synonyms=""):
+        self.__fD["ENTITY_SYNONYMS"] = str(synonyms)
 
     def setEntityEnzymeClass(self, ec):
-        self.__fD['ENTITY_ENZYME_CLASS'] = str(ec)
+        self.__fD["ENTITY_ENZYME_CLASS"] = str(ec)
 
-    def setEntityDescription(self, description=''):
-        self.__fD['ENTITY_DESCRIPTION'] = str(description)
+    def setEntityDescription(self, description=""):
+        self.__fD["ENTITY_DESCRIPTION"] = str(description)
+
     #
 
-    def setEntityDescriptionOrig(self, description=''):
-        self.__fD['ENTITY_DESCRIPTION_ORIG'] = str(description)
+    def setEntityDescriptionOrig(self, description=""):
+        self.__fD["ENTITY_DESCRIPTION_ORIG"] = str(description)
 
-    def setEntitySynonymsOrig(self, synonyms=''):
-        self.__fD['ENTITY_SYNONYMS_ORIG'] = str(synonyms)
+    def setEntitySynonymsOrig(self, synonyms=""):
+        self.__fD["ENTITY_SYNONYMS_ORIG"] = str(synonyms)
 
     def setEntityEnzymeClassOrig(self, ec):
-        self.__fD['ENTITY_ENZYME_CLASS_ORIG'] = str(ec)
+        self.__fD["ENTITY_ENZYME_CLASS_ORIG"] = str(ec)
 
     def setEntityFragmentDetails(self, details):
-        self.__fD['ENTITY_FRAGMENT_DETAILS'] = str(details)
+        self.__fD["ENTITY_FRAGMENT_DETAILS"] = str(details)
 
     def setEntityFragmentDetailsOrig(self, details):
-        self.__fD['ENTITY_FRAGMENT_DETAILS_ORIG'] = str(details)
+        self.__fD["ENTITY_FRAGMENT_DETAILS_ORIG"] = str(details)
 
     def setEntityMutationDetails(self, details):
-        self.__fD['ENTITY_MUTATION_DETAILS'] = str(details)
+        self.__fD["ENTITY_MUTATION_DETAILS"] = str(details)
 
     def setEntityMutationDetailsOrig(self, details):
-        self.__fD['ENTITY_MUTATION_DETAILS_ORIG'] = str(details)
+        self.__fD["ENTITY_MUTATION_DETAILS_ORIG"] = str(details)
 
     def setEntityDetails(self, details):
-        self.__fD['ENTITY_DETAILS'] = str(details)
+        self.__fD["ENTITY_DETAILS"] = str(details)
 
     def setEntityDetailsOrig(self, details):
-        self.__fD['ENTITY_DETAILS_ORIG'] = str(details)
+        self.__fD["ENTITY_DETAILS_ORIG"] = str(details)
 
     #
     def getEntityDescription(self):
-        return (self.__fD['ENTITY_DESCRIPTION'])
+        return self.__fD["ENTITY_DESCRIPTION"]
 
     def getEntitySynonyms(self):
-        return (self.__fD['ENTITY_SYNONYMS'])
+        return self.__fD["ENTITY_SYNONYMS"]
 
     def getEntityEnzymeClass(self):
-        return self.__fD['ENTITY_ENZYME_CLASS']
+        return self.__fD["ENTITY_ENZYME_CLASS"]
 
     #
     def getEntityDescriptionOrig(self):
-        return self.__fD['ENTITY_DESCRIPTION_ORIG']
+        return self.__fD["ENTITY_DESCRIPTION_ORIG"]
 
     def getEntitySynonymsOrig(self):
-        return self.__fD['ENTITY_SYNONYMS_ORIG']
+        return self.__fD["ENTITY_SYNONYMS_ORIG"]
 
     def getEntityEnzymeClassOrig(self):
-        return self.__fD['ENTITY_ENZYME_CLASS_ORIG']
+        return self.__fD["ENTITY_ENZYME_CLASS_ORIG"]
 
     def getEntityFragmentDetails(self):
-        return self.__fD['ENTITY_FRAGMENT_DETAILS']
+        return self.__fD["ENTITY_FRAGMENT_DETAILS"]
 
     def getEntityFragmentDetailsOrig(self):
-        return self.__fD['ENTITY_FRAGMENT_DETAILS_ORIG']
+        return self.__fD["ENTITY_FRAGMENT_DETAILS_ORIG"]
 
     def getEntityMutationDetails(self):
-        return self.__fD['ENTITY_MUTATION_DETAILS']
+        return self.__fD["ENTITY_MUTATION_DETAILS"]
 
     def getEntityMutationDetailsOrig(self):
-        return self.__fD['ENTITY_MUTATION_DETAILS_ORIG']
+        return self.__fD["ENTITY_MUTATION_DETAILS_ORIG"]
 
     def getEntityDetails(self):
-        return self.__fD['ENTITY_DETAILS']
+        return self.__fD["ENTITY_DETAILS"]
 
     def getEntityDetailsOrig(self):
-        return self.__fD['ENTITY_DETAILS_ORIG']
+        return self.__fD["ENTITY_DETAILS_ORIG"]
 
     def getEntitySourceMethodOrig(self):
-        return self.__fD['SOURCE_METHOD_ORIG']
+        return self.__fD["SOURCE_METHOD_ORIG"]
 
     def getEntitySourceMethod(self):
-        return self.__fD['SOURCE_METHOD']
+        return self.__fD["SOURCE_METHOD"]
 
     def getSourceGeneName(self):
-        return self.__fD['SOURCE_GENE_NAME']
+        return self.__fD["SOURCE_GENE_NAME"]
 
     def getSourceGeneNameOrig(self):
-        return self.__fD['SOURCE_GENE_NAME_ORIG']
+        return self.__fD["SOURCE_GENE_NAME_ORIG"]
 
     #
-    def setTaxId(self, taxid=''):
-        self.__fD['SOURCE_TAXID'] = str(taxid)
+    def setTaxId(self, taxid=""):
+        self.__fD["SOURCE_TAXID"] = str(taxid)
 
-    def setSource(self, organism='', strain='', taxid='', gene='', method='MAN', commonName='', variant=''):
-        self.__fD['SOURCE_ORGANISM'] = str(organism)
-        self.__fD['SOURCE_STRAIN'] = str(strain)
-        self.__fD['SOURCE_TAXID'] = str(taxid)
-        self.__fD['SOURCE_GENE_NAME'] = str(gene)
-        self.__fD['SOURCE_METHOD'] = str(method)
-        self.__fD['SOURCE_COMMON_NAME'] = str(commonName)
-        self.__fD['SOURCE_VARIANT'] = str(variant)
+    def setSource(self, organism="", strain="", taxid="", gene="", method="MAN", commonName="", variant=""):
+        self.__fD["SOURCE_ORGANISM"] = str(organism)
+        self.__fD["SOURCE_STRAIN"] = str(strain)
+        self.__fD["SOURCE_TAXID"] = str(taxid)
+        self.__fD["SOURCE_GENE_NAME"] = str(gene)
+        self.__fD["SOURCE_METHOD"] = str(method)
+        self.__fD["SOURCE_COMMON_NAME"] = str(commonName)
+        self.__fD["SOURCE_VARIANT"] = str(variant)
 
-    def setSourceOrig(self, organism='', strain='', taxid='', gene='', method='MAN', commonName='', variant=''):
-        self.__fD['SOURCE_ORGANISM_ORIG'] = str(organism)
-        self.__fD['SOURCE_STRAIN_ORIG'] = str(strain)
-        self.__fD['SOURCE_TAXID_ORIG'] = str(taxid)
-        self.__fD['SOURCE_GENE_NAME_ORIG'] = str(gene)
-        self.__fD['SOURCE_METHOD_ORIG'] = str(method)
-        self.__fD['SOURCE_COMMON_NAME_ORIG'] = str(commonName)
-        self.__fD['SOURCE_VARIANT_ORIG'] = str(variant)
+    def setSourceOrig(self, organism="", strain="", taxid="", gene="", method="MAN", commonName="", variant=""):
+        self.__fD["SOURCE_ORGANISM_ORIG"] = str(organism)
+        self.__fD["SOURCE_STRAIN_ORIG"] = str(strain)
+        self.__fD["SOURCE_TAXID_ORIG"] = str(taxid)
+        self.__fD["SOURCE_GENE_NAME_ORIG"] = str(gene)
+        self.__fD["SOURCE_METHOD_ORIG"] = str(method)
+        self.__fD["SOURCE_COMMON_NAME_ORIG"] = str(commonName)
+        self.__fD["SOURCE_VARIANT_ORIG"] = str(variant)
 
-    def setHostOrgDetails(self, source='', strain='', taxid='', vector='', vectorType='', plasmid='', commonName='', cellLine='', variant=''):
-        self.__fD['HOST_ORG_SOURCE'] = str(source)
-        self.__fD['HOST_ORG_STRAIN'] = str(strain)
-        self.__fD['HOST_ORG_TAXID'] = str(taxid)
-        self.__fD['HOST_ORG_VECTOR'] = str(vector)
-        self.__fD['HOST_ORG_VECTOR_TYPE'] = str(vectorType)
-        self.__fD['HOST_ORG_PLASMID'] = str(plasmid)
-        self.__fD['HOST_ORG_COMMON_NAME'] = str(commonName)
-        self.__fD['HOST_ORG_CELL_LINE'] = str(cellLine)
-        self.__fD['HOST_ORG_VARIANT'] = str(variant)
+    def setHostOrgDetails(self, source="", strain="", taxid="", vector="", vectorType="", plasmid="", commonName="", cellLine="", variant=""):
+        self.__fD["HOST_ORG_SOURCE"] = str(source)
+        self.__fD["HOST_ORG_STRAIN"] = str(strain)
+        self.__fD["HOST_ORG_TAXID"] = str(taxid)
+        self.__fD["HOST_ORG_VECTOR"] = str(vector)
+        self.__fD["HOST_ORG_VECTOR_TYPE"] = str(vectorType)
+        self.__fD["HOST_ORG_PLASMID"] = str(plasmid)
+        self.__fD["HOST_ORG_COMMON_NAME"] = str(commonName)
+        self.__fD["HOST_ORG_CELL_LINE"] = str(cellLine)
+        self.__fD["HOST_ORG_VARIANT"] = str(variant)
 
-    def setHostOrgDetailsOrig(self, source='', strain='', taxid='', vector='', vectorType='', plasmid='', commonName='', cellLine='', variant=''):
-        self.__fD['HOST_ORG_SOURCE_ORIG'] = str(source)
-        self.__fD['HOST_ORG_STRAIN_ORIG'] = str(strain)
-        self.__fD['HOST_ORG_TAXID_ORIG'] = str(taxid)
-        self.__fD['HOST_ORG_VECTOR_ORIG'] = str(vector)
-        self.__fD['HOST_ORG_VECTOR_TYPE_ORIG'] = str(vectorType)
-        self.__fD['HOST_ORG_PLASMID_ORIG'] = str(plasmid)
-        self.__fD['HOST_ORG_COMMON_NAME_ORIG'] = str(commonName)
-        self.__fD['HOST_ORG_CELL_LINE_ORIG'] = str(cellLine)
-        self.__fD['HOST_ORG_VARIANT_ORIG'] = str(variant)
+    def setHostOrgDetailsOrig(self, source="", strain="", taxid="", vector="", vectorType="", plasmid="", commonName="", cellLine="", variant=""):
+        self.__fD["HOST_ORG_SOURCE_ORIG"] = str(source)
+        self.__fD["HOST_ORG_STRAIN_ORIG"] = str(strain)
+        self.__fD["HOST_ORG_TAXID_ORIG"] = str(taxid)
+        self.__fD["HOST_ORG_VECTOR_ORIG"] = str(vector)
+        self.__fD["HOST_ORG_VECTOR_TYPE_ORIG"] = str(vectorType)
+        self.__fD["HOST_ORG_PLASMID_ORIG"] = str(plasmid)
+        self.__fD["HOST_ORG_COMMON_NAME_ORIG"] = str(commonName)
+        self.__fD["HOST_ORG_CELL_LINE_ORIG"] = str(cellLine)
+        self.__fD["HOST_ORG_VARIANT_ORIG"] = str(variant)
 
-    def setAuthPartDetails(self, partId, seqNumBegin, seqNumEnd, seqPartType=''):
-        self.__fD['AUTH_SEQ_NUM_BEGIN'] = int(seqNumBegin)
-        self.__fD['AUTH_SEQ_NUM_END'] = int(seqNumEnd)
-        self.__fD['AUTH_SEQ_PART_ID'] = int(partId)
-        self.__fD['AUTH_SEQ_PART_TYPE'] = str(seqPartType)
+    def setAuthPartDetails(self, partId, seqNumBegin, seqNumEnd, seqPartType=""):
+        self.__fD["AUTH_SEQ_NUM_BEGIN"] = int(seqNumBegin)
+        self.__fD["AUTH_SEQ_NUM_END"] = int(seqNumEnd)
+        self.__fD["AUTH_SEQ_PART_ID"] = int(partId)
+        self.__fD["AUTH_SEQ_PART_TYPE"] = str(seqPartType)
 
-    def setAuthPartDetailsOrig(self, partId, seqNumBegin, seqNumEnd, seqPartType=''):
-        self.__fD['AUTH_SEQ_NUM_BEGIN_ORIG'] = int(seqNumBegin)
-        self.__fD['AUTH_SEQ_NUM_END_ORIG'] = int(seqNumEnd)
-        self.__fD['AUTH_SEQ_PART_ID_ORIG'] = int(partId)
-        self.__fD['AUTH_SEQ_PART_TYPE_ORIG'] = str(seqPartType)
+    def setAuthPartDetailsOrig(self, partId, seqNumBegin, seqNumEnd, seqPartType=""):
+        self.__fD["AUTH_SEQ_NUM_BEGIN_ORIG"] = int(seqNumBegin)
+        self.__fD["AUTH_SEQ_NUM_END_ORIG"] = int(seqNumEnd)
+        self.__fD["AUTH_SEQ_PART_ID_ORIG"] = int(partId)
+        self.__fD["AUTH_SEQ_PART_TYPE_ORIG"] = str(seqPartType)
 
-    def setRefSeqNames(self, proteinName='', synonyms='', geneName=''):
-        self.__fD['DB_MOLECULE_NAME'] = str(proteinName)
-        self.__fD['DB_MOLECULE_SYNONYMS'] = str(synonyms)
-        self.__fD['DB_GENE_NAME'] = str(geneName)
-        if (self.__debug):
-            self.__lfh.write("+SequenceFeature.setRefSeqName() accession %r name %r synonyms %r gene %r\n" %
-                             (self.__fD['DB_ACCESSION'], self.__fD['DB_MOLECULE_NAME'], self.__fD['DB_MOLECULE_SYNONYMS'], self.__fD['DB_GENE_NAME']))
+    def setRefSeqNames(self, proteinName="", synonyms="", geneName=""):
+        self.__fD["DB_MOLECULE_NAME"] = str(proteinName)
+        self.__fD["DB_MOLECULE_SYNONYMS"] = str(synonyms)
+        self.__fD["DB_GENE_NAME"] = str(geneName)
+        if self.__debug:
+            self.__lfh.write(
+                "+SequenceFeature.setRefSeqName() accession %r name %r synonyms %r gene %r\n"
+                % (self.__fD["DB_ACCESSION"], self.__fD["DB_MOLECULE_NAME"], self.__fD["DB_MOLECULE_SYNONYMS"], self.__fD["DB_GENE_NAME"])
+            )
 
     def getRefSeqNames(self):
         try:
-            return self.__fD['DB_MOLECULE_NAME'], self.__fD['DB_MOLECULE_SYNONYMS'], self.__fD['DB_GENE_NAME']
-        except:
+            return self.__fD["DB_MOLECULE_NAME"], self.__fD["DB_MOLECULE_SYNONYMS"], self.__fD["DB_GENE_NAME"]
+        except:  # noqa: E722 pylint: disable=bare-except
             if self.__verbose:
                 self.__lfh.write("+SequenceFeature.getRefSeqName() failed\n")
-        return '', '', ''
+        return "", "", ""
+
     #
 
-    def setRefSeqDetails(self, enzymeClass='', description='', comments='', keywords=''):
-        self.__fD['DB_MOLECULE_EC'] = str(enzymeClass)
-        self.__fD['DB_MOLECULE_DESCRIPTION'] = str(description)
-        self.__fD['DB_MOLECULE_COMMENTS'] = str(comments)
-        self.__fD['DB_MOLECULE_KEYWORDS'] = str(keywords)
-        if (self.__debug):
+    def setRefSeqDetails(self, enzymeClass="", description="", comments="", keywords=""):
+        self.__fD["DB_MOLECULE_EC"] = str(enzymeClass)
+        self.__fD["DB_MOLECULE_DESCRIPTION"] = str(description)
+        self.__fD["DB_MOLECULE_COMMENTS"] = str(comments)
+        self.__fD["DB_MOLECULE_KEYWORDS"] = str(keywords)
+        if self.__debug:
             self.__lfh.write(
-                "+SequenceFeature.setRefSeqDetails() accession %r EC %r descriptions %r comments %r keywords %r\n" %
-                (self.__fD['DB_ACCESSION'],
-                 self.__fD['DB_MOLECULE_EC'],
-                    self.__fD['DB_MOLECULE_DESCRIPTION'],
-                    self.__fD['DB_MOLECULE_COMMENTS'],
-                    self.__fD['DB_MOLECULE_KEYWORDS']))
+                "+SequenceFeature.setRefSeqDetails() accession %r EC %r descriptions %r comments %r keywords %r\n"
+                % (
+                    self.__fD["DB_ACCESSION"],
+                    self.__fD["DB_MOLECULE_EC"],
+                    self.__fD["DB_MOLECULE_DESCRIPTION"],
+                    self.__fD["DB_MOLECULE_COMMENTS"],
+                    self.__fD["DB_MOLECULE_KEYWORDS"],
+                )
+            )
 
     def getRefSeqDetails(self):
         try:
-            return self.__fD['DB_MOLECULE_EC'], self.__fD['DB_MOLECULE_DESCRIPTION'], self.__fD['DB_MOLECULE_COMMENTS'], self.__fD['DB_MOLECULE_KEYWORDS']
-        except:
+            return self.__fD["DB_MOLECULE_EC"], self.__fD["DB_MOLECULE_DESCRIPTION"], self.__fD["DB_MOLECULE_COMMENTS"], self.__fD["DB_MOLECULE_KEYWORDS"]
+        except:  # noqa: E722 pylint: disable=bare-except
             if self.__verbose:
                 self.__lfh.write("+SequenceFeature.getRefSeqDetails() failed\n")
-        return '', '', '', ''
+        return "", "", "", ""
 
-    def setRefSeqVariant(self, variant=''):
+    def setRefSeqVariant(self, variant=""):
         if variant:
-            self.__fD['REF_SEQ_VARIANT'] = str(variant)
+            self.__fD["REF_SEQ_VARIANT"] = str(variant)
         #
 
     def getRefSeqVariant(self):
-        if 'REF_SEQ_VARIANT' in self.__fD:
-            return self.__fD['REF_SEQ_VARIANT']
+        if "REF_SEQ_VARIANT" in self.__fD:
+            return self.__fD["REF_SEQ_VARIANT"]
         #
-        return ''
+        return ""
 
-    def setRefSeqFragmentDetails(self, fragmentDetails=''):
+    def setRefSeqFragmentDetails(self, fragmentDetails=""):
         if fragmentDetails:
-            self.__fD['REF_SEQ_FRAGMENT_DETAILS'] = str(fragmentDetails)
+            self.__fD["REF_SEQ_FRAGMENT_DETAILS"] = str(fragmentDetails)
         #
 
     def getRefSeqDepositorInfo(self):
         return {}
 
     def setRefSortOrder(self, sortIndex, sortMetric):
-        self.__fD['REF_SORT_ORDER_INDEX'] = int(float(sortIndex))
-        self.__fD['REF_SORT_METRIC'] = float(sortMetric)
+        self.__fD["REF_SORT_ORDER_INDEX"] = int(float(sortIndex))
+        self.__fD["REF_SORT_METRIC"] = float(sortMetric)
 
     def getRefSortOrderIndex(self):
         try:
-            return self.__fD['REF_SORT_ORDER_INDEX']
-        except:
+            return self.__fD["REF_SORT_ORDER_INDEX"]
+        except:  # noqa: E722 pylint: disable=bare-except
             return 0
 
     def getRefSortMetric(self):
         try:
-            return self.__fD['REF_SORT_METRIC']
-        except:
+            return self.__fD["REF_SORT_METRIC"]
+        except:  # noqa: E722 pylint: disable=bare-except
             return 0.0
 
     def getPartInfo(self):
         try:
-            return (self.__fD['AUTH_SEQ_PART_ID'], self.__fD['AUTH_SEQ_PART_TYPE'])
-        except:
+            return (self.__fD["AUTH_SEQ_PART_ID"], self.__fD["AUTH_SEQ_PART_TYPE"])
+        except:  # noqa: E722 pylint: disable=bare-except
             return (None, None)
 
     def getAuthPartDetails(self):
         try:
-            return (self.__fD['AUTH_SEQ_PART_ID'], self.__fD['AUTH_SEQ_NUM_BEGIN'], self.__fD['AUTH_SEQ_NUM_END'], self.__fD['AUTH_SEQ_PART_TYPE'])
-        except:
+            return (self.__fD["AUTH_SEQ_PART_ID"], self.__fD["AUTH_SEQ_NUM_BEGIN"], self.__fD["AUTH_SEQ_NUM_END"], self.__fD["AUTH_SEQ_PART_TYPE"])
+        except:  # noqa: E722 pylint: disable=bare-except
             return (None, None, None, None)
 
     def getAuthPartDetailsOrig(self):
         try:
-            return (self.__fD['AUTH_SEQ_PART_ID_ORIG'], self.__fD['AUTH_SEQ_NUM_BEGIN_ORIG'], self.__fD['AUTH_SEQ_NUM_END_ORIG'], self.__fD['AUTH_SEQ_PART_TYPE_ORIG'])
-        except:
+            return (self.__fD["AUTH_SEQ_PART_ID_ORIG"], self.__fD["AUTH_SEQ_NUM_BEGIN_ORIG"], self.__fD["AUTH_SEQ_NUM_END_ORIG"], self.__fD["AUTH_SEQ_PART_TYPE_ORIG"])
+        except:  # noqa: E722 pylint: disable=bare-except
             return (None, None, None, None)
 
     def getRefDatabaseName(self):
-        if ('DB_NAME' in self.__fD):
-            return (self.__fD['DB_NAME'])
+        if "DB_NAME" in self.__fD:
+            return self.__fD["DB_NAME"]
         else:
-            return ''
+            return ""
 
     def getRefIsoform(self):
-        if ('DB_ISOFORM' in self.__fD):
-            return (self.__fD['DB_ISOFORM'])
+        if "DB_ISOFORM" in self.__fD:
+            return self.__fD["DB_ISOFORM"]
         else:
-            return ''
+            return ""
 
     def getSourceOrganism(self):
-        if ('SOURCE_ORGANISM' in self.__fD):
-            return (self.__fD['SOURCE_ORGANISM'])
+        if "SOURCE_ORGANISM" in self.__fD:
+            return self.__fD["SOURCE_ORGANISM"]
         else:
-            return ''
+            return ""
 
     def getSourceTaxId(self):
-        if ('SOURCE_TAXID' in self.__fD):
-            return (self.__fD['SOURCE_TAXID'])
+        if "SOURCE_TAXID" in self.__fD:
+            return self.__fD["SOURCE_TAXID"]
         else:
-            return ''
+            return ""
 
     def getSourceStrain(self):
-        if ('SOURCE_STRAIN' in self.__fD):
-            return (self.__fD['SOURCE_STRAIN'])
+        if "SOURCE_STRAIN" in self.__fD:
+            return self.__fD["SOURCE_STRAIN"]
         else:
-            return ''
+            return ""
 
     def getSourceCommonName(self):
-        if ('SOURCE_COMMON_NAME' in self.__fD):
-            return (self.__fD['SOURCE_COMMON_NAME'])
+        if "SOURCE_COMMON_NAME" in self.__fD:
+            return self.__fD["SOURCE_COMMON_NAME"]
         else:
-            return ''
+            return ""
 
     def getSourceVariant(self):
-        if ('SOURCE_VARIANT' in self.__fD):
-            return (self.__fD['SOURCE_VARIANT'])
+        if "SOURCE_VARIANT" in self.__fD:
+            return self.__fD["SOURCE_VARIANT"]
         else:
-            return ''
+            return ""
 
     def getSourceOrganismOrig(self):
-        if ('SOURCE_ORGANISM_ORIG' in self.__fD):
-            return (self.__fD['SOURCE_ORGANISM_ORIG'])
+        if "SOURCE_ORGANISM_ORIG" in self.__fD:
+            return self.__fD["SOURCE_ORGANISM_ORIG"]
         else:
-            return ''
+            return ""
 
     def getSourceTaxIdOrig(self):
-        if ('SOURCE_TAXID_ORIG' in self.__fD):
-            return (self.__fD['SOURCE_TAXID_ORIG'])
+        if "SOURCE_TAXID_ORIG" in self.__fD:
+            return self.__fD["SOURCE_TAXID_ORIG"]
         else:
-            return ''
+            return ""
 
     def getSourceStrainOrig(self):
-        if ('SOURCE_STRAIN_ORIG' in self.__fD):
-            return (self.__fD['SOURCE_STRAIN_ORIG'])
+        if "SOURCE_STRAIN_ORIG" in self.__fD:
+            return self.__fD["SOURCE_STRAIN_ORIG"]
         else:
-            return ''
+            return ""
 
     def getSourceCommonNameOrig(self):
-        if ('SOURCE_COMMON_NAME_ORIG' in self.__fD):
-            return (self.__fD['SOURCE_COMMON_NAME_ORIG'])
+        if "SOURCE_COMMON_NAME_ORIG" in self.__fD:
+            return self.__fD["SOURCE_COMMON_NAME_ORIG"]
         else:
-            return ''
+            return ""
 
     def getSourceVariantOrig(self):
-        if ('SOURCE_VARIANT_ORIG' in self.__fD):
-            return (self.__fD['SOURCE_VARIANT_ORIG'])
+        if "SOURCE_VARIANT_ORIG" in self.__fD:
+            return self.__fD["SOURCE_VARIANT_ORIG"]
         else:
-            return ''
+            return ""
 
     def getHostOrgSourceOrganism(self):
         try:
-            return self.__fD['HOST_ORG_SOURCE']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_SOURCE"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgStrain(self):
         try:
-            return self.__fD['HOST_ORG_STRAIN']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_STRAIN"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgTaxId(self):
         try:
-            return self.__fD['HOST_ORG_TAXID']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_TAXID"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgVector(self):
         try:
-            return self.__fD['HOST_ORG_VECTOR']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_VECTOR"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgVectorType(self):
         try:
-            return self.__fD['HOST_ORG_VECTOR_TYPE']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_VECTOR_TYPE"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgPlasmid(self):
         try:
-            return self.__fD['HOST_ORG_PLASMID']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_PLASMID"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgCommonName(self):
         try:
-            return self.__fD['HOST_ORG_COMMON_NAME']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_COMMON_NAME"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgCellLine(self):
         try:
-            return self.__fD['HOST_ORG_CELL_LINE']
-        except:
-            return ''
- 
+            return self.__fD["HOST_ORG_CELL_LINE"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
+
     def getHostOrgVariant(self):
         try:
-            return self.__fD['HOST_ORG_VARIANT']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_VARIANT"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgSourceOrganismOrig(self):
         try:
-            return self.__fD['HOST_ORG_SOURCE_ORIG']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_SOURCE_ORIG"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgStrainOrig(self):
         try:
-            return self.__fD['HOST_ORG_STRAIN_ORIG']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_STRAIN_ORIG"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgTaxIdOrig(self):
         try:
-            return self.__fD['HOST_ORG_TAXID_ORIG']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_TAXID_ORIG"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgVectorOrig(self):
         try:
-            return self.__fD['HOST_ORG_VECTOR_ORIG']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_VECTOR_ORIG"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgVectorTypeOrig(self):
         try:
-            return self.__fD['HOST_ORG_VECTOR_TYPE_ORIG']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_VECTOR_TYPE_ORIG"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgPlasmidOrig(self):
         try:
-            return self.__fD['HOST_ORG_PLASMID_ORIG']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_PLASMID_ORIG"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgCommonNameOrig(self):
         try:
-            return self.__fD['HOST_ORG_COMMON_NAME_ORIG']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_COMMON_NAME_ORIG"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgCellLineOrig(self):
         try:
-            return self.__fD['HOST_ORG_CELL_LINE_ORIG']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_CELL_LINE_ORIG"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     def getHostOrgVariantOrig(self):
         try:
-            return self.__fD['HOST_ORG_VARIANT_ORIG']
-        except:
-            return ''
+            return self.__fD["HOST_ORG_VARIANT_ORIG"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
 
     #
     def setManualEditStatus(self, status):
         if status:
-            self.__fD['HAS_MANUAL_EDIT'] = True
+            self.__fD["HAS_MANUAL_EDIT"] = True
         else:
-            self.__fD['HAS_MANUAL_EDIT'] = False
+            self.__fD["HAS_MANUAL_EDIT"] = False
 
     def getManualEditStatus(self):
         try:
-            return self.__fD['HAS_MANUAL_EDIT']
-        except:
+            return self.__fD["HAS_MANUAL_EDIT"]
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
 
     def setCurentRefSelectId(self, sId):
-        self.__fD['CURRENT_REF_SELECT_ID'] = str(sId)
+        self.__fD["CURRENT_REF_SELECT_ID"] = str(sId)
 
     def getCurrentRefSelectId(self):
         try:
-            return self.__fD['CURRENT_REF_SELECT_ID']
-        except:
-            return ''
+            return self.__fD["CURRENT_REF_SELECT_ID"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
+
     #
 
     def setCurentAuthSelectId(self, sId):
-        self.__fD['CURRENT_AUTH_SELECT_ID'] = str(sId)
+        self.__fD["CURRENT_AUTH_SELECT_ID"] = str(sId)
 
     def getCurrentAuthSelectId(self):
         try:
-            return self.__fD['CURRENT_AUTH_SELECT_ID']
-        except:
-            return ''
+            return self.__fD["CURRENT_AUTH_SELECT_ID"]
+        except:  # noqa: E722 pylint: disable=bare-except
+            return ""
+
     #
 
     def getMatchLength(self):
-        if ('MATCH_LENGTH' in self.__fD):
-            return (self.__fD['MATCH_LENGTH'])
+        if "MATCH_LENGTH" in self.__fD:
+            return self.__fD["MATCH_LENGTH"]
         else:
             return 0
 
     def getAuthRefSimWithGaps(self):
-        if ('AUTH_REF_SEQ_SIM_WITH_GAPS' in self.__fD):
-            return self.__fD['AUTH_REF_SEQ_SIM_WITH_GAPS']
+        if "AUTH_REF_SEQ_SIM_WITH_GAPS" in self.__fD:
+            return self.__fD["AUTH_REF_SEQ_SIM_WITH_GAPS"]
         else:
             return 0.0
 
     def setAuthXyzAlignDetails(self, seqLen=0, alignLen=0, seqSim=0.0, seqSimWithGaps=0.0):
-        self.__fD['MATCH_LENGTH'] = int(seqLen)
-        self.__fD['ALIGN_LENGTH'] = int(alignLen)
-        self.__fD['AUTH_XYZ_SEQ_SIM'] = float(seqSim)
-        self.__fD['AUTH_XYZ_SEQ_SIM_WITH_GAPS'] = float(seqSimWithGaps)
+        self.__fD["MATCH_LENGTH"] = int(seqLen)
+        self.__fD["ALIGN_LENGTH"] = int(alignLen)
+        self.__fD["AUTH_XYZ_SEQ_SIM"] = float(seqSim)
+        self.__fD["AUTH_XYZ_SEQ_SIM_WITH_GAPS"] = float(seqSimWithGaps)
 
-    def setAuthXyzAlignRange(self, seqBegin='', seqEnd=''):
-        """  These can potentially include trailing insertion codes so they are treated as strings.
-        """
-        self.__fD['AUTH_XYZ_SEQ_BEGIN'] = str(seqBegin)
-        self.__fD['AUTH_XYZ_SEQ_END'] = str(seqEnd)
+    def setAuthXyzAlignRange(self, seqBegin="", seqEnd=""):
+        """These can potentially include trailing insertion codes so they are treated as strings."""
+        self.__fD["AUTH_XYZ_SEQ_BEGIN"] = str(seqBegin)
+        self.__fD["AUTH_XYZ_SEQ_END"] = str(seqEnd)
 
     def getAuthXyzAlignRange(self):
-        """  These can potentially include trailing insertion codes so they are treated as strings.
-        """
-        return self.__fD['AUTH_XYZ_SEQ_BEGIN'], self.__fD['AUTH_XYZ_SEQ_END']
+        """These can potentially include trailing insertion codes so they are treated as strings."""
+        return self.__fD["AUTH_XYZ_SEQ_BEGIN"], self.__fD["AUTH_XYZ_SEQ_END"]
 
     def setAuthRefAlignDetails(self, seqLen=0, alignLen=0, seqSim=0.0, seqSimWithGaps=0.0):
-        self.__fD['MATCH_LENGTH'] = int(str(seqLen))
-        self.__fD['ALIGN_LENGTH'] = int(str(alignLen))
-        self.__fD['AUTH_REF_SEQ_SIM'] = float(str(seqSim))
-        self.__fD['AUTH_REF_SEQ_SIM_WITH_GAPS'] = float(str(seqSimWithGaps))
+        self.__fD["MATCH_LENGTH"] = int(str(seqLen))
+        self.__fD["ALIGN_LENGTH"] = int(str(alignLen))
+        self.__fD["AUTH_REF_SEQ_SIM"] = float(str(seqSim))
+        self.__fD["AUTH_REF_SEQ_SIM_WITH_GAPS"] = float(str(seqSimWithGaps))
 
     def setAuthRefAlignRange(self, refMatchBegin=0, refMatchEnd=0):
-        self.__fD['REF_MATCH_BEGIN'] = refMatchBegin
-        self.__fD['REF_MATCH_END'] = refMatchEnd
+        self.__fD["REF_MATCH_BEGIN"] = refMatchBegin
+        self.__fD["REF_MATCH_END"] = refMatchEnd
 
     def clearAlignDetails(self):
-        self.__fD['REF_MATCH_BEGIN'] = 0
-        self.__fD['REF_MATCH_END'] = 0
-        self.__fD['MATCH_LENGTH'] = 0
-        self.__fD['ALIGN_LENGTH'] = 0
-        self.__fD['AUTH_XYZ_SEQ_SIM'] = 0.0
-        self.__fD['AUTH_XYZ_SEQ_SIM_WITH_GAPS'] = 0.0
-        self.__fD['AUTH_REF_SEQ_SIM'] = 0.0
-        self.__fD['AUTH_REF_SEQ_SIM_WITH_GAPS'] = 0.0
+        self.__fD["REF_MATCH_BEGIN"] = 0
+        self.__fD["REF_MATCH_END"] = 0
+        self.__fD["MATCH_LENGTH"] = 0
+        self.__fD["ALIGN_LENGTH"] = 0
+        self.__fD["AUTH_XYZ_SEQ_SIM"] = 0.0
+        self.__fD["AUTH_XYZ_SEQ_SIM_WITH_GAPS"] = 0.0
+        self.__fD["AUTH_REF_SEQ_SIM"] = 0.0
+        self.__fD["AUTH_REF_SEQ_SIM_WITH_GAPS"] = 0.0
 
     def decodeUniProtSourceName(self):
-        """ Return source and strain -
-        """
-        if ('SOURCE_ORGANISM' in self.__fD):
-            return self.__getStrain(sourceName=self.__fD['SOURCE_ORGANISM'])
+        """Return source and strain -"""
+        if "SOURCE_ORGANISM" in self.__fD:
+            return self.__getStrain(sourceName=self.__fD["SOURCE_ORGANISM"])
         else:
-            return '', ''
+            return "", ""
 
     def decodeUniProtSourceOrganism(self, sourceName):
-        """ Return source and strain -
-        """
+        """Return source and strain -"""
         try:
             return self.__getStrain(sourceName=sourceName)
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             pass
-        return '', ''
+        return "", ""
 
-    def __getStrain(self, sourceName=''):
-        myRegex = r'\((.*)\)'
+    def __getStrain(self, sourceName=""):
+        myRegex = r"\((.*)\)"
         try:
-            #self.__lfh.write("+SequenceFeature.decodeUniProtSourceName() decoding %r\n" % sourceName)
+            # self.__lfh.write("+SequenceFeature.decodeUniProtSourceName() decoding %r\n" % sourceName)
             m = re.findall(myRegex, sourceName)
             if len(m) > 0:
-                newSourceName = re.sub(myRegex, '', sourceName)
+                # newSourceName = re.sub(myRegex, "", sourceName)
                 if str(m[0]).startswith("strain"):
                     newStrain = str(m[0])[6:]
                 else:
                     newStrain = str(m[0])
 
-                if ((len(newStrain) < 1) or (newStrain.upper() == 'NONE')):
-                    newStrain == ''
+                if (len(newStrain) < 1) or (newStrain.upper() == "NONE"):
+                    newStrain = ""
                 # return str(newSourceName).strip(),str(newStrain).strip()
                 return str(sourceName).strip(), str(newStrain).strip()
-        except:
-            if (self.__verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__verbose:
                 self.__lfh.write("+SequenceFeature.decodeUniProtSourceName() failed \n")
                 traceback.print_exc(file=self.__lfh)
 
-        return sourceName, ''
+        return sourceName, ""
 
 
 class ResidueLabel(object):
@@ -853,23 +929,23 @@ class ResidueLabel(object):
 
     """
 
-    def __init__(self, verbose=False):
-        self.__versbose = verbose
+    def __init__(self, verbose=False):  # pylint: disable=unused-argument
+        # self.__versbose = verbose
         self.__reset()
 
     def __reset(self):
-        self.__seqType = ''
-        self.__seqInstId = ''
+        self.__seqType = ""
+        self.__seqInstId = ""
         self.__seqAltId = 1
         self.__seqVersion = 1
-        self.__residueCode3 = ''
-        self.__residueLabelIndex = ''
+        self.__residueCode3 = ""
+        self.__residueLabelIndex = ""
         self.__alignIndex = 0
         self.__seqIndex = 0
-        self.__residueType = 'AA'
+        self.__residueType = "AA"
         self.__seqPartId = 1
 
-    def set(self, seqType='ref', seqInstId='', seqAltId=1, seqVersion=1, residueCode3='', residueLabelIndex=0, alignIndex=0, seqIndex=0, residueType='AA', seqPartId=1):
+    def set(self, seqType="ref", seqInstId="", seqAltId=1, seqVersion=1, residueCode3="", residueLabelIndex=0, alignIndex=0, seqIndex=0, residueType="AA", seqPartId=1):
         self.__seqType = seqType
         self.__seqInstId = seqInstId
         self.__seqAltId = int(seqAltId)
@@ -938,7 +1014,7 @@ class ResidueLabel(object):
     def getSequencePartId(self):
         return int(self.__seqPartId)
 
-    def setSequenceVersion(self, seqPartId):
+    def setSequencePartId(self, seqPartId):
         self.__seqPartId = int(seqPartId)
 
     def printIt(self, ofh):
@@ -962,11 +1038,27 @@ class ResidueLabel(object):
         tCode = self.__residueCode3
         if tCode == ".":
             tCode = "-"
-        idS = self.__seqType  + '_' + self.__seqInstId + '_' \
-            +  str(self.__seqAltId) + '_' + str(self.__seqVersion) + \
-            '_' + tCode  + '_' + str(self.__residueLabelIndex) + '_' + \
-            str(self.__seqIndex) + '_' + str(self.__alignIndex) + '_' + str(self.__residueType) +\
-            '_' + str(self.__seqPartId)
+        idS = (
+            self.__seqType
+            + "_"
+            + self.__seqInstId
+            + "_"
+            + str(self.__seqAltId)
+            + "_"
+            + str(self.__seqVersion)
+            + "_"
+            + tCode
+            + "_"
+            + str(self.__residueLabelIndex)
+            + "_"
+            + str(self.__seqIndex)
+            + "_"
+            + str(self.__alignIndex)
+            + "_"
+            + str(self.__residueType)
+            + "_"
+            + str(self.__seqPartId)
+        )
 
         return idS
 
@@ -976,13 +1068,13 @@ class ResidueLabel(object):
         """
         self.__reset()
         try:
-            idL = residueLabelString.split('_')
+            idL = residueLabelString.split("_")
             self.__seqType = idL[0]
             self.__seqInstId = idL[1]
             self.__seqAltId = idL[2]
             self.__seqVersion = idL[3]
             self.__residueCode3 = idL[4]
-            if (self.__residueCode3 == "-"):
+            if self.__residueCode3 == "-":
                 self.__residueCode3 = "."
             self.__residueLabelIndex = idL[5]
             self.__seqIndex = idL[6]
@@ -991,7 +1083,7 @@ class ResidueLabel(object):
             self.__seqPartId = idL[9]
 
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
 
     def getSeq(self):
@@ -1002,16 +1094,16 @@ class ResidueLabel(object):
         Return a dictionary of the elements of the residue label details.
         """
         idD = {}
-        idD['TYPE'] = self.__seqType
-        idD['CHAIN_ID'] = self.__seqInstId
-        idD['ALTERNATIVE'] = self.__seqAltId
-        idD['VERSION'] = self.__seqVersion
-        idD['CODE3'] = self.__residueCode3
-        idD['INDEX_LABEL'] = self.__residueLabelIndex
-        idD['INDEX_ALIGNMENT'] = self.__alignIndex
-        idD['INDEX_SEQUENCE'] = self.__seqIndex
-        idD['RESIDUE_TYPE'] = self.__residueType
-        idD['PART_ID'] = self.__residueType
+        idD["TYPE"] = self.__seqType
+        idD["CHAIN_ID"] = self.__seqInstId
+        idD["ALTERNATIVE"] = self.__seqAltId
+        idD["VERSION"] = self.__seqVersion
+        idD["CODE3"] = self.__residueCode3
+        idD["INDEX_LABEL"] = self.__residueLabelIndex
+        idD["INDEX_ALIGNMENT"] = self.__alignIndex
+        idD["INDEX_SEQUENCE"] = self.__seqIndex
+        idD["RESIDUE_TYPE"] = self.__residueType
+        idD["PART_ID"] = self.__residueType
 
         return idD
 
@@ -1035,14 +1127,14 @@ class SequenceLabel(object):
 
     """
 
-    def __init__(self, verbose=False):
-        self.__versbose = verbose
+    def __init__(self, verbose=False):  # pylint: disable=unused-argument
+        # self.__versbose = verbose
         self.__reset()
-        self.__typeOrder = ['auth', 'xyz', 'ref']
+        self.__typeOrder = ["auth", "xyz", "ref"]
 
     def __reset(self):
-        self.seqType = ''
-        self.seqInstId = ''
+        self.seqType = ""
+        self.seqInstId = ""
         self.seqPartId = 1
         self.seqAltId = 1
         self.seqVersion = 1
@@ -1069,16 +1161,15 @@ class SequenceLabel(object):
             if self.seqType != other.seqType:
                 try:
                     return self.__typeOrder.index(self.seqType) < self.__typeOrder.index(other.seqType)
-                except:
+                except:  # noqa: E722 pylint: disable=bare-except
                     # ignore failures
                     return False
             else:
-                return ((self.seqVersion > other.seqVersion) or
-                        ((self.seqInstId < other.seqInstId) and (self.seqPartId < other.seqPartId) and (self.seqAltId > other.seqAltId)))
+                return (self.seqVersion > other.seqVersion) or ((self.seqInstId < other.seqInstId) and (self.seqPartId < other.seqPartId) and (self.seqAltId > other.seqAltId))
         return NotImplemented
 
-    def set(self, seqType='ref', seqInstId='', seqPartId=1, seqAltId=1, seqVersion=1):
-        self.seqType = seqType if seqType in self.__typeOrder else 'unknown'
+    def set(self, seqType="ref", seqInstId="", seqPartId=1, seqAltId=1, seqVersion=1):
+        self.seqType = seqType if seqType in self.__typeOrder else "unknown"
         self.seqInstId = str(seqInstId)
         self.seqPartId = int(seqPartId)
         self.seqAltId = int(seqAltId)
@@ -1131,7 +1222,7 @@ class SequenceLabel(object):
         Return a string identifier containing sequence label details.
 
         """
-        idS = self.seqType + '_' + self.seqInstId + '_' + str(self.seqPartId) + '_' + str(self.seqAltId) + '_' + str(self.seqVersion)
+        idS = self.seqType + "_" + self.seqInstId + "_" + str(self.seqPartId) + "_" + str(self.seqAltId) + "_" + str(self.seqVersion)
         return idS
 
     def unpack(self, sequenceLabelString):
@@ -1140,14 +1231,14 @@ class SequenceLabel(object):
         """
         self.__reset()
         try:
-            idL = sequenceLabelString.split('_')
+            idL = sequenceLabelString.split("_")
             self.seqType = idL[0]
             self.seqInstId = idL[1]
             self.seqPartId = int(idL[2])
             self.seqAltId = int(idL[3])
             self.seqVersion = int(idL[4])
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
 
     def getDict(self):
@@ -1155,11 +1246,11 @@ class SequenceLabel(object):
         Return a dictionary of the elements of the sequence label details.
         """
         idD = {}
-        idD['TYPE'] = self.seqType
-        idD['INSTANCE_ID'] = self.seqInstId
-        idD['PART_ID'] = self.seqPartId
-        idD['ALTERNATIVE_ID'] = self.seqAltId
-        idD['VERSION'] = self.seqVersion
+        idD["TYPE"] = self.seqType
+        idD["INSTANCE_ID"] = self.seqInstId
+        idD["PART_ID"] = self.seqPartId
+        idD["ALTERNATIVE_ID"] = self.seqAltId
+        idD["VERSION"] = self.seqVersion
         return idD
 
 
@@ -1169,14 +1260,15 @@ class SequenceLabelUtils(object):
     Utilitity functions on sequence labels.
     """
 
-    def __init__(self, verbose=False, log=sys.stderr):
-        self.__verbose = verbose
-        self.__lfh = log
+    def __init__(self, verbose=False, log=sys.stderr):  # pylint: disable=unused-argument
+        # self.__verbose = verbose
+        # self.__lfh = log
+        pass
 
     def getAlignGroupId(self, alignIdList):
         sLabel = SequenceLabel()
         for alignId in alignIdList:
             sLabel.unpack(alignId)
-            (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = sLabel.get()
-            if seqType in ['auth', 'ref']:
+            (seqType, seqInstId, _seqPartId, _seqAltId, _seqVersion) = sLabel.get()
+            if seqType in ["auth", "ref"]:
                 return seqInstId

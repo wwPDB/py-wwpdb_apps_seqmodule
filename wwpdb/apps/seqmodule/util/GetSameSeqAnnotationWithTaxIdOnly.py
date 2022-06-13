@@ -15,24 +15,26 @@ License described at http://creativecommons.org/licenses/by/3.0/.
 
 """
 __docformat__ = "restructuredtext en"
-__author__    = "Zukang Feng"
-__email__     = "zfeng@rcsb.rutgers.edu"
-__license__   = "Creative Commons Attribution 3.0 Unported"
-__version__   = "V0.07"
+__author__ = "Zukang Feng"
+__email__ = "zfeng@rcsb.rutgers.edu"
+__license__ = "Creative Commons Attribution 3.0 Unported"
+__version__ = "V0.07"
 
-import json, os, sys, time, traceback
+import os
+import sys
+import traceback
 from operator import itemgetter
 
 from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.io.file.mmCIFUtil import mmCIFUtil
 from wwpdb.apps.seqmodule.align.AlignmentToolUtils import codeIndex
-from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import fetchNcbiGi,fetchUniProt
+from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import fetchNcbiGi, fetchUniProt
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
+
 
 class GetSameSeqAnnotation(object):
     def __init__(self, siteId=None, sessionPath=None, pathInfo=None, verbose=False, log=sys.stderr):
-        """
-        """
+        """ """
         self.__siteId = siteId
         self.__sessionPath = sessionPath
         self.__pI = pathInfo
@@ -48,16 +50,15 @@ class GetSameSeqAnnotation(object):
         self.__gapSymbol = self.__srd.getGapSymbol()
 
     def setEntitySeq(self, seq="", polyTypeCode="AA"):
-        """ Set three letter sequence from input one letter seq
-        """
+        """Set three letter sequence from input one letter seq"""
         if (not seq) or (len(seq) < 1):
             return
         #
-        (self.__oneLetterCodeSeqList,self.__threeLetterCodeSeqList) = self.__srd.cnv1ListPlus3List(seq, polyTypeCode)
+        (self.__oneLetterCodeSeqList, self.__threeLetterCodeSeqList) = self.__srd.cnv1ListPlus3List(seq, polyTypeCode)
 
     def getSeqAnnotationFromAssignFile(self, retList=None, authPartsTaxIdInfoList=None, includeSelfRef=False):
-        """ retList[][0]: depID, retList[][1]: entityID, retList[][2]: pdbID, retList[][3]: AnnInitial, retList[][4]: statusCode,
-            retList[][5]: date_begin_processing
+        """retList[][0]: depID, retList[][1]: entityID, retList[][2]: pdbID, retList[][3]: AnnInitial, retList[][4]: statusCode,
+        retList[][5]: date_begin_processing
         """
         if (not retList) or (not authPartsTaxIdInfoList):
             return {}
@@ -68,8 +69,9 @@ class GetSameSeqAnnotation(object):
         #
         assignFileList = []
         for entityTup in retList:
-            assignFile = self.__pI.getFilePath(dataSetId=entityTup[0], wfInstanceId=None, contentType="seq-assign", formatType="pdbx", \
-                                               fileSource="archive", versionId="latest", partNumber="1")
+            assignFile = self.__pI.getFilePath(
+                dataSetId=entityTup[0], wfInstanceId=None, contentType="seq-assign", formatType="pdbx", fileSource="archive", versionId="latest", partNumber="1"
+            )
             if (not assignFile) or (not os.access(assignFile, os.F_OK)):
                 continue
             #
@@ -94,19 +96,18 @@ class GetSameSeqAnnotation(object):
         return {}
 
     def testGetSeqAnnotationFromAssignFile(self, assignFile, entityId, authPartsTaxIdInfoList):
-        """
-        """
+        """ """
         try:
             cifObj = mmCIFUtil(filePath=assignFile)
-            seqAnntationInfoMap,partsTaxIdInfo = self.__getEntityDetailsMap(cifObj, entityId, authPartsTaxIdInfoList)
+            seqAnntationInfoMap, partsTaxIdInfo = self.__getEntityDetailsMap(cifObj, entityId, authPartsTaxIdInfoList)
             self.__lfh.write("seqAnntationInfoMap=%d\n" % len(seqAnntationInfoMap))
             self.__lfh.write("partsTaxIdInfo=%d\n" % len(partsTaxIdInfo))
-            for partId,infoD in seqAnntationInfoMap.items():
+            for partId, infoD in seqAnntationInfoMap.items():
                 self.__lfh.write("seqAnntationInfoMap.partId=%r\n" % partId)
                 self.__lfh.write("seqAnntationInfoMap.infoD=%r\n" % infoD)
             #
             alignmentMap = self.__getAlignmentMap(cifObj, entityId, partsTaxIdInfo)
-            for partId,alignmentTup in alignmentMap.items():
+            for partId, alignmentTup in alignmentMap.items():
                 self.__lfh.write("alignmentMap.partId=%r\n" % partId)
                 self.__lfh.write("alignmentMap.alignment:\n")
                 for alignTup in alignmentTup[0]:
@@ -119,32 +120,31 @@ class GetSameSeqAnnotation(object):
                 #
             #
             dbRefMap = self.__getDbRefMap(cifObj, entityId)
-            for partId,infoD in dbRefMap.items():
+            for partId, infoD in dbRefMap.items():
                 self.__lfh.write("dbRefMap.partId=%r\n" % partId)
                 self.__lfh.write("dbRefMap.partIdinfoD=%r\n" % infoD)
             #
-        except:
-            if (self.__verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__verbose:
                 traceback.print_exc(file=self.__lfh)
             #
         #
 
     def __getSeqAnnotationFromAssignFile(self, entityInfo, authPartsTaxIdInfoList, includeSelfRef):
-        """
-        """
+        """ """
         try:
             cifObj = mmCIFUtil(filePath=entityInfo[6])
-            seqAnntationInfoMap,partsTaxIdInfo = self.__getEntityDetailsMap(cifObj, entityInfo[1], authPartsTaxIdInfoList)
+            seqAnntationInfoMap, partsTaxIdInfo = self.__getEntityDetailsMap(cifObj, entityInfo[1], authPartsTaxIdInfoList)
             if not seqAnntationInfoMap:
                 return seqAnntationInfoMap
             #
             alignmentMap = self.__getAlignmentMap(cifObj, entityInfo[1], partsTaxIdInfo)
-#           if not alignmentMap:
-#               return {}
-#           #
+            #           if not alignmentMap:
+            #               return {}
+            #           #
             dbRefMap = self.__getDbRefMap(cifObj, entityInfo[1])
             selfRefmap = self.__getSelfRefmap(cifObj, entityInfo[1], includeSelfRef)
-            for partId,infoD in seqAnntationInfoMap.items():
+            for partId, infoD in seqAnntationInfoMap.items():
                 if partId in selfRefmap:
                     infoD["selfref"] = True
                     continue
@@ -152,7 +152,7 @@ class GetSameSeqAnnotation(object):
                 if partId not in dbRefMap:
                     return {}
                 #
-                for k,v in dbRefMap[partId].items():
+                for k, v in dbRefMap[partId].items():
                     infoD[k] = v
                 #
                 if partId not in alignmentMap:
@@ -171,30 +171,39 @@ class GetSameSeqAnnotation(object):
                 infoD["REF_ENTRY_ANN"] = entityInfo[3]
             #
             return seqAnntationInfoMap
-        except:
-            if (self.__verbose):
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__verbose:
                 traceback.print_exc(file=self.__lfh)
             #
         #
         return {}
 
     def __getEntityDetailsMap(self, cifObj, entityId, authPartsTaxIdInfoList):
-        """
-        """
-        itemList = ( ( "seq_part_id", "SEQ_PART_ID" ), ( "seq_part_beg", "SEQ_NUM_BEG" ), ( "seq_part_end", "SEQ_NUM_END" ), \
-                     ( "seq_part_type", "SEQ_PART_TYPE" ), ( "entity_description", "name" ), ( "entity_synonyms", "synonyms" ), \
-                     ( "gene_name", "gene" ), ( "taxonomy_id", "taxonomy_id" ), ( "source_scientific_name", "source_scientific" ), \
-                     ( "source_strain", "strain" ), ( "source_common_name", "source_common" ), ( "entity_enzyme_class", "ec" ), \
-                     ( "entity_fragment_details", "entity_fragment_details" ) ) #variant
+        """ """
+        itemList = (
+            ("seq_part_id", "SEQ_PART_ID"),
+            ("seq_part_beg", "SEQ_NUM_BEG"),
+            ("seq_part_end", "SEQ_NUM_END"),
+            ("seq_part_type", "SEQ_PART_TYPE"),
+            ("entity_description", "name"),
+            ("entity_synonyms", "synonyms"),
+            ("gene_name", "gene"),
+            ("taxonomy_id", "taxonomy_id"),
+            ("source_scientific_name", "source_scientific"),
+            ("source_strain", "strain"),
+            ("source_common_name", "source_common"),
+            ("entity_enzyme_class", "ec"),
+            ("entity_fragment_details", "entity_fragment_details"),
+        )  # variant
         #
-        partItemList = ( "SEQ_PART_ID", "SEQ_NUM_BEG", "SEQ_NUM_END", "SEQ_PART_TYPE", "taxonomy_id" )
+        partItemList = ("SEQ_PART_ID", "SEQ_NUM_BEG", "SEQ_NUM_END", "SEQ_PART_TYPE", "taxonomy_id")
         #
         annInfoMap = {}
         partsTaxIdInfo = []
         #
         retList = cifObj.GetValue("pdbx_seqtool_entity_details")
         for retDic in retList:
-            if (not "entity_id" in retDic) or (retDic["entity_id"] != entityId):
+            if ("entity_id" not in retDic) or (retDic["entity_id"] != entityId):
                 continue
             #
             infoDic = {}
@@ -210,7 +219,7 @@ class GetSameSeqAnnotation(object):
             #
             partTaxIdTup = []
             for partItem in partItemList:
-                if (not partItem in infoDic) or (not infoDic[partItem]):
+                if (partItem not in infoDic) or (not infoDic[partItem]):
                     continue
                 #
                 partTaxIdTup.append(infoDic[partItem])
@@ -220,19 +229,21 @@ class GetSameSeqAnnotation(object):
             #
         #
         if (len(annInfoMap) != len(partsTaxIdInfo)) or (len(partsTaxIdInfo) != len(authPartsTaxIdInfoList)):
-            return {},[]
+            return {}, []
         #
         for i in range(0, len(partsTaxIdInfo)):
-            if (str(partsTaxIdInfo[i][1]) != str(authPartsTaxIdInfoList[i][1])) or (str(partsTaxIdInfo[i][2]) != str(authPartsTaxIdInfoList[i][2])) or \
-               (str(partsTaxIdInfo[i][4]) != str(authPartsTaxIdInfoList[i][4])):
-                return {},[]
+            if (
+                (str(partsTaxIdInfo[i][1]) != str(authPartsTaxIdInfoList[i][1]))
+                or (str(partsTaxIdInfo[i][2]) != str(authPartsTaxIdInfoList[i][2]))
+                or (str(partsTaxIdInfo[i][4]) != str(authPartsTaxIdInfoList[i][4]))
+            ):
+                return {}, []
             #
         #
-        return annInfoMap,partsTaxIdInfo
+        return annInfoMap, partsTaxIdInfo
 
     def __getAlignmentMap(self, cifObj, entityId, partsTaxIdInfo):
-        """
-        """
+        """ """
         alignList = []
         threeLetterSeqList = []
         numMap = {}
@@ -244,7 +255,7 @@ class GetSameSeqAnnotation(object):
         #
         retList = cifObj.GetValue("pdbx_seqtool_mapping_ref")
         for retDic in retList:
-            if (not "entity_id" in retDic) or (retDic["entity_id"] != entityId):
+            if ("entity_id" not in retDic) or (retDic["entity_id"] != entityId):
                 continue
             #
             # alignTup[0]: entity_mon_id - three letter code
@@ -257,7 +268,7 @@ class GetSameSeqAnnotation(object):
             # alignTup[7]: ref_mon_id - one letter code
             #
             alignTup = []
-            for item in ( "entity_mon_id", "entity_seq_num", "ref_mon_id", "ref_mon_num", "entity_part_id" ):
+            for item in ("entity_mon_id", "entity_seq_num", "ref_mon_id", "ref_mon_num", "entity_part_id"):
                 if (item in retDic) and retDic[item]:
                     alignTup.append(retDic[item])
                 else:
@@ -290,7 +301,7 @@ class GetSameSeqAnnotation(object):
             alignList.append(alignTup)
             threeLetterSeqList.append((alignTup[0], alignTup[6]))
         #
-        if (not alignList) or (seq_count  != len(self.__threeLetterCodeSeqList)):
+        if (not alignList) or (seq_count != len(self.__threeLetterCodeSeqList)):
             return {}
         #
         for partTup in partsTaxIdInfo:
@@ -310,11 +321,17 @@ class GetSameSeqAnnotation(object):
         #
         retList = cifObj.GetValue("pdbx_seqtool_mapping_comment")
         for retDic in retList:
-            if (not "entity_id" in retDic) or (retDic["entity_id"] != entityId):
+            if ("entity_id" not in retDic) or (retDic["entity_id"] != entityId):
                 continue
             #
-            if (not "entity_mon_id" in retDic) or (not retDic["entity_mon_id"]) or (not "entity_seq_num" in retDic) or \
-               (not retDic["entity_seq_num"]) or (not "comment" in retDic) or (not retDic["comment"]):
+            if (
+                ("entity_mon_id" not in retDic)
+                or (not retDic["entity_mon_id"])
+                or ("entity_seq_num" not in retDic)
+                or (not retDic["entity_seq_num"])
+                or ("comment" not in retDic)
+                or (not retDic["comment"])
+            ):
                 continue
             #
             if (retDic["entity_mon_id"] + "_" + retDic["entity_seq_num"]) in authMap:
@@ -325,11 +342,17 @@ class GetSameSeqAnnotation(object):
         #
         retList = cifObj.GetValue("pdbx_seqtool_ref_deletions")
         for retDic in retList:
-            if (not "entity_id" in retDic) or (retDic["entity_id"] != entityId):
+            if ("entity_id" not in retDic) or (retDic["entity_id"] != entityId):
                 continue
             #
-            if (not "ref_mon_id" in retDic) or (not retDic["ref_mon_id"]) or (not "ref_mon_num" in retDic) or \
-               (not retDic["ref_mon_num"]) or (not "part_id" in retDic) or (not retDic["part_id"]):
+            if (
+                ("ref_mon_id" not in retDic)
+                or (not retDic["ref_mon_id"])
+                or ("ref_mon_num" not in retDic)
+                or (not retDic["ref_mon_num"])
+                or ("part_id" not in retDic)
+                or (not retDic["part_id"])
+            ):
                 continue
             #
             if (retDic["ref_mon_id"] + "_" + retDic["ref_mon_num"] + "_" + retDic["part_id"]) in refMap:
@@ -341,17 +364,22 @@ class GetSameSeqAnnotation(object):
         return self.__getAuthRefAlignmentMap(alignList, partsTaxIdInfo)
 
     def __getDbRefMap(self, cifObj, entityId):
-        """
-        """
-        itemList = ( ( "db_name", "db_name" ), ( "db_code", "db_code" ), ( "db_accession", "db_accession" ), \
-                     ( "db_isoform", "db_isoform" ), ( "match_begin", "hitFrom" ), ( "match_end", "hitTo" ) )
+        """ """
+        itemList = (
+            ("db_name", "db_name"),
+            ("db_code", "db_code"),
+            ("db_accession", "db_accession"),
+            ("db_isoform", "db_isoform"),
+            ("match_begin", "hitFrom"),
+            ("match_end", "hitTo"),
+        )
         #
         unpIdList = []
         gbIdList = []
         dbRefMap = {}
         retList = cifObj.GetValue("pdbx_seqtool_db_ref")
         for retDic in retList:
-            if (not "entity_id" in retDic) or (retDic["entity_id"] != entityId) or (not "entity_part_id" in retDic) or (not retDic["entity_part_id"]):
+            if ("entity_id" not in retDic) or (retDic["entity_id"] != entityId) or ("entity_part_id" not in retDic) or (not retDic["entity_part_id"]):
                 continue
             #
             infoDic = {}
@@ -366,18 +394,18 @@ class GetSameSeqAnnotation(object):
                 if infoDic["db_name"] == "UNP":
                     try:
                         start = int(str(infoDic["hitFrom"]))
-                    except:
+                    except:  # noqa: E722 pylint: disable=bare-except
                         start = 0
                     #
                     try:
                         end = int(str(infoDic["hitTo"]))
-                    except:
+                    except:  # noqa: E722 pylint: disable=bare-except
                         end = 0
                     #
                     if ("db_isoform" in infoDic) and infoDic["db_isoform"]:
-                        unpIdList.append( ( str(infoDic["db_isoform"]), start, end ) )
+                        unpIdList.append((str(infoDic["db_isoform"]), start, end))
                     elif ("db_accession" in infoDic) and infoDic["db_accession"]:
-                        unpIdList.append( ( str(infoDic["db_accession"]), start, end ) )
+                        unpIdList.append((str(infoDic["db_accession"]), start, end))
                     #
                 elif infoDic["db_name"] == "GB":
                     if ("db_accession" in infoDic) and infoDic["db_accession"]:
@@ -401,18 +429,18 @@ class GetSameSeqAnnotation(object):
                 gbD[idCode] = fetchNcbiGi(idCode, siteId=self.__siteId)
             #
         #
-        for partId,infoDic in dbRefMap.items():
+        for _partId, infoDic in dbRefMap.items():
             dbDic = {}
             if "db_name" in infoDic:
                 if infoDic["db_name"] == "UNP":
                     try:
                         start = int(str(infoDic["hitFrom"]))
-                    except:
+                    except:  # noqa: E722 pylint: disable=bare-except
                         start = 0
                     #
                     try:
                         end = int(str(infoDic["hitTo"]))
-                    except:
+                    except:  # noqa: E722 pylint: disable=bare-except
                         end = 0
                     #
                     if ("db_isoform" in infoDic) and infoDic["db_isoform"]:
@@ -436,8 +464,8 @@ class GetSameSeqAnnotation(object):
                 return {}
             #
             # Remove merging "ec" number
-            #for item in ( 'db_isoform_description', 'db_description', 'ec', 'db_description', 'comments', 'keyword' ):
-            for item in ( "db_isoform_description", "db_description", "comments", "keyword" ):
+            # for item in ( 'db_isoform_description', 'db_description', 'ec', 'db_description', 'comments', 'keyword' ):
+            for item in ("db_isoform_description", "db_description", "comments", "keyword"):
                 if item in dbDic:
                     infoDic[item] = dbDic[item]
                 else:
@@ -453,8 +481,7 @@ class GetSameSeqAnnotation(object):
         return dbRefMap
 
     def __getSelfRefmap(self, cifObj, entityId, includeSelfRef):
-        """
-        """
+        """ """
         selfRefmap = {}
         #
         if not includeSelfRef:
@@ -462,7 +489,7 @@ class GetSameSeqAnnotation(object):
         #
         retList = cifObj.GetValue("pdbx_seqtool_self_ref")
         for retDic in retList:
-            if (not "entity_id" in retDic) or (retDic["entity_id"] != entityId) or (not "entity_part_id" in retDic) or (not retDic["entity_part_id"]):
+            if ("entity_id" not in retDic) or (retDic["entity_id"] != entityId) or ("entity_part_id" not in retDic) or (not retDic["entity_part_id"]):
                 continue
             #
             selfRefmap[retDic["entity_part_id"]] = True
@@ -473,11 +500,9 @@ class GetSameSeqAnnotation(object):
         return selfRefmap
 
     def __getAuthRefAlignmentMap(self, matchList, partsTaxIdInfo):
-        """
-        """
+        """ """
         alignmentMap = {}
         for partTup in partsTaxIdInfo:
-            alignIdx = 0
             authIdx = -1
             refIdx = -1
             alignLength = 0
@@ -504,21 +529,20 @@ class GetSameSeqAnnotation(object):
                     if matchTup[2] != self.__gapSymbol:
                         refIdx += 1
                         currRefIdx = refIdx
-                        sTup3L.append( ( matchTup[2], matchTup[3], matchTup[5], currRefIdx + 1, matchTup[7] ) )
+                        sTup3L.append((matchTup[2], matchTup[3], matchTup[5], currRefIdx + 1, matchTup[7]))
                     #
-                    alignTup = [ codeIndex(currAuthIdx, matchTup[5]), codeIndex(currRefIdx, matchTup[5]) ]
+                    alignTup = [codeIndex(currAuthIdx, matchTup[5]), codeIndex(currRefIdx, matchTup[5])]
                 else:
-                    alignTup = [ currAuthIdx, -1 ]
+                    alignTup = [currAuthIdx, -1]
                 #
                 alignmentList.append(alignTup)
             #
-            alignmentMap[partTup[0]] = ( alignmentList, ( alignLength, float(numMatch)/float(alignLength), float(numMatchGaps)/float(alignLength) ), sTup3L )
+            alignmentMap[partTup[0]] = (alignmentList, (alignLength, float(numMatch) / float(alignLength), float(numMatchGaps) / float(alignLength)), sTup3L)
         #
         return alignmentMap
 
     def __checkSelfRefSeq(self, cifObj, entityId):
-        """
-        """
+        """ """
         threeLetterSeqList = []
         auth_asym_id = ""
         #
@@ -526,7 +550,7 @@ class GetSameSeqAnnotation(object):
         #
         retList = cifObj.GetValue("pdbx_seqtool_mapping_xyz")
         for retDic in retList:
-            if (not "entity_id" in retDic) or (retDic["entity_id"] != entityId) or (not "entity_mon_id" in retDic) or (not "auth_asym_id" in retDic):
+            if ("entity_id" not in retDic) or (retDic["entity_id"] != entityId) or ("entity_mon_id" not in retDic) or ("auth_asym_id" not in retDic):
                 continue
             #
             if not auth_asym_id:
@@ -549,17 +573,23 @@ class GetSameSeqAnnotation(object):
         #
         return True
 
+
+def __mymain():
+    # from wwpdb.utils.config.ConfigInfo import ConfigInfo
+    # from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest
+
+    #
+    # siteId = os.getenv("WWPDB_SITE_ID")
+    # cI = ConfigInfo(siteId)
+    #
+    # myReqObj = SeqModInputRequest({}, verbose=True, log=sys.stderr)
+    # myReqObj.setValue("TopSessionPath", cI.get("SITE_WEB_APPS_TOP_SESSIONS_PATH"))
+    # myReqObj.setValue("TopPath", cI.get("SITE_WEB_APPS_TOP_PATH"))
+    # myReqObj.setValue("WWPDB_SITE_ID", siteId)
+    # myReqObj.setValue("sessionid", "447a9d00e63720c7df7ca0bf755f004dec2acb44")
+    annObj = GetSameSeqAnnotation(verbose=True, log=sys.stderr)
+    annObj.testGetSeqAnnotationFromAssignFile(sys.argv[1], sys.argv[2], [sys.argv[3]])
+
+
 if __name__ == "__main__":
-    from wwpdb.utils.config.ConfigInfo import ConfigInfo
-    from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest
-    #
-    siteId = os.getenv("WWPDB_SITE_ID")
-    cI = ConfigInfo(siteId)
-    #
-    myReqObj = SeqModInputRequest({}, verbose=True, log=sys.stderr)
-    myReqObj.setValue("TopSessionPath", cI.get('SITE_WEB_APPS_TOP_SESSIONS_PATH'))
-    myReqObj.setValue("TopPath", cI.get('SITE_WEB_APPS_TOP_PATH'))
-    myReqObj.setValue("WWPDB_SITE_ID",  siteId)
-    myReqObj.setValue("sessionid", "447a9d00e63720c7df7ca0bf755f004dec2acb44")
-    annObj = GetSameSeqAnnotation(reqObj=myReqObj, verbose = True, log = sys.stderr)
-    annObj.testGetSeqAnnotationFromAssignFile(sys.argv[1], sys.argv[2], [ sys.argv[3] ] )
+    __mymain()

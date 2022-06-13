@@ -28,17 +28,19 @@ __email__ = "jwest@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.09"
 
-import os, sys
+import sys
 from wwpdb.utils.seqdb_v2.FetchNcbiXml import FetchFullNcbiXml, FetchNcbiXml
 from wwpdb.utils.seqdb_v2.FetchUnpXml import FetchUnpXml
 from wwpdb.utils.config.ConfigInfo import ConfigInfo
 
-def fetchUniProt(idTupleList=[], filePath=None, verbose=False, log=sys.stderr):
-    """
-    """
+
+def fetchUniProt(idTupleList=None, filePath=None, verbose=False, log=sys.stderr):
+    """ """
+    if idTupleList is None:
+        idTupleList = []
     d = {}
     if not idTupleList:
-       return d
+        return d
     #
     idCodeList = []
     for idTuple in idTupleList:
@@ -47,7 +49,7 @@ def fetchUniProt(idTupleList=[], filePath=None, verbose=False, log=sys.stderr):
         #
     #
     if not idCodeList:
-       return d
+        return d
     #
     fobj = FetchUnpXml(verbose=verbose, log=log)
     ok = fobj.fetchList(idCodeList)
@@ -77,7 +79,7 @@ def fetchUniProt(idTupleList=[], filePath=None, verbose=False, log=sys.stderr):
                         vd = retD
                         try:
                             diff = (int(idTuple[1]) - int(retD["begin"])) + (int(retD["end"]) - int(idTuple[2]))
-                        except:
+                        except:  # noqa: E722 pylint: disable=bare-except
                             pass
                         #
                     else:
@@ -87,7 +89,7 @@ def fetchUniProt(idTupleList=[], filePath=None, verbose=False, log=sys.stderr):
                                 diff = diff1
                                 vd = retD
                             #
-                        except:
+                        except:  # noqa: E722 pylint: disable=bare-except
                             pass
                         #
                     #
@@ -97,23 +99,23 @@ def fetchUniProt(idTupleList=[], filePath=None, verbose=False, log=sys.stderr):
                 #
             #
             for k in vd.keys():
-                if k in ['ec', 'comments', 'synonyms']:
+                if k in ["ec", "comments", "synonyms"]:
                     v = vd[k]
                     oL = []
-                    tL = v.split(',')
+                    tL = v.split(",")
                     for it in tL:
                         sV = str(it).strip()
-                        if k == 'ec':
-                            sVL = sV.split('.')
+                        if k == "ec":
+                            sVL = sV.split(".")
                             oL1 = []
                             for s1 in sVL:
-                                if str(s1).startswith('n'):
-                                    oL1.append('-')
+                                if str(s1).startswith("n"):
+                                    oL1.append("-")
                                 else:
                                     oL1.append(s1)
                                 #
                             #
-                            sV = '.'.join(oL1)
+                            sV = ".".join(oL1)
                         #
                         if sV in oL:
                             continue
@@ -121,7 +123,7 @@ def fetchUniProt(idTupleList=[], filePath=None, verbose=False, log=sys.stderr):
                             oL.append(sV)
                         #
                     #
-                    vd[k] = ','.join(oL)
+                    vd[k] = ",".join(oL)
                 #
             #
             d[idTuple] = vd
@@ -129,24 +131,24 @@ def fetchUniProt(idTupleList=[], filePath=None, verbose=False, log=sys.stderr):
     #
     return d
 
+
 def fetchNcbiGi(giIdCode, xmlPath=None, siteId=None):
-    """
-    """
+    """ """
     cI = ConfigInfo(siteId)
-    apikey = cI.get('NCBI_API_KEY', None)  
-    fetchobj = FetchFullNcbiXml(giIdCode, 'Nucleotide', apikey=apikey)
+    apikey = cI.get("NCBI_API_KEY", None)
+    fetchobj = FetchFullNcbiXml(giIdCode, "Nucleotide", apikey=apikey)
     if xmlPath is not None:
         fetchobj.WriteNcbiXml(filename=xmlPath)
     #
     return fetchobj.ParseNcbiXmlData()
 
+
 def fetchNcbiSummary(giIdCode, xmlPath=None, siteId=None):
-    """
-    """
+    """ """
     cI = ConfigInfo(siteId)
-    apikey = cI.get('NCBI_API_KEY', None)  
-    fetchobj = FetchNcbiXml(giIdCode, 'Nucleotide', apikey=apikey)
-    if (xmlPath is not None):
+    apikey = cI.get("NCBI_API_KEY", None)
+    fetchobj = FetchNcbiXml(giIdCode, "Nucleotide", apikey=apikey)
+    if xmlPath is not None:
         fetchobj.WriteNcbiXml(filename=xmlPath)
     #
     return fetchobj.ParseNcbiXmlData()

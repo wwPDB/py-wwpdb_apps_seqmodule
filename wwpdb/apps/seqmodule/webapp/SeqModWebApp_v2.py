@@ -76,8 +76,11 @@ try:
 except ImportError:
     import pickle as pickle
 #
-import filecmp, os, shutil, string, sys, time, traceback, types
-from json import loads, dumps
+import os
+import shutil
+import sys
+import time
+import traceback
 
 from wwpdb.utils.config.ConfigInfo import ConfigInfo
 
@@ -110,11 +113,9 @@ from wwpdb.io.locator.PathInfo import PathInfo
 
 
 class SeqModWebApp(object):
-    """Handle request and response object processing for sequence editor tool application.
+    """Handle request and response object processing for sequence editor tool application."""
 
-    """
-
-    def __init__(self, parameterDict={}, verbose=False, log=sys.stderr, siteId="WWPDB_DEPLOY_TEST"):
+    def __init__(self, parameterDict=None, verbose=False, log=sys.stderr, siteId="WWPDB_DEPLOY_TEST"):
         """
         Create an instance of `SeqModWebApp` to manage a sequence editor web request.
 
@@ -124,6 +125,8 @@ class SeqModWebApp(object):
          :param `log`:      stream for logging.
 
         """
+        if parameterDict is None:
+            parameterDict = {}
         self.__verbose = verbose
         self.__lfh = log
         self.__debug = False
@@ -131,19 +134,19 @@ class SeqModWebApp(object):
         self.__cI = ConfigInfo(self.__siteId)
         #
         # the <site-specificit...>/webapps  directory path --  containing htdocs & fcgi subdirs
-        self.__topPath = self.__cI.get('SITE_WEB_APPS_TOP_PATH')
+        self.__topPath = self.__cI.get("SITE_WEB_APPS_TOP_PATH")
 
         # The path containing the sessions directory (i.e. <top_sessions_path>/sessions )
-        self.__topSessionPath = self.__cI.get('SITE_WEB_APPS_TOP_SESSIONS_PATH')
+        self.__topSessionPath = self.__cI.get("SITE_WEB_APPS_TOP_SESSIONS_PATH")
 
         if isinstance(parameterDict, dict):
             self.__myParameterDict = parameterDict
         else:
             self.__myParameterDict = {}
 
-        if (self.__debug):
+        if self.__debug:
             self.__lfh.write("+SeqModWebApp.__init() - SERVICE REQUEST STARTING with input parameter dictionary \n")
-            self.__lfh.write("%s" % (''.join(self.__dump())))
+            self.__lfh.write("%s" % ("".join(self.__dump())))
 
         self.__reqObj = SeqModInputRequest(self.__myParameterDict, verbose=self.__verbose, log=self.__lfh)
         self.__templatePath = os.path.join(self.__topPath, "htdocs", "seqmodule")
@@ -155,9 +158,9 @@ class SeqModWebApp(object):
         #
         #
         # Example data path details -- for internally stored example data ---
-        #self.__examplePath      =os.path.join(self.__topPath,"scripts","wwpdb","apps","seqmodule","examples")
-        #self.__examplePathData  =os.path.join(self.__examplePath,"rcsb-data")
-        #self.__examplePathSeq   =os.path.join(self.__examplePath,"rcsb-sequence")
+        # self.__examplePath      =os.path.join(self.__topPath,"scripts","wwpdb","apps","seqmodule","examples")
+        # self.__examplePathData  =os.path.join(self.__examplePath,"rcsb-data")
+        # self.__examplePathSeq   =os.path.join(self.__examplePath,"rcsb-sequence")
         #
         # RCSB Specific paths
         #
@@ -179,7 +182,7 @@ class SeqModWebApp(object):
 
         """
         #
-        if (self.__verbose):
+        if self.__verbose:
             rqp = self.__reqObj.getRequestPath()
             self.__lfh.write("\n#########################################################################################################\n")
             self.__lfh.write("+SeqModWebApp.__doOP() - Beginning request:  %s\n" % rqp)
@@ -188,10 +191,10 @@ class SeqModWebApp(object):
         stw = SeqModWebAppWorker(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
         # doOp returns a response content object --
         rC = stw.doOp()
-        if (self.__debug):
+        if self.__debug:
             self.__lfh.write("+SeqModWebApp.doOp() working method completed with response format %s\n" % self.__reqObj.getReturnFormat())
             if rC is not None:
-                self.__lfh.write("%s" % (''.join(rC.dump())))
+                self.__lfh.write("%s" % ("".join(rC.dump())))
             else:
                 self.__lfh.write("+SeqModWebApp.doOp() return object is empty\n")
 
@@ -200,10 +203,10 @@ class SeqModWebApp(object):
 
     def __dump(self):
         """Utility method to format the contents of the internal parameter dictionary
-           containing data from the input web request.
+        containing data from the input web request.
 
-           :returns:
-               ``list`` of formatted text lines
+        :returns:
+            ``list`` of formatted text lines
 
         """
         retL = []
@@ -217,74 +220,74 @@ class SeqModWebApp(object):
 
 
 class SeqModWebAppWorker(object):
-
     def __init__(self, reqObj=None, verbose=False, log=sys.stderr):
         """
-         Worker methods for the sequence editor application
+        Worker methods for the sequence editor application
 
-         Performs URL - application mapping and application launching
-         for sequence editor tool.
+        Performs URL - application mapping and application launching
+        for sequence editor tool.
 
-         All operations can be driven from this interface which can
-         supplied with control information from web application request
-         or from a testing application.
+        All operations can be driven from this interface which can
+        supplied with control information from web application request
+        or from a testing application.
 
 
         """
         self.__verbose = verbose
         self.__lfh = log
-        self.__reqObj = reqObj
-        self.__siteId  = str(self.__reqObj.getValue("WWPDB_SITE_ID"))
-        self.__doWfTracking = True
         #
-        self.__appPathD = {'/service/environment/dump': '_dumpOp',
-                           '/service/sequence_editor/store_alignment/start': '_storeAlignmentStartOp',
-                           '/service/sequence_editor/store_alignment/check': '_storeAlignmentCheckOp',
-                           '/service/sequence_editor/load_summary': '_loadSummaryOp',
-                           '/service/sequence_editor/reload_summary': '_reloadSummaryOp',
-                           '/service/sequence_editor/save': '_saveOp',
-                           '/service/sequence_editor/close_unfinished': '_closeUnfinishedOp',
-                           '/service/sequence_editor/close_completed': '_closeCompletedOp',
-                           '/service/sequence_editor/save_partial_assignment': '_savePartialAssignmentOp',
-                           '/service/sequence_editor/remove_partial_assignment': '_removePartialAssignmentOp',
-                           '/service/sequence_editor/new_session': '_newSessionOp',
-                           '/service/sequence_editor/new_session/wf': '_newSessionWfOp',
-                           '/service/sequence_editor/edit': '_editOp',
-                           '/service/sequence_editor/global_edit': '_globalEditOp',
-                           '/service/sequence_editor/global_auth_seq_edit': '_globalAuthSeqEditOp',
-                           '/service/sequence_editor/global_edit_menu': '_globalEditMenuOp',
-                           '/service/sequence_editor/move': '_moveEditOp',
-                           '/service/sequence_editor/undo_edit': '_undoEditOp',
-                           '/service/sequence_editor/delete': '_deleteOp',
-                           '/service/sequence_editor/molviewer/jmol': '_launchJmolViewerOp',
-                           '/service/sequence_editor/molviewer/astexviewer': '_launchAstexViewerOp',
-                           #
-                           '/service/sequence_editor/load_data/start/rcsb': '_loadDataStartOp',
-                           '/service/sequence_editor/load_data/check/rcsb': '_loadDataCheckOp',
-                           '/service/sequence_editor/load_data/check': '_loadDataCheckOp',
-                           #
-                           '/service/sequence_editor/load_data/start/wf': '_loadDataWfStartOp',
-                           '/service/sequence_editor/load_data/check/wf': '_loadDataCheckOp',
-                           #
-                           '/service/sequence_editor/rerun_blast/start': '_reRunBlastOp',
-                           #
-                           '/service/sequence_editor/load_form/taxonomy': '_loadTaxonomyFormOp',
-                           '/service/sequence_editor/load_form/seqdbref': '_loadSeqDbRefFormOp',
-                           '/service/sequence_editor/load_form/entityreview': '_loadEntitySourceDetailsFormOp',
-
-                           '/service/sequence_editor/respond_form/taxonomy': '_respondTaxonomyFormOp',
-                           '/service/sequence_editor/respond_form/seqdbref': '_respondSeqDbRefFormOp',
-                           '/service/sequence_editor/respond_form/entityreview': '_respondEntitySourceDetailsFormOp',
-
-                           '/service/sequence_editor/download': '_respondDownloadOp',
-
-                           '/service/sequence_editor/reload_data/start': '_reloadDataStartOp',
-                           '/service/sequence_editor/reload_data/check': '_loadDataCheckOp',
-                           #
-                           '/service/sequence_editor/align_view': '_alignViewOp',
-                           '/service/sequence_editor/align_view_frame': '_alignViewFrameOp',
-                           '/service/sequence_editor/polymer_linkage_table': '_getPolymerLinkageTableOp'
-                           }
+        self.__reqObj = reqObj
+        self.__siteId = str(self.__reqObj.getValue("WWPDB_SITE_ID"))
+        self.__doWfTracking = True
+        self.__sObj = None
+        self.__sessionPath = None
+        #
+        self.__appPathD = {
+            "/service/environment/dump": "_dumpOp",
+            "/service/sequence_editor/store_alignment/start": "_storeAlignmentStartOp",
+            "/service/sequence_editor/store_alignment/check": "_storeAlignmentCheckOp",
+            "/service/sequence_editor/load_summary": "_loadSummaryOp",
+            "/service/sequence_editor/reload_summary": "_reloadSummaryOp",
+            "/service/sequence_editor/save": "_saveOp",
+            "/service/sequence_editor/close_unfinished": "_closeUnfinishedOp",
+            "/service/sequence_editor/close_completed": "_closeCompletedOp",
+            "/service/sequence_editor/save_partial_assignment": "_savePartialAssignmentOp",
+            "/service/sequence_editor/remove_partial_assignment": "_removePartialAssignmentOp",
+            "/service/sequence_editor/new_session": "_newSessionOp",
+            "/service/sequence_editor/new_session/wf": "_newSessionWfOp",
+            "/service/sequence_editor/edit": "_editOp",
+            "/service/sequence_editor/global_edit": "_globalEditOp",
+            "/service/sequence_editor/global_auth_seq_edit": "_globalAuthSeqEditOp",
+            "/service/sequence_editor/global_edit_menu": "_globalEditMenuOp",
+            "/service/sequence_editor/move": "_moveEditOp",
+            "/service/sequence_editor/undo_edit": "_undoEditOp",
+            "/service/sequence_editor/delete": "_deleteOp",
+            "/service/sequence_editor/molviewer/jmol": "_launchJmolViewerOp",
+            "/service/sequence_editor/molviewer/astexviewer": "_launchAstexViewerOp",
+            #
+            "/service/sequence_editor/load_data/start/rcsb": "_loadDataStartOp",
+            "/service/sequence_editor/load_data/check/rcsb": "_loadDataCheckOp",
+            "/service/sequence_editor/load_data/check": "_loadDataCheckOp",
+            #
+            "/service/sequence_editor/load_data/start/wf": "_loadDataWfStartOp",
+            "/service/sequence_editor/load_data/check/wf": "_loadDataCheckOp",
+            #
+            "/service/sequence_editor/rerun_blast/start": "_reRunBlastOp",
+            #
+            "/service/sequence_editor/load_form/taxonomy": "_loadTaxonomyFormOp",
+            "/service/sequence_editor/load_form/seqdbref": "_loadSeqDbRefFormOp",
+            "/service/sequence_editor/load_form/entityreview": "_loadEntitySourceDetailsFormOp",
+            "/service/sequence_editor/respond_form/taxonomy": "_respondTaxonomyFormOp",
+            "/service/sequence_editor/respond_form/seqdbref": "_respondSeqDbRefFormOp",
+            "/service/sequence_editor/respond_form/entityreview": "_respondEntitySourceDetailsFormOp",
+            "/service/sequence_editor/download": "_respondDownloadOp",
+            "/service/sequence_editor/reload_data/start": "_reloadDataStartOp",
+            "/service/sequence_editor/reload_data/check": "_loadDataCheckOp",
+            #
+            "/service/sequence_editor/align_view": "_alignViewOp",
+            "/service/sequence_editor/align_view_frame": "_alignViewFrameOp",
+            "/service/sequence_editor/polymer_linkage_table": "_getPolymerLinkageTableOp",
+        }
 
     def doOp(self):
         #
@@ -296,25 +299,24 @@ class SeqModWebAppWorker(object):
                 # bail out if operation is unknown -
                 self.__reqObj.setReturnFormat(return_format="json")
                 rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                rC.setError(errMsg='Unknown operation')
+                rC.setError(errMsg="Unknown operation")
             else:
                 mth = getattr(self, self.__appPathD[reqPath], None)
                 rC = mth()
             return rC
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             traceback.print_exc(file=self.__lfh)
             self.__reqObj.setReturnFormat(return_format="json")
             rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-            rC.setError(errMsg='Operation failure')
+            rC.setError(errMsg="Operation failure")
             return rC
 
     def setLogHandle(self, log=sys.stderr):
-        """  Reset the stream for logging output.
-        """
+        """Reset the stream for logging output."""
         try:
             self.__lfh = log
             return True
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
 
     # ------------------------------------------------------------------------------------------------------------
@@ -329,35 +331,32 @@ class SeqModWebAppWorker(object):
         return rC
 
     def _alignViewOp(self):
-        """
-        """
+        """ """
         return self.__alignView()
 
     def _alignViewFrameOp(self):
-        """
-        """
+        """ """
         return self.__alignView(frameOpt=True)
 
     def _saveOp(self):
         return self.__saveSelection()
 
     def _closeCompletedOp(self):
-        """ RPS, 2010-Aug-02: created independent function for
-            closing sequence editor app independent of saving selection
-            RPS, 2010-Aug-12: renamed for explicit use for completion of seq edit process
+        """RPS, 2010-Aug-02: created independent function for
+        closing sequence editor app independent of saving selection
+        RPS, 2010-Aug-12: renamed for explicit use for completion of seq edit process
         """
-        return self.__closeSeqEditor(mode='completed')
+        return self.__closeSeqEditor(mode="completed")
 
     def _closeUnfinishedOp(self):
-        """ RPS, 2010-Aug-12: created independent function for
-            closing sequence editor app independent of saving selection
-            *BUT* with intention of returning to complete editing activity
+        """RPS, 2010-Aug-12: created independent function for
+        closing sequence editor app independent of saving selection
+        *BUT* with intention of returning to complete editing activity
         """
-        return self.__closeSeqEditor(mode='unfinished')
+        return self.__closeSeqEditor(mode="unfinished")
 
     def _savePartialAssignmentOp(self):
-        """ Save partial assignment information into data archive directory
-        """
+        """Save partial assignment information into data archive directory"""
         self.__getSession()
         #
         # Remove previous saved partial assignment information before new saving operation
@@ -370,7 +369,7 @@ class SeqModWebAppWorker(object):
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
         #
         sEx = SequenceDataExport(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-        #ok, numConflicts, conflictList, warningMsg = sEx.exportAssignments()
+        # ok, numConflicts, conflictList, warningMsg = sEx.exportAssignments()
         entityIdList = sEx.getAllEntityIdList()
         #
         pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
@@ -380,25 +379,25 @@ class SeqModWebAppWorker(object):
         #
         copyFileList = []
         for entityId in entityIdList:
-            for cType in ( "seqdb-match", "seq-align-data", "mismatch-warning" ):
+            for cType in ("seqdb-match", "seq-align-data", "mismatch-warning"):
                 sourceFilePath = pI.getFilePath(dataSetId=identifier, contentType=cType, formatType="pic", fileSource="session", partNumber=entityId)
                 if (not sourceFilePath) or (not os.access(sourceFilePath, os.R_OK)):
                     continue
                 #
                 exportFilePath = pI.getFilePath(dataSetId=identifier, contentType=cType, formatType="pic", partNumber=entityId, versionId="next")
-                copyFileList.append( ( sourceFilePath, exportFilePath ) )
+                copyFileList.append((sourceFilePath, exportFilePath))
                 fph.write("%s pic %s %s\n" % (cType, str(entityId), exportFilePath))
             #
         #
         foundFlag = True
-        for (cType,fType,version) in ( ( "model", "pdbx", "next" ), ( "seq-data-stats", "pic", "next" ), ( "partial-seq-annotate", "txt", "latest") ):
+        for (cType, fType, version) in (("model", "pdbx", "next"), ("seq-data-stats", "pic", "next"), ("partial-seq-annotate", "txt", "latest")):
             sourceFilePath = pI.getFilePath(dataSetId=identifier, contentType=cType, formatType=fType, fileSource="session")
             if (not sourceFilePath) or (not os.access(sourceFilePath, os.R_OK)):
                 foundFlag = False
                 continue
             #
             exportFilePath = pI.getFilePath(dataSetId=identifier, contentType=cType, formatType=fType, versionId=version)
-            copyFileList.append( ( sourceFilePath, exportFilePath ) )
+            copyFileList.append((sourceFilePath, exportFilePath))
             if cType != "partial-seq-annotate":
                 fph.write("%s %s 1 %s\n" % (cType, fType, exportFilePath))
             #
@@ -416,8 +415,7 @@ class SeqModWebAppWorker(object):
         return rC
 
     def _removePartialAssignmentOp(self):
-        """ Remove saved partial assignment files
-        """
+        """Remove saved partial assignment files"""
         self.__getSession()
         self.__remove_partial_assignment_file()
         #
@@ -443,7 +441,7 @@ class SeqModWebAppWorker(object):
         return self.__editAlignment()
 
     def _globalAuthSeqEditOp(self):
-        self.__reqObj.setValue("operation", "global_edit_auth_seq");
+        self.__reqObj.setValue("operation", "global_edit_auth_seq")
         return self.__editAlignment()
 
     def _globalEditMenuOp(self):
@@ -456,19 +454,18 @@ class SeqModWebAppWorker(object):
         return self.__editAlignment()
 
     def _respondDownloadOp(self):
-        """  Respond to download request for sequence assignment file - type = [model,assignment]
-        """
+        """Respond to download request for sequence assignment file - type = [model,assignment]"""
         self.__getSession()
         identifier = self.__reqObj.getValue("identifier")
         cType = self.__reqObj.getValue("type")
         #
 
-        if cType in ['model']:
-            self.__reqObj.setValue('content_type', 'model')
-        elif cType in ['assignment']:
-            self.__reqObj.setValue('content_type', 'seq-assign')
-        self.__reqObj.setValue('data_set_id', identifier)
-        self.__reqObj.setValue('file_source', 'session')
+        if cType in ["model"]:
+            self.__reqObj.setValue("content_type", "model")
+        elif cType in ["assignment"]:
+            self.__reqObj.setValue("content_type", "seq-assign")
+        self.__reqObj.setValue("data_set_id", identifier)
+        self.__reqObj.setValue("file_source", "session")
         #
         wdu = WebDownloadUtils(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
         rC = wdu.makeDownloadResponse()
@@ -476,7 +473,7 @@ class SeqModWebAppWorker(object):
         if rC.isError():
             self.__reqObj.setReturnFormat(return_format="json")
         else:
-            rC.setStatusCode('ok')
+            rC.setStatusCode("ok")
             self.__reqObj.setReturnFormat(return_format="binary")
         return rC
 
@@ -485,9 +482,9 @@ class SeqModWebAppWorker(object):
         # Do this before updating the session information to avoid overwrite  -
         uds = UtilDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
         seq_search_op = self.__reqObj.getValue("seq_search_op")
-        uds.set('seq_search_op', seq_search_op)
+        uds.set("seq_search_op", seq_search_op)
         uds.serialize()
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp._respondTaxonomyFormOp() - starting with seq_search_op %s\n" % seq_search_op)
         #
         self.__getSession()
@@ -496,10 +493,10 @@ class SeqModWebAppWorker(object):
         status = sdU.polymerEntityPartEditFormResponder()
         self.__reqObj.setReturnFormat(return_format="json")
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-        if (status):
-            rC.setStatusCode('ok')
+        if status:
+            rC.setStatusCode("ok")
         else:
-            rC.setError(errMsg='Taxonomy form update processing failure')
+            rC.setError(errMsg="Taxonomy form update processing failure")
         return rC
 
     def _loadTaxonomyFormOp(self):
@@ -507,7 +504,7 @@ class SeqModWebAppWorker(object):
         authId = self.__reqObj.getValue("auth_id")
         identifier = self.__reqObj.getValue("identifier")
         if authId is not None and len(authId) > 1:
-            tL = str(authId).split('_')
+            tL = str(authId).split("_")
             entityId = tL[2]
         cD = self.__makeTaxonomyEditForm(entityId=entityId, entryId=identifier)
         self.__reqObj.setReturnFormat(return_format="json")
@@ -515,25 +512,25 @@ class SeqModWebAppWorker(object):
         rC.addDictionaryItems(cD=cD)
         return rC
 
-    def __makeTaxonomyEditForm(self, entityId='1', entryId=''):
+    def __makeTaxonomyEditForm(self, entityId="1", entryId=""):
         rD = {}
         sdU = UpdatePolymerEntityPartitions(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-        rD['htmlcontent'] = sdU.makePolymerEntityPartEditForm(entityId=entityId, entryId=entryId)
+        rD["htmlcontent"] = sdU.makePolymerEntityPartEditForm(entityId=entityId, entryId=entryId)
         return rD
 
     def _respondSeqDbRefFormOp(self):
         self.__getSession()
         sdU = UpdatePolymerEntityReference(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-        seqFetchError,packedRefSeqLabel = sdU.seqDbRefFormResponder()
+        seqFetchError, packedRefSeqLabel = sdU.seqDbRefFormResponder()
         #
         self.__reqObj.setReturnFormat(return_format="json")
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
         if seqFetchError:
             rC.setError(errMsg=seqFetchError)
-        elif (packedRefSeqLabel is not None):
-            rC.setStatusCode('ok')
+        elif packedRefSeqLabel is not None:
+            rC.setStatusCode("ok")
         else:
-            rC.setError(errMsg='Reference sequence form update processing failure')
+            rC.setError(errMsg="Reference sequence form update processing failure")
         #
         return rC
 
@@ -542,7 +539,7 @@ class SeqModWebAppWorker(object):
         refId = self.__reqObj.getValue("ref_id")
         identifier = self.__reqObj.getValue("identifier")
         if refId is not None and len(refId) > 1:
-            tL = str(refId).split('_')
+            tL = str(refId).split("_")
             entityId = str(tL[1])
             partId = str(tL[3])
         #
@@ -561,7 +558,7 @@ class SeqModWebAppWorker(object):
 
         authId = self.__reqObj.getValue("auth_id")
         if authId is not None and len(authId) > 1:
-            tL = str(authId).split('_')
+            tL = str(authId).split("_")
             entityId = tL[2]
         #
 
@@ -580,16 +577,16 @@ class SeqModWebAppWorker(object):
         #
         self.__reqObj.setReturnFormat(return_format="json")
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-        if (ok):
-            rC.setStatusCode('ok')
+        if ok:
+            rC.setStatusCode("ok")
         else:
-            rC.setError(errMsg='Entity review form update processing failure')
+            rC.setError(errMsg="Entity review form update processing failure")
 
         return rC
 
     def _launchJmolViewerOp(self):
         self.__getSession()
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp._launchJmolViewerOp() - starting with file source\n")
 
         viewer = ModelViewer3D(reqObj=self.__reqObj, verbose=self.__verbose)
@@ -610,52 +607,48 @@ class SeqModWebAppWorker(object):
         return rC
 
     def _loadSummaryOp(self):
-        """ Loads pre-calculated HTML pages containing alignment summary --
+        """Loads pre-calculated HTML pages containing alignment summary --
 
-            Performs a default selection of the best matching reference sequences.
+        Performs a default selection of the best matching reference sequences.
         """
-        return self.__loadSummary(op='load')
+        return self.__loadSummary(op="load")
 
     def _reloadSummaryOp(self):
-        """ Reloads pre-calculated HTML pages containing alignment summary -
-        """
-        return self.__loadSummary(op='reload')
+        """Reloads pre-calculated HTML pages containing alignment summary -"""
+        return self.__loadSummary(op="reload")
 
     def _newSessionOp(self):
-        """ Entry point for new sessions when invoked as the sequence editor tool.
-        """
+        """Entry point for new sessions when invoked as the sequence editor tool."""
         return self.__newSession()
 
     def _newSessionWfOp(self):
-        """ Entry point for new sessions when launched as a module from the wf environment.
-        """
+        """Entry point for new sessions when launched as a module from the wf environment."""
         return self.__newSessionWf()
 
     def _getPolymerLinkageTableOp(self):
-        """Return the polymer linkage table
-        """
+        """Return the polymer linkage table"""
         self.__getSession()
         self.__reqObj.setReturnFormat(return_format="json")
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
 
         sessionId = self.__reqObj.getSessionId()
-        #sessionPath    =self.__reqObj.getSessionPath()
+        # sessionPath    =self.__reqObj.getSessionPath()
         identifier = self.__reqObj.getValue("identifier")
         pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
-        polyLinkHtmlPath = pI.getPolyLinkReportFilePath(identifier, fileSource='session')
-        if (self.__verbose):
+        polyLinkHtmlPath = pI.getPolyLinkReportFilePath(identifier, fileSource="session")
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__getPolymerLinkageTableOp() report file path %s\n" % polyLinkHtmlPath)
         #
         htmlList = []
         if os.access(polyLinkHtmlPath, os.R_OK):
-            ifh = open(polyLinkHtmlPath, 'r')
+            ifh = open(polyLinkHtmlPath, "r")
             htmlList = ifh.readlines()
             ifh.close()
         else:
             htmlList = []
 
-        (head, tail) = os.path.split(polyLinkHtmlPath)
-        PathRel = os.path.join('/sessions', sessionId, tail)
+        (_head, tail) = os.path.split(polyLinkHtmlPath)
+        PathRel = os.path.join("/sessions", sessionId, tail)
         rC.setHtmlContentPath(PathRel)
         rC.setHtmlList(htmlList)
         return rC
@@ -664,19 +657,18 @@ class SeqModWebAppWorker(object):
     #  WF data loading and initialization entry point
     #
     def _loadDataWfStartOp(self):
-        """ Load sequence data from model and sequence database matching results.  Compute preliminary
-            alignment statistics.   Data is taken from the workflow storage system.
+        """Load sequence data from model and sequence database matching results.  Compute preliminary
+        alignment statistics.   Data is taken from the workflow storage system.
         """
         self.__getSession()
         fileSource = self.__reqObj.getValue("filesource")
         identifier = self.__reqObj.getValue("identifier")
         instance = self.__reqObj.getValue("instance")
-        if fileSource in ['archive', 'wf-archive']:
-            fileSource = 'archive'
+        if fileSource in ["archive", "wf-archive"]:
+            fileSource = "archive"
 
-        if (self.__verbose):
-            self.__lfh.write("+SeqModWebApp._loadDataWfStartOp() - starting with file source %s identifier %s instance %s\n" %
-                             (fileSource, identifier, instance))
+        if self.__verbose:
+            self.__lfh.write("+SeqModWebApp._loadDataWfStartOp() - starting with file source %s identifier %s instance %s\n" % (fileSource, identifier, instance))
         rC = self.__loadDataStart(fileSource=fileSource)
         return rC
 
@@ -684,47 +676,47 @@ class SeqModWebAppWorker(object):
     #   Local data loading and initialization entry point methods ---
     #
     def _loadDataStartOp(self):
-        """ Load sequence data from model and perform sequence database matching results.  Compute preliminary
-            alignment statistics.   Model data can be uploaded (fileSource=local-upload) or copied from
-            data processing repository (fileSource=local-repository)
+        """Load sequence data from model and perform sequence database matching results.  Compute preliminary
+        alignment statistics.   Model data can be uploaded (fileSource=local-upload) or copied from
+        data processing repository (fileSource=local-repository)
         """
         self.__getSession()
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp._loadLocalDataStartOp() - starting with session %s\n" % self.__sessionPath)
 
         wuu = WebUploadUtils(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
         if wuu.isFileUpload():
-            fileSource = 'local-upload'
+            fileSource = "local-upload"
             fileType = self.__reqObj.getValue("filetype")
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SeqModWebApp._loadLocalDataStartOp() - file source %s type %s\n" % (fileSource, fileType))
 
-            modelFileName = wuu.copyToSession(fileTag='file')
+            modelFileName = wuu.copyToSession(fileTag="file")
             #
             if modelFileName is None:
                 rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                rC.setError(errMsg='Upload processing failure')
+                rC.setError(errMsg="Upload processing failure")
                 self.__reqObj.setReturnFormat(return_format="json")
                 return rC
             else:
                 #
-                fId, idType = wuu.perceiveIdentifier(modelFileName)
-                self.__reqObj.setValue('identifier', fId)
-                self.__reqObj.setValue('UploadFileName', modelFileName)
-                self.__reqObj.setValue('UploadFileType', fileType)
+                fId, _idType = wuu.perceiveIdentifier(modelFileName)
+                self.__reqObj.setValue("identifier", fId)
+                self.__reqObj.setValue("UploadFileName", modelFileName)
+                self.__reqObj.setValue("UploadFileType", fileType)
 
                 uds = UtilDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                uds.set('identifier', fId)
-                uds.set('UploadFileName', modelFileName)
-                uds.set('UploadFileType', fileType)
+                uds.set("identifier", fId)
+                uds.set("UploadFileName", modelFileName)
+                uds.set("UploadFileType", fileType)
                 uds.serialize()
             #
         else:
-            fileSource = 'local-repository'
+            fileSource = "local-repository"
             identifier = self.__reqObj.getValue("identifier")
             #
             uds = UtilDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-            uds.set('identifier', identifier)
+            uds.set("identifier", identifier)
             uds.serialize()
 
             if self.__verbose:
@@ -735,12 +727,12 @@ class SeqModWebAppWorker(object):
         return rC
 
     def _reloadDataStartOp(self):
-        """ Launch a child process to handle reloading operations required by taxonomy/part edit operations.
-            This method supports both local and wf data/file sources.
+        """Launch a child process to handle reloading operations required by taxonomy/part edit operations.
+        This method supports both local and wf data/file sources.
         """
         #
         self.__getSession()
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp._reloadDataStartOp() - STARTING at site %s\n" % self.__siteId)
         #
         dU = DetachUtils(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
@@ -750,25 +742,23 @@ class SeqModWebAppWorker(object):
 
         self.__reqObj.setReturnFormat(return_format="json")
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-        identifier = self.__reqObj.getValue('identifier')
+        identifier = self.__reqObj.getValue("identifier")
         rC.setIdentifier(identifier)
-        rC.setStatusCode('running')
+        rC.setStatusCode("running")
 
         return rC
 
     def _loadDataCheckOp(self):
-        """ Shared checking method for data initialization and loading/uploading operations.
-        """
+        """Shared checking method for data initialization and loading/uploading operations."""
         return self.__loadDataCheck()
 
     # --------------------------------------------------------------------------------------------------
     #   Re-run blast search entry point methods ---
     #
     def _reRunBlastOp(self):
-        """ Re-run blast search, perform sequence database matching results, compute preliminary alignment statistics.
-        """
+        """Re-run blast search, perform sequence database matching results, compute preliminary alignment statistics."""
         self.__getSession()
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp._reRunBlastOp() - starting with session %s\n" % self.__sessionPath)
         #
 
@@ -779,9 +769,9 @@ class SeqModWebAppWorker(object):
 
         self.__reqObj.setReturnFormat(return_format="json")
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-        identifier = self.__reqObj.getValue('identifier')
+        identifier = self.__reqObj.getValue("identifier")
         rC.setIdentifier(identifier)
-        rC.setStatusCode('running')
+        rC.setStatusCode("running")
 
         return rC
 
@@ -790,7 +780,7 @@ class SeqModWebAppWorker(object):
     #
     def __newSession(self):
         #
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__newSession() - starting\n")
 
         self.__getSession(forceNew=True)
@@ -799,37 +789,37 @@ class SeqModWebAppWorker(object):
         return rC
 
     def __getSession(self, forceNew=False, useContext=True):
-        """ Join existing session or create new session as required.
+        """Join existing session or create new session as required.
 
-            Import any saved parameters into the current request object from UtilDataStore().
+        Import any saved parameters into the current request object from UtilDataStore().
         """
         #
         sessionId = self.__reqObj.getSessionId()
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__getSession() - starting with session %s\n" % sessionId)
         #
         self.__sObj = self.__reqObj.newSessionObj(forceNew=forceNew)
 
-        self.__sessionId = self.__sObj.getId()
+        # self.__sessionId = self.__sObj.getId()
         self.__sessionPath = self.__sObj.getPath()
-        self.__rltvSessionPath = self.__sObj.getRelativePath()
+        # self.__rltvSessionPath = self.__sObj.getRelativePath()
         #
-        if (useContext):
+        if useContext:
             uds = UtilDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
             dd = uds.getDictionary()
             self.__lfh.write("+SeqModWebApp.__getSession() - importing persisted session parameters: %r\n" % dd.items())
             self.__reqObj.setDictionary(dd, overWrite=True)
         #
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__getSession() - Leaving with session path %s\n" % self.__sessionPath)
 
-    def __loadDataStart(self, fileSource='local-repository'):
-        """ Launch a child process to handle data initialization and loading operations.
+    def __loadDataStart(self, fileSource="local-repository"):
+        """Launch a child process to handle data initialization and loading operations.
 
-            This method supports both local and wf data/file sources.
+        This method supports both local and wf data/file sources.
         """
         #
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__loadDataStart() - STARTING using file source %s at site %s\n" % (fileSource, self.__siteId))
 
         dU = DetachUtils(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
@@ -842,52 +832,52 @@ class SeqModWebAppWorker(object):
 
         self.__reqObj.setReturnFormat(return_format="json")
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-        identifier = self.__reqObj.getValue('identifier')
+        identifier = self.__reqObj.getValue("identifier")
         rC.setIdentifier(identifier)
-        rC.setStatusCode('running')
+        rC.setStatusCode("running")
 
         return rC
 
     def __loadDataCheck(self):
         """Performs a check on the contents of a semaphore file and returns the associated status.
 
-           This method currently supports both rcsb and wf filesources.
+        This method currently supports both rcsb and wf filesources.
         """
         #
         self.__getSession(useContext=True)
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__loadDataCheck() - starting\n")
 
         sph = self.__reqObj.getSemaphore()
         delayValue = self.__reqObj.getValue("delay")
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__loadDataCheck() Checking status of semaphore %s with delay %s\n" % (sph, delayValue))
 
         self.__reqObj.setReturnFormat(return_format="json")
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-        identifier = self.__reqObj.getValue('identifier')
+        identifier = self.__reqObj.getValue("identifier")
         rC.setIdentifier(identifier)
 
         dU = DetachUtils(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-        if (dU.semaphoreExists(sph)):
+        if dU.semaphoreExists(sph):
             status = dU.getSemaphore(sph)
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SeqModWebApp.__loadDataCheck() status value for semaphore %s is %s\n" % (sph, str(status)))
-            if (status == "OK"):
-                rC.setStatusCode('completed')
+            if status == "OK":
+                rC.setStatusCode("completed")
             else:
-                rC.setStatusCode('failed')
+                rC.setStatusCode("failed")
         else:
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SeqModWebApp.__loadDataCheck() semaphore %s pending - waiting %s\n" % (sph, delayValue))
             time.sleep(int(delayValue))
-            rC.setStatusCode('running')
+            rC.setStatusCode("running")
 
         return rC
 
-    def __loadSummary(self, op='load'):
+    def __loadSummary(self, op="load"):
         #
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__loadSummary() - starting\n")
 
         self.__getSession(useContext=True)
@@ -895,7 +885,7 @@ class SeqModWebAppWorker(object):
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
         try:
             sV = SummaryView(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-            sumObj,warningMsg = sV.loadSummary(operation=op)
+            sumObj, warningMsg = sV.loadSummary(operation=op)
             if warningMsg:
                 rC.setWarning(warnMsg=warningMsg)
             #
@@ -908,15 +898,15 @@ class SeqModWebAppWorker(object):
             sessionId = self.__reqObj.getSessionId()
             sPath = self.__reqObj.getSessionPath()
             htmlPathAbs = os.path.join(sPath, sessionId, "current-alignment-summary.html")
-            fp = open(htmlPathAbs, 'w')
-            fp.write("%s" % ''.join(oL))
+            fp = open(htmlPathAbs, "w")
+            fp.write("%s" % "".join(oL))
             fp.close()
             rC.setHtmlContentPath(os.path.join("/sessions", sessionId, "current-alignment-summary.html"))
             #
             rC.setIdentifier(self.__reqObj.getValue("identifier"))
-            rC.setStructTitle(eD['STRUCT_TITLE'])
-            rC.setCitationTitle(eD['CITATION_TITLE'])
-            rC.setPdbCode(eD['PDB_ID'])
+            rC.setStructTitle(eD["STRUCT_TITLE"])
+            rC.setCitationTitle(eD["CITATION_TITLE"])
+            rC.setPdbCode(eD["PDB_ID"])
             rC.setGroupIdList(gIdList)
             #
             pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
@@ -951,8 +941,7 @@ class SeqModWebAppWorker(object):
                         warningMsg += "</br>\n"
                     #
                     if len(warningD["not_found_existing_match"]) > 1:
-                        warningMsg += self.__reformatText("Sequences not matched to existing entries in entities: " \
-                                    + ",".join(warningD["not_found_existing_match"]))
+                        warningMsg += self.__reformatText("Sequences not matched to existing entries in entities: " + ",".join(warningD["not_found_existing_match"]))
                     else:
                         warningMsg += "Sequences not matched to existing entries in entity: " + warningD["not_found_existing_match"][0]
                     #
@@ -964,18 +953,17 @@ class SeqModWebAppWorker(object):
             #  Reset --
             #
             self.__reqObj.setNewRefId("")
-        except:
+        except:  # noqa: E722 pylint: disable=bare-except
             rC.setError(errMsg="Sequence alignment summary preparation has failed.")
             rC.setStatusCode("failed")
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SeqModWebApp.__loadSummary() - failed with exception\n")
                 traceback.print_exc(file=self.__lfh)
         #
         return rC
 
     def __reformatText(self, inputText):
-        """
-        """
+        """ """
         length = 150
         if len(inputText) < length:
             return inputText
@@ -995,16 +983,16 @@ class SeqModWebAppWorker(object):
         prev_i = break_index[0]
         for i in break_index:
             if (i - start) > length:
-                rangeList.append((start, prev_i + 1)) 
+                rangeList.append((start, prev_i + 1))
                 insertList.append(prev_i)
-                start = prev_i + 1 
+                start = prev_i + 1
                 continue
-            #   
-            prev_i = i 
+            #
+            prev_i = i
         #
         if (prev_i > start) and (prev_i < len(inputText)) and ((len(insertList) == 0) or (prev_i != insertList[-1])) and ((len(inputText) - start) > length):
-            rangeList.append((start, prev_i + 1)) 
-            start = prev_i + 1 
+            rangeList.append((start, prev_i + 1))
+            start = prev_i + 1
         #
         if start < len(inputText):
             rangeList.append((start, len(inputText)))
@@ -1014,23 +1002,22 @@ class SeqModWebAppWorker(object):
             if outputText:
                 outputText += "</br>\n"
             #
-            outputText += inputText[rangeTup[0]:rangeTup[1]]
+            outputText += inputText[rangeTup[0] : rangeTup[1]]
         #
         return outputText
 
     def __storeAlignmentStart(self):
-        """ Launch a subprocess to compute, store and render the aligned input sequence list.
-        """
+        """Launch a subprocess to compute, store and render the aligned input sequence list."""
         #
         self.__getSession(useContext=True)
-        sessionId = self.__reqObj.getSessionId()
+        _sessionId = self.__reqObj.getSessionId()  # noqa: F841
         alignTag = self.__reqObj.getValue("aligntag")
         operation = self.__reqObj.getValue("operation")
         viewalign_order = self.__reqObj.getValue("viewalign_order")
         alignids = self.__reqObj.getValue("alignids")
         activeGroupId = self.__reqObj.getValue("activegroupid")
 
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__storeAlignmentStart() - starting\n")
             self.__lfh.write("+SeqModWebApp.__storeAlignmentStart() operation       %s\n" % operation)
             self.__lfh.write("+SeqModWebApp.__storeAlignmentStart() aligntag        %s\n" % alignTag)
@@ -1038,9 +1025,9 @@ class SeqModWebAppWorker(object):
             self.__lfh.write("+SeqModWebApp.__storeAlignmentStart() alignids        %s\n" % alignids)
             self.__lfh.write("+SeqModWebApp.__storeAlignmentStart() viewalign_order %s\n" % viewalign_order)
 
-        if (len(alignTag) < 1):
+        if len(alignTag) < 1:
             alignTag = activeGroupId
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SeqModWebApp.__storeAlignmentStart() creating new alignment tag %s\n" % alignTag)
             #
         #
@@ -1053,7 +1040,7 @@ class SeqModWebAppWorker(object):
 
         self.__reqObj.setReturnFormat(return_format="json")
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-        rC.setStatusCode('running')
+        rC.setStatusCode("running")
         rC.setAlignTag(alignTag)
         rC.setViewAlignOrder(viewalign_order)
         # reset edit operation -
@@ -1064,7 +1051,7 @@ class SeqModWebAppWorker(object):
     def __storeAlignmentCheck(self):
         #
         self.__getSession()
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("\n+SeqModWebApp.__storeAlignmentCheck() - starting\n")
         #
         sph = self.__reqObj.getSemaphore()
@@ -1072,16 +1059,16 @@ class SeqModWebAppWorker(object):
         alignTag = self.__reqObj.getValue("aligntag")
         delayValue = self.__reqObj.getValue("delay")
         #
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__storeAlignmentCheck() Checking status of semaphore %s with delay %s\n" % (sph, delayValue))
         #
         self.__reqObj.setReturnFormat(return_format="json")
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
         dU = DetachUtils(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
 
-        if (dU.semaphoreExists(sph)):
+        if dU.semaphoreExists(sph):
             status = dU.getSemaphore(sph)
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SeqModWebApp.__storeAlignmentCheck() status value for semaphore %s is %s\n" % (sph, str(status)))
             #
             rC.setIdentifier(self.__reqObj.getValue("identifier"))
@@ -1093,14 +1080,14 @@ class SeqModWebAppWorker(object):
             #
             sPath = self.__reqObj.getSessionPath()
             rptPathAbs = os.path.join(sPath, sessionId, "current-alignment-annotation-" + alignTag + ".html")
-            if (os.access(rptPathAbs, os.F_OK)):
+            if os.access(rptPathAbs, os.F_OK):
                 pth = os.path.join("/sessions", sessionId, "current-alignment-annotation-" + alignTag + ".html")
                 rC.setAnnotationReportPath(pth)
                 rC.setAnnotationReportFlag(True)
             #
             miscD = {}
             rptPathAbs = os.path.join(sPath, sessionId, "alignment-" + alignTag + "-misc.pic")
-            if (os.access(rptPathAbs, os.F_OK)):
+            if os.access(rptPathAbs, os.F_OK):
                 fb = open(rptPathAbs, "rb")
                 miscD = pickle.load(fb)
                 fb.close()
@@ -1108,40 +1095,40 @@ class SeqModWebAppWorker(object):
             if "warning" in miscD:
                 rC.setWarning(warnMsg=miscD["warning"])
             #
-            if (status == "OK"):
+            if status == "OK":
                 # reset edit operation -
                 rC.setEditOp(0)
                 rC.setAlignTag(alignTag)
                 rC.setStatusCode("completed")
                 #
                 rptPathAbs = os.path.join(sPath, sessionId, "current-alignment-" + alignTag + ".html")
-                if (os.access(rptPathAbs, os.F_OK)):
+                if os.access(rptPathAbs, os.F_OK):
                     rC.setHtmlContentPath(os.path.join("/sessions", sessionId, "current-alignment-" + alignTag + ".html"))
                 #
                 rptPathAbs = os.path.join(sPath, sessionId, "conflict-report-" + alignTag + ".html")
-                if (os.access(rptPathAbs, os.F_OK)):
+                if os.access(rptPathAbs, os.F_OK):
                     pth = os.path.join("/sessions", sessionId, "conflict-report-" + alignTag + ".html")
                     rC.setConflictReportPath(pth)
                     rC.setConflictReportFlag(True)
-                    if (self.__verbose):
+                    if self.__verbose:
                         self.__lfh.write("+SeqModWebApp.__storeAlignmentCheck() conflict report %s\n" % pth)
                     #
                 #
                 if "gedittype" in miscD:
-                    rC.addDictionaryItems({ "gedittype" : miscD["gedittype"] })
+                    rC.addDictionaryItems({"gedittype": miscD["gedittype"]})
                 else:
-                    rC.addDictionaryItems({ "gedittype" : "no-mismatch" })
+                    rC.addDictionaryItems({"gedittype": "no-mismatch"})
                 #
-                for item in ( "alignids", "selectids", "alignmentblocklist", "missingauthseqmap", "blockedithtml", "repdelhtml" ):
+                for item in ("alignids", "selectids", "alignmentblocklist", "missingauthseqmap", "blockedithtml", "repdelhtml"):
                     if item in miscD:
-                        rC.addDictionaryItems({ item : miscD[item] })
+                        rC.addDictionaryItems({item: miscD[item]})
                     #
                 #
             else:
                 rC.setStatusCode("failed")
             #
         else:
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SeqModWebApp.__storeAlignmentCheck() semaphore %s pending - waiting %s\n" % (sph, delayValue))
             #
             time.sleep(int(delayValue))
@@ -1150,13 +1137,12 @@ class SeqModWebAppWorker(object):
         return rC
 
     def __editAlignment(self):
-        """
-        """
+        """ """
         sessionId = self.__reqObj.getSessionId()
         alignTag = self.__reqObj.getValue("aligntag")
         #
         operation = self.__reqObj.getValue("operation")
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__editAlignment() - starting\n")
             self.__lfh.write("+SeqModWebApp.__editAlignment() - session id %s\n" % sessionId)
             self.__lfh.write("+SeqModWebApp.__editAlignment() - operation %s\n" % operation)
@@ -1167,7 +1153,7 @@ class SeqModWebAppWorker(object):
         aE.setAlignmentTag(alignTag)
         #
         cD = aE.edit()
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__editAlignment() edit completed for session %s\n" % sessionId)
         #
         self.__reqObj.setReturnFormat(return_format="json")
@@ -1176,22 +1162,21 @@ class SeqModWebAppWorker(object):
         return rC
 
     def __saveSelection(self):
-        """ Save assignment and annotation file
-        """
+        """Save assignment and annotation file"""
         self.__getSession()
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__saveSelection() - starting\n")
 
-        #selectIdList = self.__reqObj.getSummarySelectList()
+        # selectIdList = self.__reqObj.getSummarySelectList()
         selectIdList = []
         sEx = SequenceDataExport(reqObj=self.__reqObj, exportList=selectIdList, verbose=self.__verbose, log=self.__lfh)
         ok, numConflicts, conflictList, warningMsg = sEx.exportAssignments()
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__saveSelection() - exporting assignments status = %r and conflict count  %d\n" % (ok, numConflicts))
-        #if (ok and (numConflicts < 3)):
-        if (ok and (numConflicts==0)):
+        # if (ok and (numConflicts < 3)):
+        if ok and (numConflicts == 0):
             ok = sEx.applyAssignmentsToModel()
-            if (self.__verbose):
+            if self.__verbose:
                 self.__lfh.write("+SeqModWebApp.__saveSelection() - exporting model status = %r\n" % ok)
         #
         self.__reqObj.setReturnFormat(return_format="json")
@@ -1199,14 +1184,14 @@ class SeqModWebAppWorker(object):
         if warningMsg:
             rC.setWarning(warnMsg=warningMsg)
         #
-        if (not ok):
-            rC.setError(errMsg='Sequence data export failed')
+        if not ok:
+            rC.setError(errMsg="Sequence data export failed")
         elif numConflicts > 0:
             oL = []
             for ctup in conflictList:
                 oL.append("Entity %s(%d)" % (ctup[0], ctup[1]))
-            tS = ' , '.join(oL)
-            rC.setError(errMsg='Error: Total sample conflict count = %d  - %s</br>\nSequence data export failed' % (numConflicts, tS))
+            tS = " , ".join(oL)
+            rC.setError(errMsg="Error: Total sample conflict count = %d  - %s</br>\nSequence data export failed" % (numConflicts, tS))
         else:
             self.__remove_partial_assignment_file()
             rC.set("removepartialassignment", True)
@@ -1214,18 +1199,18 @@ class SeqModWebAppWorker(object):
         return rC
 
     def __closeSeqEditor(self, mode):
-        """ RPS, 2010-Aug-02: providing dedicated function to accommodate user request to end sesssion when
-            done with using sequence editor interface
-            RPS, 2010-Aug-12: refactored to support different 'modes' = ('completed' | 'unfinished')
+        """RPS, 2010-Aug-02: providing dedicated function to accommodate user request to end sesssion when
+        done with using sequence editor interface
+        RPS, 2010-Aug-12: refactored to support different 'modes' = ('completed' | 'unfinished')
 
         """
         self.__getSession()
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("\n\n+SeqModWebApp.__closeSeqEditor() - starting with operation %s\n" % mode)
 
-        if (mode == 'completed'):
+        if mode == "completed":
             state = "closed(0)"
-        elif (mode == 'unfinished'):
+        elif mode == "unfinished":
             state = "waiting"
 
         depId = self.__reqObj.getValue("identifier")
@@ -1240,7 +1225,7 @@ class SeqModWebAppWorker(object):
         elif skipStatus.lower() in ["no", "n"]:
             self.__doWfTracking = True
 
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__closeSeqEditor() - depId   %s\n" % depId)
             self.__lfh.write("+SeqModWebApp.__closeSeqEditor() - instId  %s\n" % instId)
             self.__lfh.write("+SeqModWebApp.__closeSeqEditor() - classID %s\n" % classId)
@@ -1253,27 +1238,33 @@ class SeqModWebAppWorker(object):
         self.__reqObj.setReturnFormat(return_format="json")
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
 
-        if fileSource in ['archive', 'wf-archive']:
+        if fileSource in ["archive", "wf-archive"]:
             # copy session files back to the archive directory -- independent of close mode --
             dI = DataImporter(reqObj=self.__reqObj, fileSource=fileSource, verbose=self.__verbose, log=self.__lfh)
             ok = dI.copyFilesOnClose(includeSeqAssignFile=True)
 
-        if fileSource in ['wf-instance']:
+        if fileSource in ["wf-instance"]:
             # Copy session files back to the invoking instance directory -
             dI = DataImporter(reqObj=self.__reqObj, fileSource=fileSource, verbose=self.__verbose, log=self.__lfh)
-            ok = dI.copyFilesOnClose(includePolyLinkFile=True,includeSeqAssignFile=True)
+            ok = dI.copyFilesOnClose(includePolyLinkFile=True, includeSeqAssignFile=True)
             # And if we are done then also copy back to the archive --
             ok1 = True
-            if mode in ['completed']:
-                ok1 = dI.copyFiles(inputFileSource="session",outputFileSource='wf-archive',versionIndex=4,includeModelFile=True, \
-                                   includeSeqAssignFile=True,messageHead="DataImporter.copyFilesOnClose()")
+            if mode in ["completed"]:
+                ok1 = dI.copyFiles(
+                    inputFileSource="session",
+                    outputFileSource="wf-archive",
+                    versionIndex=4,
+                    includeModelFile=True,
+                    includeSeqAssignFile=True,
+                    messageHead="DataImporter.copyFilesOnClose()",
+                )
                 #
                 self.__getSession()
                 pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
                 sourceFilePath = pI.getFilePath(dataSetId=depId, contentType="model", formatType="pdbx", fileSource="session")
                 if os.access(sourceFilePath, os.R_OK):
                     dbLoader = DBLoadUtil(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                    dbLoader.doLoading( [ sourceFilePath ] )
+                    dbLoader.doLoading([sourceFilePath])
                 #
             #
             ok = ok and ok1
@@ -1282,7 +1273,7 @@ class SeqModWebAppWorker(object):
         if self.__doWfTracking:
             try:
                 okDb = self.__updateWfStatus(depId=depId, instId=instId, classId=classId, statusCode=state)
-            except:
+            except:  # noqa: E722 pylint: disable=bare-except
                 okDb = False
 
         ok = ok and okDb
@@ -1298,11 +1289,11 @@ class SeqModWebAppWorker(object):
 
     def __newSessionWf(self):
 
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__newSessionWf() - starting\n")
 
         sessionId = self.__reqObj.getSessionId()
-        if (len(sessionId) == 0):
+        if len(sessionId) == 0:
             sObj = self.__reqObj.newSessionObj()
             sessionId = sObj.getId()
 
@@ -1320,26 +1311,26 @@ class SeqModWebAppWorker(object):
 
         #
         myD = {}
-        myD['sessionid'] = sessionId
-        myD['identifier'] = identifier
-        myD['instance'] = instance
-        myD['classid'] = self.__reqObj.getValue("classID")
-        myD['filesource'] = fileSource
+        myD["sessionid"] = sessionId
+        myD["identifier"] = identifier
+        myD["instance"] = instance
+        myD["classid"] = self.__reqObj.getValue("classID")
+        myD["filesource"] = fileSource
 
-        myD['height'] = '100%'
+        myD["height"] = "100%"
         # myD['height']='1000px'
-        myD['width'] = '100%'
+        myD["width"] = "100%"
         #
         uds = UtilDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-        uds.set('identifier', identifier)
-        uds.set('filesource', fileSource)
-        uds.set('instance', instance)
-        uds.set('skipstatus', skipStatus)
+        uds.set("identifier", identifier)
+        uds.set("filesource", fileSource)
+        uds.set("instance", instance)
+        uds.set("skipstatus", skipStatus)
         uds.serialize()
         try:
-            ok = self.__updateWfStatus(depId=myD['identifier'], instId=myD['instance'], classId=myD['classid'], statusCode="open")
-        except:
-            ok = False
+            _ok = self.__updateWfStatus(depId=myD["identifier"], instId=myD["instance"], classId=myD["classid"], statusCode="open")  # noqa: F841
+        except:  # noqa: E722 pylint: disable=bare-except
+            _ok = False  # noqa: F841
         #
         self.__reqObj.setReturnFormat(return_format="html")
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
@@ -1349,10 +1340,9 @@ class SeqModWebAppWorker(object):
         return rC
 
     def __alignView(self, frameOpt=True):
-        """ Send a skeleton HTML template with placeholders for the sequence alignment and conflict report.
-        """
+        """Send a skeleton HTML template with placeholders for the sequence alignment and conflict report."""
         viewalign_order = self.__reqObj.getValue("viewalign_order")
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__alignView() - starting with %s \n" % viewalign_order)
         #
         self.__getSession(forceNew=False, useContext=True)
@@ -1362,14 +1352,13 @@ class SeqModWebAppWorker(object):
         viewalign_order = self.__reqObj.getValue("viewalign_order")
         activeEntityGroupId = self.__reqObj.getValue("activegroupid")
 
-        if (self.__verbose):
-            self.__lfh.write("+SeqModWebApp.__alignView() Loading alignment template for sessionId %s alignment tag %s order %s\n"
-                             % (sessionId, alignTag, viewalign_order))
+        if self.__verbose:
+            self.__lfh.write("+SeqModWebApp.__alignView() Loading alignment template for sessionId %s alignment tag %s order %s\n" % (sessionId, alignTag, viewalign_order))
         myD = {}
         myD["sessionid"] = self.__reqObj.getSessionId()
         myD["seqview"] = "fromlist"
         myD["alignids"] = ",".join(self.__reqObj.getAlignList())
-        #myD["selectids"] = ",".join(self.__reqObj.getSummarySelectList())
+        # myD["selectids"] = ",".join(self.__reqObj.getSummarySelectList())
         myD["selectids"] = self.__reqObj.getValue("selectids")
         myD["aligntag"] = activeEntityGroupId
         myD["activegroupid"] = activeEntityGroupId
@@ -1379,7 +1368,7 @@ class SeqModWebAppWorker(object):
         myD["viewalign_order"] = self.__reqObj.getValue("viewalign_order")
         myD["modelfilename"] = self.__reqObj.getValue("modelfilename")
 
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__alignView() parameter dictionary %s\n" % myD.items())
 
         self.__reqObj.setReturnFormat(return_format="html")
@@ -1392,36 +1381,31 @@ class SeqModWebAppWorker(object):
         else:
             rC.setHtmlTextFromTemplate(templateFilePath=templateFilePath, webIncludePath=webIncludePath, parameterDict=myD)
         rC.setViewAlignOrder(viewalign_order)
-        if (self.__verbose):
+        if self.__verbose:
             self.__lfh.write("+SeqModWebApp.__alignView() Just set viewalign_order in ResponseContent as %s\n" % viewalign_order)
 
         return rC
 
     def __updateWfStatus(self, depId, instId, classId, statusCode):
-        """ Update progress and tracking status --
-        """
+        """Update progress and tracking status --"""
         if not self.__doWfTracking:
-            if (self.__verbose):
-                self.__lfh.write("+SeqModWebApp.__updateWfStatus() - skipped setting depId %s instId %s classId %s status %s\n"
-                                 % (depId, instId, classId, statusCode))
+            if self.__verbose:
+                self.__lfh.write("+SeqModWebApp.__updateWfStatus() - skipped setting depId %s instId %s classId %s status %s\n" % (depId, instId, classId, statusCode))
             return True
         try:
-            if (self.__verbose):
-                self.__lfh.write("+SeqModWebApp.__updateWfStatus() - setting depId %s instId %s classId %s status %s\n"
-                                 % (depId, instId, classId, statusCode))
+            if self.__verbose:
+                self.__lfh.write("+SeqModWebApp.__updateWfStatus() - setting depId %s instId %s classId %s status %s\n" % (depId, instId, classId, statusCode))
             wft = WfTracking(verbose=self.__verbose, log=self.__lfh)
             ok = wft.setInstanceStatus(depId=depId, instId=instId, classId=classId, status=statusCode)
             return ok
-        except:
-            if (self.__verbose):
-                self.__lfh.write("+SeqModWebApp.__updateWfStatus() - failed depId %s instId %s classId %s status %s\n"
-                                 % (depId, instId, classId, statusCode))
+        except:  # noqa: E722 pylint: disable=bare-except
+            if self.__verbose:
+                self.__lfh.write("+SeqModWebApp.__updateWfStatus() - failed depId %s instId %s classId %s status %s\n" % (depId, instId, classId, statusCode))
             traceback.print_exc(file=self.__lfh)
         return False
 
     def __remove_partial_assignment_file(self):
-        """ Remove saved partial assignment files
-        """
+        """Remove saved partial assignment files"""
         identifier = self.__reqObj.getValue("identifier")
         #
         pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
@@ -1441,8 +1425,12 @@ class SeqModWebAppWorker(object):
         #
 
 
-if __name__ == '__main__':
+def main():
     sTool = SeqModWebApp()
     d = sTool.doOp()
     for k, v in d.items():
         sys.stdout.write("Key - %s  value - %r\n" % (k, v))
+
+
+if __name__ == "__main__":
+    main()

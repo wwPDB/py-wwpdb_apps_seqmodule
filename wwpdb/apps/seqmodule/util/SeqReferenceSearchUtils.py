@@ -5,7 +5,7 @@
 # Updates:
 ##
 """
-Wrap class for blast sequence search and 100% matched previous processed sequence search 
+Wrap class for blast sequence search and 100% matched previous processed sequence search
 """
 __docformat__ = "restructuredtext en"
 __author__ = "Zukang Feng"
@@ -13,18 +13,19 @@ __email__ = "zfeng@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.09"
 
-import os, sys, traceback
+import sys
+import traceback
 
 from wwpdb.apps.seqmodule.util.LocalBlastSearchUtils import LocalBlastSearchUtils
 from wwpdb.apps.seqmodule.util.GetSameSeqAnnotationWithTaxIdOnly import GetSameSeqAnnotation
 from wwpdb.apps.seqmodule.util.SearchEntityPolySeqs import SearchEntityPolySeqs
 
+
 class SeqReferenceSearchUtils(object):
-    """
-    """
+    """ """
+
     def __init__(self, siteId=None, sessionPath=None, searchUtil=None, pathInfo=None, verbose=False, log=sys.stderr, ncbilock=None):
-        """
-        """
+        """ """
         self.__siteId = siteId
         self.__sessionPath = sessionPath
         self.__sepsUtil = searchUtil
@@ -34,26 +35,33 @@ class SeqReferenceSearchUtils(object):
         self.__ncbilock = ncbilock
 
     def run(self, dataSetId, eD, authDefinedRefList, refRefSearchFlag, forceBlastSearchFlag):
-        """
-        """
-        sasUtil = SeqAnnotationSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, searchUtil=self.__sepsUtil, pathInfo=self.__pI, \
-                                           verbose=self.__verbose, log=self.__lfh)
-        selfRefD,sameSeqRefD = sasUtil.getSameSeqRefInfo(dataSetId, eD)
+        """ """
+        sasUtil = SeqAnnotationSearchUtils(
+            siteId=self.__siteId, sessionPath=self.__sessionPath, searchUtil=self.__sepsUtil, pathInfo=self.__pI, verbose=self.__verbose, log=self.__lfh
+        )
+        selfRefD, sameSeqRefD = sasUtil.getSameSeqRefInfo(dataSetId, eD)
         #
         eRefD = {}
         if (len(selfRefD) == 0) or forceBlastSearchFlag:
-            lbsUtil = LocalBlastSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, doRefSearchFlag=refRefSearchFlag, \
-                                            verbose=self.__verbose, log=self.__lfh, ncbilock=self.__ncbilock)
+            lbsUtil = LocalBlastSearchUtils(
+                siteId=self.__siteId,
+                sessionPath=self.__sessionPath,
+                pathInfo=self.__pI,
+                doRefSearchFlag=refRefSearchFlag,
+                verbose=self.__verbose,
+                log=self.__lfh,
+                ncbilock=self.__ncbilock,
+            )
             eRefD = lbsUtil.searchSeqReference(dataSetId=dataSetId, entityD=eD, authRefList=authDefinedRefList)
         #
-        return eRefD,selfRefD,sameSeqRefD
+        return eRefD, selfRefD, sameSeqRefD
+
 
 class SeqAnnotationSearchUtils(object):
-    """
-    """
+    """ """
+
     def __init__(self, siteId=None, sessionPath=None, searchUtil=None, pathInfo=None, verbose=False, log=sys.stderr):
-        """
-        """
+        """ """
         self.__siteId = siteId
         self.__sessionPath = sessionPath
         self.__sepsUtil = searchUtil
@@ -66,22 +74,21 @@ class SeqAnnotationSearchUtils(object):
         #
 
     def getSameSeqRefInfo(self, dataSetId, eD):
-        """
-        """
+        """ """
         if not eD:
-            return {},{}
+            return {}, {}
         #
         try:
-            selfList,sameSeqEntryList = self.__sepsUtil.searchSameSequenceEntity(entryId=dataSetId, seq=eD["SEQ_ENTITY_1"])
+            selfList, sameSeqEntryList = self.__sepsUtil.searchSameSequenceEntity(entryId=dataSetId, seq=eD["SEQ_ENTITY_1"])
             selfInfoMap = {}
             sameSeqInfoMap = {}
             if (len(selfList) > 0) or (len(sameSeqEntryList) > 0):
                 partsTaxIdInfoList = []
                 for (partNo, pD) in enumerate(eD["PART_LIST"], start=1):
                     if ("SOURCE_TAXID" in pD) and pD["SOURCE_TAXID"] and ("SEQ_NUM_BEG" in pD) and pD["SEQ_NUM_BEG"] and ("SEQ_NUM_END" in pD) and pD["SEQ_NUM_END"]:
-                        partsTaxIdInfoList.append([ str(partNo), pD["SEQ_NUM_BEG"], pD["SEQ_NUM_END"], "", pD["SOURCE_TAXID"] ])
+                        partsTaxIdInfoList.append([str(partNo), pD["SEQ_NUM_BEG"], pD["SEQ_NUM_END"], "", pD["SOURCE_TAXID"]])
                     elif (len(eD["PART_LIST"]) == 1) and ("SOURCE_TAXID" in pD) and pD["SOURCE_TAXID"]:
-                        partsTaxIdInfoList.append([ str(partNo), "", "", "", pD["SOURCE_TAXID"] ])
+                        partsTaxIdInfoList.append([str(partNo), "", "", "", pD["SOURCE_TAXID"]])
                     #
                 #
                 annObj = GetSameSeqAnnotation(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, verbose=self.__verbose, log=self.__lfh)
@@ -93,8 +100,8 @@ class SeqAnnotationSearchUtils(object):
                     sameSeqInfoMap = annObj.getSeqAnnotationFromAssignFile(retList=sameSeqEntryList, authPartsTaxIdInfoList=partsTaxIdInfoList)
                 #
             #
-            return selfInfoMap,sameSeqInfoMap
-        except:
+            return selfInfoMap, sameSeqInfoMap
+        except:  # noqa: E722 pylint: disable=bare-except
             traceback.print_exc(file=self.__lfh)
-            return {},{}
+            return {}, {}
         #

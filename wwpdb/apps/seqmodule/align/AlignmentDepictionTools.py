@@ -16,20 +16,23 @@ try:
 except ImportError:
     import pickle as pickle
 #
-import copy, os, sys, traceback
+import copy
+import os
+import sys
+import traceback
 from operator import itemgetter
 
 from wwpdb.apps.seqmodule.align.AlignmentBackEndEditingTools import AlignmentBackEndEditingTools
 from wwpdb.apps.seqmodule.align.AlignmentToolUtils import codeSeqIndex
-from wwpdb.apps.seqmodule.io.SequenceEditStore import getEditStoreFilename,SequenceEditStore
+from wwpdb.apps.seqmodule.io.SequenceEditStore import getEditStoreFilename, SequenceEditStore
 from wwpdb.utils.session.UtilDataStore import UtilDataStore
 
+
 class AlignmentDepictionTools(AlignmentBackEndEditingTools):
-    """ Render the input alignment view and conflict table.
-    """
+    """Render the input alignment view and conflict table."""
+
     def __init__(self, reqObj=None, entityId=None, pathInfo=None, seqDataStore=None, verbose=False, log=sys.stderr):
-        super(AlignmentDepictionTools, self).__init__(reqObj=reqObj, entityId=entityId, pathInfo=pathInfo, seqDataStore=seqDataStore, \
-                                                      verbose=verbose, log=log)
+        super(AlignmentDepictionTools, self).__init__(reqObj=reqObj, entityId=entityId, pathInfo=pathInfo, seqDataStore=seqDataStore, verbose=verbose, log=log)
         #
         self.__sessionId = self._reqObj.getSessionId()
         self.__alignViewOrder = self._reqObj.getAlignmentOrdering()
@@ -55,10 +58,12 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         #
         self.__refAlignIdx = -1
         self.__authAlignIdx = -1
+        #
+        self.__selectedIdList = []
+        self.__annotationDict = {}
 
     def doRender(self):
-        """ Render alignment, conflict table, annotations & warning 
-        """
+        """Render alignment, conflict table, annotations & warning"""
         self.__setup()
         authIdx = self._seqAlignLabelIndices[self._authLabel]
         self._checkPartStartEndPosMap(authIdx, self._authLabel)
@@ -67,13 +72,13 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         totalSeqCoodConflict = self._assignAllConflicts(self._authLabel, self.__selectedIdList)
         if len(self.__alignIdList) > len(self.__selectedIdList):
             self._clearAllConflicts(authIdx)
-            numSeqCoodConflict = self._assignAllConflicts(self._authLabel, self.__alignIdList)
+            _numSeqCoodConflict = self._assignAllConflicts(self._authLabel, self.__alignIdList)  # noqa: F841
         #
         self.__renderAlignment()
         self.__renderConflictTable(authIdx)
         self.__renderAnnotations()
         self.__renderWarning(authIdx)
-        #self.__writeMisMatchTypeText()
+        # self.__writeMisMatchTypeText()
         self.__updateSeqCoodConflict(totalSeqCoodConflict)
         self.__updateMiscDataStore()
         self.__updateUtilDataStore()
@@ -95,23 +100,21 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         return True
 
     def setLogHandle(self, log=sys.stderr):
-        """  Reset the stream for logging output.
-        """
+        """Reset the stream for logging output."""
         try:
             self._lfh = log
-            return True 
-        except:
+            return True
+        except:  # noqa: E722 pylint: disable=bare-except
             return False
         #
 
     def __setup(self):
-        """ Check if input alignIds match the default selected alignIds saved in alignment pickle file and
-            build proper display order index based input alignment view order
+        """Check if input alignIds match the default selected alignIds saved in alignment pickle file and
+        build proper display order index based input alignment view order
         """
         chainIdList = self.getGroup(self._entityId)
         if self._verbose:
-            self._lfh.write("AlignmentDepictionTools.__setup identifier=%r entityId=%r operation=%r\n" % \
-                           (self.__identifier, self._entityId, self.__operation))
+            self._lfh.write("AlignmentDepictionTools.__setup identifier=%r entityId=%r operation=%r\n" % (self.__identifier, self._entityId, self.__operation))
             self._lfh.write("alignIdList=%r\n" % self.__alignIdList)
             self._lfh.write("allSelectedIdList=%r\n" % self.__allSelectedIdList)
             self._lfh.write("chainIdList=%r\n" % chainIdList)
@@ -124,7 +127,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 if len(tL) < 3:
                     continue
                 #
-                if ((tL[0] in ( "auth", "ref")) and (tL[1] == self._entityId)) or ((tL[0] == "xyz") and (tL[1] in chainIdList)):
+                if ((tL[0] in ("auth", "ref")) and (tL[1] == self._entityId)) or ((tL[0] == "xyz") and (tL[1] in chainIdList)):
                     self.__selectedIdList.append(seqId)
                 elif (tL[0] == "selfref") and (tL[1] == self._entityId):
                     self._selfRefPartIdList.append(seqId)
@@ -132,19 +135,18 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             #
             self.__editAndUpdateAlignment()
         else:
-            self.__alignIdList,self.__selectedIdList = self._checkAndUpdateAlignment(self.__alignIdList, self.__allSelectedIdList)
+            self.__alignIdList, self.__selectedIdList = self._checkAndUpdateAlignment(self.__alignIdList, self.__allSelectedIdList)
         #
         if self._verbose:
             self._lfh.write("self.__selectedIdList=%r\n" % self.__selectedIdList)
         #
 
     def __editAndUpdateAlignment(self):
-        """ Apply any stored edits to the current alignment in the input sequence alignment list.
-        """
+        """Apply any stored edits to the current alignment in the input sequence alignment list."""
         esfn = getEditStoreFilename(self._entityId)
         ses = SequenceEditStore(sessionObj=self._reqObj.getSessionObj(), fileName=esfn, verbose=self._verbose, log=self._lfh)
         edObjList = ses.getList()
-        if (self._verbose):
+        if self._verbose:
             self._lfh.write("+AlignmentDepictionTools.__editAndUpdateAlignment() edit store %s edit list length %d\n" % (esfn, len(edObjList)))
         #
         edObjMap = {}
@@ -154,8 +156,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             resLabelObj = self._getResLabelFromResLabelId(resLabelId)
             if not resLabelObj:
                 if self._verbose:
-                    self._lfh.write("+AlignmentDepictionTools.__editAndUpdateAlignment() unpack resLabelId failed: edType=%r getTargetElementId()=%r\n" \
-                                 % (edType, resLabelId))
+                    self._lfh.write("+AlignmentDepictionTools.__editAndUpdateAlignment() unpack resLabelId failed: edType=%r getTargetElementId()=%r\n" % (edType, resLabelId))
                 #
                 continue
             #
@@ -164,14 +165,13 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 newLabelObj = self._getResLabelFromResLabelId(newId)
                 if not newLabelObj:
                     if self._verbose:
-                        self._lfh.write("+AlignmentDepictionTools.__editAndUpdateAlignment() unpack resLabelId failed: edType=%r getNewElementId()=%r\n" \
-                                     % (edType, newId))
+                        self._lfh.write("+AlignmentDepictionTools.__editAndUpdateAlignment() unpack resLabelId failed: edType=%r getNewElementId()=%r\n" % (edType, newId))
                     #
                     continue
                 #
             #
             seqLabelId = self._getSeqLabelId(resLabelObj.getSeq())
-            if not seqLabelId in self._seqAlignLabelIndices:
+            if seqLabelId not in self._seqAlignLabelIndices:
                 if self._verbose:
                     self._lfh.write("+AlignmentDepictionTools.__editAndUpdateAlignment() seqLabelId %r does not exist in alignment.\n" % seqLabelId)
                 #
@@ -180,43 +180,42 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             seqType = resLabelObj.getSequenceType()
             if edType in edObjMap:
                 if seqType in edObjMap[edType]:
-                    edObjMap[edType][seqType].append( (resLabelId, ( seqType, seqLabelId, self._seqAlignLabelIndices[seqLabelId], edObj ) ) )
+                    edObjMap[edType][seqType].append((resLabelId, (seqType, seqLabelId, self._seqAlignLabelIndices[seqLabelId], edObj)))
                 else:
-                    edObjMap[edType][seqType] = [ ( resLabelId, ( seqType, seqLabelId, self._seqAlignLabelIndices[seqLabelId], edObj ) ) ]
+                    edObjMap[edType][seqType] = [(resLabelId, (seqType, seqLabelId, self._seqAlignLabelIndices[seqLabelId], edObj))]
                 #
             else:
                 myD = {}
-                myD[seqType] = [ ( resLabelId, ( seqType, seqLabelId, self._seqAlignLabelIndices[seqLabelId], edObj ) ) ]
+                myD[seqType] = [(resLabelId, (seqType, seqLabelId, self._seqAlignLabelIndices[seqLabelId], edObj))]
                 edObjMap[edType] = myD
             #
         #
         if not edObjMap:
             return
         #
-        for edType in ( "details", "replace", "replaceid", "delete", "insert" ):
-            if not edType in edObjMap:
+        for edType in ("details", "replace", "replaceid", "delete", "insert"):
+            if edType not in edObjMap:
                 continue
             #
-            for seqType in ( "auth", "xyz", "ref" ):
-                if not seqType in edObjMap[edType]:
+            for seqType in ("auth", "xyz", "ref"):
+                if seqType not in edObjMap[edType]:
                     continue
                 #
-                for (resLabelId,editInfoTuple) in edObjMap[edType][seqType]:
+                for (resLabelId, editInfoTuple) in edObjMap[edType][seqType]:
                     try:
                         getattr(self, "_update_%s" % edType)(self._getResLabelFromResLabelId(resLabelId), editInfoTuple)
-                    except:
+                    except:  # noqa: E722 pylint: disable=bare-except
                         traceback.print_exc(file=self._lfh)
                     #
                 #
             #
         #
-        self.__alignIdList,self.__selectedIdList = self._updateAlignmentAndSequences(self.__alignIdList, self.__selectedIdList)
+        self.__alignIdList, self.__selectedIdList = self._updateAlignmentAndSequences(self.__alignIdList, self.__selectedIdList)
         self._updateAlignmentDataStore(self._authLabel)
         ses.deleteEditList(edObjList)
 
     def __buildAlignIndexOrder(self):
-        """ Build display order index based input alignment view order
-        """
+        """Build display order index based input alignment view order"""
         orderedAlignIdList = []
         for viewOrder in self.__alignViewOrder.split("-"):
             foundAlignIdList = []
@@ -224,11 +223,11 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 if not alignId.startswith(viewOrder):
                     continue
                 #
-                if not alignId in self._seqAlignLabelIndices:
+                if alignId not in self._seqAlignLabelIndices:
                     self._addErrorMessage("Missing '" + alignId + "' in alignment.")
                     continue
                 #
-                foundAlignIdList.append( [ self._seqAlignLabelIndices[alignId], alignId ] )
+                foundAlignIdList.append([self._seqAlignLabelIndices[alignId], alignId])
             #
             if not foundAlignIdList:
                 continue
@@ -272,7 +271,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 #
                 label = dbName + ":" + displayCode
                 if uniprotCode != "":
-                    label='<a href="http://www.uniprot.org/uniprot/%s" target="blank"><span class="nowrap">%s</span></a>'%(uniprotCode,dbName+":"+displayCode)
+                    label = '<a href="http://www.uniprot.org/uniprot/%s" target="blank"><span class="nowrap">%s</span></a>' % (uniprotCode, dbName + ":" + displayCode)
                 #
             elif seqType == "auth":
                 num_auths += 1
@@ -298,8 +297,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                     begPos = self._partPosDict[int(seqPartId)][0]
                     endPos = self._partPosDict[int(seqPartId)][1]
                 #
-                self.__orderAlignRefIndexList.append((orderedAlignIdTup[0], seqType, seqInstId, seqPartId, seqAltId, seqVersion, label, \
-                                                      polymerTypeCode, begPos, endPos))
+                self.__orderAlignRefIndexList.append((orderedAlignIdTup[0], seqType, seqInstId, seqPartId, seqAltId, seqVersion, label, polymerTypeCode, begPos, endPos))
             #
         #
         if (num_refs > 1) or (num_auths > 1):
@@ -308,8 +306,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         #
 
     def __renderAlignment(self):
-        """ Render the alignment list according the selected option type
-        """
+        """Render the alignment list according the selected option type"""
         htmlFilePath = os.path.join(self._sessionPath, "current-alignment-" + self._entityId + ".html")
         self.__removeFile(htmlFilePath)
         #
@@ -331,20 +328,20 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         legendL = []
         legendL.append('<ul class="legend">\n<li>|</li>')
         for idx in range(2, resPerLine + 1):
-            if (idx % 10 == 0):
+            if idx % 10 == 0:
                 legendL.append("<li>|</li>")
-            elif (idx % 5 == 0):
+            elif idx % 5 == 0:
                 legendL.append("<li>+</li>")
             else:
                 legendL.append("<li>-</li>")
         legendL.append("</ul>\n")
         legend = "".join(legendL)
         #
-        while (ibeg < alignLength):
+        while ibeg < alignLength:
             iend = min(ibeg + resPerLine, alignLength)
             #
             # Alternate background style (odd lines)
-            if (alignmentLine % 2):
+            if alignmentLine % 2:
                 cssClassBg = "greybg"
             else:
                 cssClassBg = "whitebg"
@@ -353,7 +350,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             self.__alignmentBlock.append(str(alignmentLine))
             #
             for (alignIdx, seqType, seqInstId, seqPartId, seqAltId, seqVersion, label, polymerTypeCode) in self.__orderAlignIndexList:
-                idL = seqType + "_" +  seqInstId + "_" + str(alignmentLine)
+                idL = seqType + "_" + seqInstId + "_" + str(alignmentLine)
                 fp.write('<div id="%s" class="%s">%s &nbsp;</div>\n' % (idL, seqType, label))
                 #
                 cssT = cssClassPickable + " " + cssClassBg
@@ -364,16 +361,25 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                     # orginal residue label index + position in alignment  + position in sequence
                     # type + '_' + chainId + '_' + compId + '_'+ resNum + '_' + str(sPos) + '_' + seqIdx
                     #
-                    idS = self._getResLabelId(seqType=seqType, seqInstId=seqInstId, seqAltId=seqAltId, seqVersion=seqVersion, \
-                              residueCode3=self._seqAlignList[sPos][alignIdx][1], residueLabelIndex=self._seqAlignList[sPos][alignIdx][2], alignIndex=sPos, \
-                              seqIndex=codeSeqIndex(self._seqAlignList[sPos][alignIdx][3]), residueType=polymerTypeCode, seqPartId=seqPartId)
+                    idS = self._getResLabelId(
+                        seqType=seqType,
+                        seqInstId=seqInstId,
+                        seqAltId=seqAltId,
+                        seqVersion=seqVersion,
+                        residueCode3=self._seqAlignList[sPos][alignIdx][1],
+                        residueLabelIndex=self._seqAlignList[sPos][alignIdx][2],
+                        alignIndex=sPos,
+                        seqIndex=codeSeqIndex(self._seqAlignList[sPos][alignIdx][3]),
+                        residueType=polymerTypeCode,
+                        seqPartId=seqPartId,
+                    )
                     #
                     cssClassType = ""
-                    if (polymerTypeCode == "RNA"):
+                    if polymerTypeCode == "RNA":
                         cssClassType = " bgcolrna "
-                    elif (polymerTypeCode == "DNA"):
+                    elif polymerTypeCode == "DNA":
                         cssClassType = " bgcoldna "
-                    elif (polymerTypeCode == "XNA"):
+                    elif polymerTypeCode == "XNA":
                         cssClassType = " bgcolrna "
                         if self._srd.isDNA(self._seqAlignList[sPos][alignIdx][1]):
                             cssClassType = " bgcoldna "
@@ -381,25 +387,35 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                     #
                     if (seqType == "xyz") or (seqType == "ref"):
                         cssClassEditable = "draggable"
-                    elif((seqType == "ref") and (self._seqAlignList[sPos][alignIdx][1] != self._gapSymbol)):
+                    elif (seqType == "ref") and (self._seqAlignList[sPos][alignIdx][1] != self._gapSymbol):
                         cssClassEditable = ""
                     else:
                         cssClassEditable = "dblclick draggable"
                     #
-                    if(seqType == "ref" and (sPos == 0 or sPos == (alignLength - 1))):
+                    if seqType == "ref" and (sPos == 0 or sPos == (alignLength - 1)):
                         cssClassEditable += " " + cssClassTerminalResidue
                     #
                     if self._seqAlignList[sPos][alignIdx][6] != 0:
-                        cssPosClassBg = cssClassEditable + " " + self.__assignConflictCssStyle((self._seqAlignList[sPos][alignIdx][6], \
-                                        self._seqAlignList[sPos][alignIdx][7]), seqType, self._seqAlignList[sPos][alignIdx][5])
+                        cssPosClassBg = (
+                            cssClassEditable
+                            + " "
+                            + self.__assignConflictCssStyle(
+                                (self._seqAlignList[sPos][alignIdx][6], self._seqAlignList[sPos][alignIdx][7]), seqType, self._seqAlignList[sPos][alignIdx][5]
+                            )
+                        )
                     else:
                         cssPosClassBg = cssClassEditable + cssClassType
                     #
                     # Add highlighting of exceptional features with the coordinate sequence.
                     #
-                    if ((seqType == "xyz") and (len(self._seqAlignList[sPos][alignIdx][5]) > 0) and (not (cssPosClassBg.find("cf-misc-") != -1)) and \
-                       (not (cssPosClassBg.find("cf-ala-gly") != -1)) and (not (cssPosClassBg.find("cf-glu-gln") != -1)) and \
-                       (not (cssPosClassBg.find("cf-asp-asn") != -1))):
+                    if (
+                        (seqType == "xyz")
+                        and (len(self._seqAlignList[sPos][alignIdx][5]) > 0)
+                        and (not (cssPosClassBg.find("cf-misc-") != -1))
+                        and (not (cssPosClassBg.find("cf-ala-gly") != -1))
+                        and (not (cssPosClassBg.find("cf-glu-gln") != -1))
+                        and (not (cssPosClassBg.find("cf-asp-asn") != -1))
+                    ):
                         if self._seqAlignList[sPos][alignIdx][5].find("link") != -1:
                             cssPosClassBg += " bgxyzlink "
                         #
@@ -410,20 +426,20 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                             cssPosClassBg += " bgxyzocc  "
                         #
                     #
-                    if ((seqType == "xyz") and (len(self._seqAlignList[sPos][alignIdx][5]) > 0) and (self._seqAlignList[sPos][alignIdx][5].find("hetero") != -1)):
+                    if (seqType == "xyz") and (len(self._seqAlignList[sPos][alignIdx][5]) > 0) and (self._seqAlignList[sPos][alignIdx][5].find("hetero") != -1):
                         cssPosClassBg += " bgxyzhetero  "
                         ii = self._seqAlignList[sPos][alignIdx][5].find("hetero")
-                        idS += "_" + self._seqAlignList[sPos][alignIdx][5][ii + 7:]
+                        idS += "_" + self._seqAlignList[sPos][alignIdx][5][ii + 7 :]
                     #
                     # Add highlighting for linker regions in the sample sequence --
                     #
-                    if ((seqType == "auth") and (len(self._seqAlignList[sPos][alignIdx][5]) > 0)):
+                    if (seqType == "auth") and (len(self._seqAlignList[sPos][alignIdx][5]) > 0):
                         if self._seqAlignList[sPos][alignIdx][5].find("linker") != -1:
                             cssPosClassBg += " cf-misc-ref "
                             self._seqAlignList[sPos][alignIdx][6] = 1
                         #
                     #
-                    if (self._seqAlignList[sPos][alignIdx][1] == self._gapSymbol):
+                    if self._seqAlignList[sPos][alignIdx][1] == self._gapSymbol:
                         cssPosClassBg += " cf-gap-test "
                     #
                     # for tool tips -
@@ -447,8 +463,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         fp.close()
 
     def __renderConflictTable(self, authIdx):
-        """ Render the conflict table from the alignment
-        """
+        """Render the conflict table from the alignment"""
         htmlFilePath = os.path.join(self._sessionPath, "conflict-report-" + self._entityId + ".html")
         self.__removeFile(htmlFilePath)
         #
@@ -473,8 +488,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         fp.close()
 
     def __renderAnnotations(self):
-        """ Get selected annotations for display in alignment view display
-        """
+        """Get selected annotations for display in alignment view display"""
         htmlFilePath = os.path.join(self._sessionPath, "current-alignment-annotation-" + self._entityId + ".html")
         self.__removeFile(htmlFilePath)
         #
@@ -506,10 +520,9 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         fp.close()
 
     def __renderWarning(self, authIdx):
-        """ Render engineered mutation warning for nature source sequence
-        """
-#       htmlFilePath = os.path.join(self._sessionPath, "warning-alignment-" + self._entityId + ".html")
-#       self.__removeFile(htmlFilePath)
+        """Render engineered mutation warning for nature source sequence"""
+        #       htmlFilePath = os.path.join(self._sessionPath, "warning-alignment-" + self._entityId + ".html")
+        #       self.__removeFile(htmlFilePath)
         #
         if len(self._seqAlignList) < 1:
             return
@@ -522,41 +535,40 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             if len(alignTup[authIdx][5]) < 1:
                 continue
             #
-            aType,comment = self._decodeComment(alignTup[authIdx][5])
-            for cType in ( 'engineered mutation', 'expression tag', 'linker' ):
+            _aType, comment = self._decodeComment(alignTup[authIdx][5])
+            for cType in ("engineered mutation", "expression tag", "linker"):
                 if comment.find(cType) != -1:
                     eelCommentL.append(cType)
                 #
             #
         #
         self.__warningMsg += self._getNaturalSourceWarningMessage(self.__annotationDict["source_method"].upper(), eelCommentL)
-#       if not self.__warningMsg:
-#           return
-#       #
-#       fp = open(htmlFilePath, "w")
-#       fp.write("%s\n" % self.__warningMsg)
-#       fp.close()
-        
-    def __writeMisMatchTypeText(self):
-        """ Write over all mismatch type into the text file
-        """
-        textFilePath = os.path.join(self._sessionPath, "mismatch-type.txt")
-        fp = open(textFilePath, "w")
-        if not self.__misMatchTypes:
-            fp.write("%s" %  "no-mismatch")
-        elif len(self.__misMatchTypes) == 1:
-            fp.write("%s" % self.__misMatchTypes[0])
-        else:
-            fp.write("%s" % "cf-all-mismatch")
-        #
-        fp.close()
+
+    #       if not self.__warningMsg:
+    #           return
+    #       #
+    #       fp = open(htmlFilePath, "w")
+    #       fp.write("%s\n" % self.__warningMsg)
+    #       fp.close()
+
+    # def __writeMisMatchTypeText(self):
+    #     """Write over all mismatch type into the text file"""
+    #     textFilePath = os.path.join(self._sessionPath, "mismatch-type.txt")
+    #     fp = open(textFilePath, "w")
+    #     if not self.__misMatchTypes:
+    #         fp.write("%s" % "no-mismatch")
+    #     elif len(self.__misMatchTypes) == 1:
+    #         fp.write("%s" % self.__misMatchTypes[0])
+    #     else:
+    #         fp.write("%s" % "cf-all-mismatch")
+    #     #
+    #     fp.close()
 
     def __updateSeqCoodConflict(self, numConflict):
-        """
-        """
+        """ """
         warningD = {}
         picklePath = self._pI.getFilePath(self.__identifier, contentType="mismatch-warning", formatType="pic", fileSource="session")
-        if (os.access(picklePath, os.F_OK)):
+        if os.access(picklePath, os.F_OK):
             fb = open(picklePath, "rb")
             warningD = pickle.load(fb)
             fb.close()
@@ -591,7 +603,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 for iEntityId in intEntityIdList:
                     sortedEntityIdList.append(str(iEntityId))
                 #
-            except:
+            except:  # noqa: E722 pylint: disable=bare-except
                 sortedEntityIdList = sorted(set(misMatchList))
             #
             misMatchList = sortedEntityIdList
@@ -602,8 +614,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         fb.close()
 
     def __updateMiscDataStore(self):
-        """ Write self.__alignIdList, self.__selectedIdList, self.__warningMsg & self.__misMatchTypes values to pickle file
-        """
+        """Write self.__alignIdList, self.__selectedIdList, self.__warningMsg & self.__misMatchTypes values to pickle file"""
         pickleFilePath = os.path.join(self._sessionPath, "alignment-" + self._entityId + "-misc.pic")
         self.__removeFile(pickleFilePath)
         #
@@ -638,10 +649,9 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         fb.close()
 
     def __updateUtilDataStore(self):
-        """ Update UtilDataStore object
-        """
+        """Update UtilDataStore object"""
         eD = {}
-        for key in ( "STRUCT_TITLE", "PDB_ID" ):
+        for key in ("STRUCT_TITLE", "PDB_ID"):
             eD[key] = self.getEntryDetail(key)
         #
         uds = UtilDataStore(reqObj=self._reqObj, verbose=self._verbose, log=self._lfh)
@@ -658,62 +668,60 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         uds.serialize()
 
     def __removeFile(self, filePath):
-        """ remove existing file
-        """
+        """remove existing file"""
         if os.access(filePath, os.F_OK):
             os.remove(filePath)
         #
 
     def __assignConflictCssStyle(self, conflictTup, seqType, comment):
-        """  Assign a CSS Sytle for the input conflict -
-        """
-        styleS = ''
-        if (conflictTup[0] == 0):
-            styleS = ''
-        elif (conflictTup[0] == 1):
+        """Assign a CSS Sytle for the input conflict -"""
+        styleS = ""
+        if conflictTup[0] == 0:
+            styleS = ""
+        elif conflictTup[0] == 1:
             styleS = " cf-misc-ref "
-        elif (conflictTup[0] == 2):
+        elif conflictTup[0] == 2:
             styleS = " cf-misc-test "
-            if (conflictTup[1] == 'UNK') or ((len(comment) > 0) and self._isCompatible(comment, conflictTup[1])):
+            if (conflictTup[1] == "UNK") or ((len(comment) > 0) and self._isCompatible(comment, conflictTup[1])):
                 styleS = " cf-misc-test cf-other-mismatch cf-all-mismatch "
-                if 'cf-other-mismatch' not in self.__misMatchTypes:
-                    self.__misMatchTypes.append('cf-other-mismatch')
+                if "cf-other-mismatch" not in self.__misMatchTypes:
+                    self.__misMatchTypes.append("cf-other-mismatch")
                 #
             #
-        elif (conflictTup[0] == 3):
+        elif conflictTup[0] == 3:
             styleS = " cf-gap-test "
-        elif (conflictTup[0] == 4):
+        elif conflictTup[0] == 4:
             styleS = " cf-gap-ref "
-        elif (conflictTup[0] == 5):
+        elif conflictTup[0] == 5:
             styleS = " cf-glu-gln cf-all-mismatch "
-            if 'cf-glu-gln' not in self.__misMatchTypes:
-                self.__misMatchTypes.append('cf-glu-gln')
+            if "cf-glu-gln" not in self.__misMatchTypes:
+                self.__misMatchTypes.append("cf-glu-gln")
             #
-        elif (conflictTup[0] == 6):
+        elif conflictTup[0] == 6:
             styleS = " cf-asp-asn cf-all-mismatch "
-            if 'cf-asp-asn' not in self.__misMatchTypes:
-                self.__misMatchTypes.append('cf-asp-asn')
+            if "cf-asp-asn" not in self.__misMatchTypes:
+                self.__misMatchTypes.append("cf-asp-asn")
             #
-        elif (conflictTup[0] == 7 and seqType == 'xyz'):
+        elif conflictTup[0] == 7 and seqType == "xyz":
             styleS = " cf-ala-gly cf-all-mismatch "
-            if 'cf-ala-gly' not in self.__misMatchTypes:
-                self.__misMatchTypes.append('cf-ala-gly')
+            if "cf-ala-gly" not in self.__misMatchTypes:
+                self.__misMatchTypes.append("cf-ala-gly")
             #
-        elif (conflictTup[0] == 8):
+        elif conflictTup[0] == 8:
             styleS = " cf-met-mse cf-misc-ref cf-all-mismatch "
-            if 'cf-met-mse' not in self.__misMatchTypes:
-                self.__misMatchTypes.append('cf-met-mse')
+            if "cf-met-mse" not in self.__misMatchTypes:
+                self.__misMatchTypes.append("cf-met-mse")
             #
-        elif (conflictTup[0] == 9):
+        elif conflictTup[0] == 9:
             if len(comment) > 0:
                 styleS = " cf-met-mse cf-misc-ref cf-all-mismatch "
             else:
                 styleS = " cf-met-mse "
             #
-        elif (conflictTup[0] == 10):
+        elif conflictTup[0] == 10:
             styleS = " cf-misc-test "
         else:
-            styleS = ''
+            styleS = ""
         #
         # JDW JDW - generalize editing
         if (len(styleS) > 0) and (seqType != "ref"):
@@ -722,16 +730,16 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         return styleS
 
     def __getConflictTable(self, authIdx):
-        """ Get conflict table content from the alignment
+        """Get conflict table content from the alignment
 
-            alignTup[0: 1_L_code, 1: 3_L_code, 2: numbering, 3: sequence index, 4: align position, 5: comment, 6: conflict number, 7: conflict comment ]
+        alignTup[0: 1_L_code, 1: 3_L_code, 2: numbering, 3: sequence index, 4: align position, 5: comment, 6: conflict number, 7: conflict comment ]
         """
         conflictList = []
-        seqPosAuth = 0
+        # seqPosAuth = 0
         expressionTagCount = 0
         foundLongExpressionTag = False
         #
-        for alPos,alignTup in enumerate(self._seqAlignList):
+        for alPos, alignTup in enumerate(self._seqAlignList):
             if len(alignTup[authIdx][5]) < 1:
                 if expressionTagCount >= self._longExpressionTagCountCutoff:
                     foundLongExpressionTag = True
@@ -739,7 +747,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 expressionTagCount = 0
                 continue
             #
-            cType,comment = self._decodeComment(alignTup[authIdx][5])
+            _cType, comment = self._decodeComment(alignTup[authIdx][5])
             if comment == "expression tag":
                 expressionTagCount += 1
             else:
@@ -748,9 +756,18 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 #
                 expressionTagCount = 0
             #
-            idAuth = self._getResLabelId(seqType=self.__seqTypeAuth, seqInstId=self.__seqInstIdAuth, seqAltId=self.__seqAltIdAuth, \
-                         seqVersion=self.__seqVersionAuth, residueCode3=alignTup[authIdx][1], residueLabelIndex=alignTup[authIdx][2], alignIndex=alPos, \
-                         seqIndex=codeSeqIndex(alignTup[authIdx][3]), residueType=self.__polymerTypeCodeAuth, seqPartId=self.__seqPartIdAuth)
+            idAuth = self._getResLabelId(
+                seqType=self.__seqTypeAuth,
+                seqInstId=self.__seqInstIdAuth,
+                seqAltId=self.__seqAltIdAuth,
+                seqVersion=self.__seqVersionAuth,
+                residueCode3=alignTup[authIdx][1],
+                residueLabelIndex=alignTup[authIdx][2],
+                alignIndex=alPos,
+                seqIndex=codeSeqIndex(alignTup[authIdx][3]),
+                residueType=self.__polymerTypeCodeAuth,
+                seqPartId=self.__seqPartIdAuth,
+            )
             #
             inPart = False
             for (alignIdx, seqType, seqInstId, seqPartId, seqAltId, seqVersion, label, polymerTypeCode, begPos, endPos) in self.__orderAlignRefIndexList:
@@ -767,11 +784,23 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                             self.__missingAuthSeqMap[str(alPos)] = alignTup[alignIdx][0]
                         #
                     #
-                    idRef = self._getResLabelId(seqType=seqType, seqInstId=seqInstId, seqAltId=seqAltId, seqVersion=seqVersion, \
-                                 residueCode3=alignTup[alignIdx][1], residueLabelIndex=alignTup[alignIdx][2], alignIndex=alPos, \
-                                 seqIndex=codeSeqIndex(alignTup[alignIdx][3]), residueType=polymerTypeCode, seqPartId=seqPartId)
-                    conflictList.extend(self.__wrConflictTableRow(alPos, idAuth, alignTup[authIdx][1], idRef, label, seqType, alignTup[alignIdx][1], \
-                                        (alignTup[alignIdx][6], alignTup[alignIdx][7]), comment))
+                    idRef = self._getResLabelId(
+                        seqType=seqType,
+                        seqInstId=seqInstId,
+                        seqAltId=seqAltId,
+                        seqVersion=seqVersion,
+                        residueCode3=alignTup[alignIdx][1],
+                        residueLabelIndex=alignTup[alignIdx][2],
+                        alignIndex=alPos,
+                        seqIndex=codeSeqIndex(alignTup[alignIdx][3]),
+                        residueType=polymerTypeCode,
+                        seqPartId=seqPartId,
+                    )
+                    conflictList.extend(
+                        self.__wrConflictTableRow(
+                            alPos, idAuth, alignTup[authIdx][1], idRef, label, seqType, alignTup[alignIdx][1], (alignTup[alignIdx][6], alignTup[alignIdx][7]), comment
+                        )
+                    )
                 #
             #
             if not inPart:
@@ -787,45 +816,42 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         return conflictList
 
     def __wrConflictTableRow(self, sPos, idRef, compIdRef, idTest, labelTest, seqTypeTest, compIdTest, cLTest, details):
-        """
-        """
+        """ """
         cssEditDetails = "dblclickselect"
         cL = []
-        cL.append('<tr><td>%d</td>' % (int(sPos) + 1))
+        cL.append("<tr><td>%d</td>" % (int(sPos) + 1))
         cL.append('<td><span id="%s_R" class="%s">%s</span></td>' % (idRef, "", compIdRef))
         #
         cL.append('<td><span class="nowrap">%s</span></td>' % labelTest)
-        cL.append('<td>')
+        cL.append("<td>")
         #
         cssConflict = self.__assignConflictCssStyle(cLTest, seqTypeTest, details)
         cL.append('<span id="%s_R" class="%s nowrap">%s</span>' % (idTest, cssConflict, compIdTest))
-        cL.append('</td>')
+        cL.append("</td>")
         cL.append('<td><span id="%s_D" class="%s">%s</span></td>' % (idRef, cssEditDetails, details))
-        cL.append('</tr>\n')
+        cL.append("</tr>\n")
         return cL
 
     def __wrConflictTableRowOther(self, sPos, idRef, compIdRef, details):
-        """
-        """
+        """ """
         cssEditDetails = "dblclickselect"
         cL = []
-        cL.append('<tr><td>%d</td>' % (int(sPos) + 1))
+        cL.append("<tr><td>%d</td>" % (int(sPos) + 1))
         cL.append('<td><span id="%s_R" class="%s">%s</span></td>' % (idRef, " ", compIdRef))
         #
-        cL.append('<td>%s</td>' % " ")
-        cL.append('<td>')
+        cL.append("<td>%s</td>" % " ")
+        cL.append("<td>")
         #
         cssConflict = " "
         cL.append('<span id="%s_R" class="%s">%s</span>' % (idRef, cssConflict, " "))
-        cL.append('</td>')
+        cL.append("</td>")
         cL.append('<td><span id="%s_D" class="%s">%s</span></td>' % (idRef, cssEditDetails, details))
-        cL.append('</tr>\n')
+        cL.append("</tr>\n")
         return cL
 
     def __getBlockEditFormHtml(self):
-        """
-        """
-        form_template = '''
+        """ """
+        form_template = """
             <input type="hidden" id="chainids" name="chainids" value="%(chainids)s" />
             <input type="hidden" name="identifier" value="%(identifier)s" />
             <input type="hidden" name="aligntag" value="%(entityid)s" />
@@ -834,7 +860,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             <tr><th>XYZ Chain ID</th><th>Start Position</th><th>End Posotion</th><th>Move to Position</th></tr>
             %(table_row)s
             </table>
-        '''
+        """
         #
         myD = {}
         myD["chainids"] = ",".join(self.__pdbChainIdList)
@@ -851,8 +877,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         return form_template % myD
 
     def __getRepopulateDeletionFormHtml(self):
-        """
-        """
+        """ """
         if (self.__refAlignIdx < 0) or (self.__authAlignIdx < 0):
             return ""
         #
@@ -862,7 +887,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         for i in range(0, len(self._seqAlignList)):
             if self._seqAlignList[i][self.__authAlignIdx][1] != self._gapSymbol:
                 if (start >= 0) and (end >= 0):
-                    deleteList.append(( start, end ))
+                    deleteList.append((start, end))
                 #
                 start = -1
                 end = -1
@@ -874,12 +899,12 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             #
         #
         if (start >= 0) and (end >= 0):
-            deleteList.append(( start, end ))
+            deleteList.append((start, end))
         #
         if not deleteList:
             return ""
         #
-        form_template = '''
+        form_template = """
             <input type="hidden" id="repblocknum" name="repblocknum" value="%(repblocknum)s" />
             <input type="hidden" name="identifier" value="%(identifier)s" />
             <input type="hidden" name="aligntag" value="%(entityid)s" />
@@ -888,7 +913,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             <tr><th>Block #</th><th>Start Position</th><th>End Posotion</th><th>Action</th></tr>
             %(table_row)s
             </table>
-        '''
+        """
         #
         myD = {}
         myD["repblocknum"] = str(len(deleteList))
@@ -903,16 +928,21 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             myD["table_row"] += '<input type="hidden" id="actual_rependposition_' + str(row) + '" value="' + str(delTup[1]) + '" />'
             #
             myD["table_row"] += "<tr><td>" + str(row + 1) + "</td>"
-            myD["table_row"] += '<td><input type="text" id="repstartposition_' + str(row) + '" name="repstartposition_' + str(row) \
-                              + '" value="' + str(delTup[0]) + '" size="20" /></td>'
-            myD["table_row"] += '<td><input type="text" id="rependposition_' + str(row) + '" name="rependposition_' + str(row) \
-                              + '" value="' + str(delTup[1]) + '" size="20" /></td>'
-            myD["table_row"] += '<td><input type="button" id="repsubmit_' + str(row) + '" name="repsubmit_' + str(row) \
-                              + '" class="submit_populatefrm" value="Update" /></td></tr>\n'
+            myD["table_row"] += (
+                '<td><input type="text" id="repstartposition_' + str(row) + '" name="repstartposition_' + str(row) + '" value="' + str(delTup[0]) + '" size="20" /></td>'
+            )
+            myD["table_row"] += (
+                '<td><input type="text" id="rependposition_' + str(row) + '" name="rependposition_' + str(row) + '" value="' + str(delTup[1]) + '" size="20" /></td>'
+            )
+            myD["table_row"] += (
+                '<td><input type="button" id="repsubmit_' + str(row) + '" name="repsubmit_' + str(row) + '" class="submit_populatefrm" value="Update" /></td></tr>\n'
+            )
             #
             row += 1
         #
-        myD["table_row"] += '<tr><td style="border-style:none"></td><td style="border-style:none"></td><td style="border-style:none"></td>' \
-                          + '<td style="border-style:none"><input type="button" id="repsubmit_all" name="repsubmit_all" value="Update All"' \
-                          + ' class="submit_populatefrm" /></td></tr>\n'
+        myD["table_row"] += (
+            '<tr><td style="border-style:none"></td><td style="border-style:none"></td><td style="border-style:none"></td>'
+            + '<td style="border-style:none"><input type="button" id="repsubmit_all" name="repsubmit_all" value="Update All"'
+            + ' class="submit_populatefrm" /></td></tr>\n'
+        )
         return form_template % myD
