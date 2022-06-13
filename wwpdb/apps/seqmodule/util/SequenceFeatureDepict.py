@@ -41,7 +41,9 @@ class SequenceFeatureDepict(object):
             annInitial=self.__fD["REF_ENTRY_ANN"],
         )
 
-    def __markupDatabaseReferenceWithUrl(self, dbName, dbAccession, dbIsoForm="", seqAltId=0, entryId="", entityId="", statusCode="", annInitial=""):  # pylint: disable=unused-argument
+    def __markupDatabaseReferenceWithUrl(
+        self, dbName, dbAccession, dbIsoForm="", seqAltId=0, entryId="", entityId="", statusCode="", annInitial=""
+    ):  # pylint: disable=unused-argument
 
         displayCode = dbAccession
         if len(dbIsoForm) > 0:
@@ -88,12 +90,15 @@ class SequenceFeatureDepict(object):
 
         return "\n".join(dL)
 
-    def __markupAlignmentFeatures(self,  # pylint: disable=unused-argument
-                                  refSeqFullLength=0, alignLength=0,
-                                  seqSim=0.0,  # pylint: disable=unused-argument
-                                  seqSimWithGaps=0.0,  # pylint: disable=unused-argument
-                                  alignBegin=0,
-                                  alignEnd=0):
+    def __markupAlignmentFeatures(
+        self,  # pylint: disable=unused-argument
+        refSeqFullLength=0,
+        alignLength=0,
+        seqSim=0.0,  # pylint: disable=unused-argument
+        seqSimWithGaps=0.0,  # pylint: disable=unused-argument
+        alignBegin=0,
+        alignEnd=0,
+    ):
 
         dL = []
 

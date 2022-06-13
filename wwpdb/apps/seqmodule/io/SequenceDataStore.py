@@ -596,7 +596,8 @@ class SequenceDataStore(object):
                         for altId, v2 in v1b.items():
                             for ver, ival in v2.items():
                                 ofh.write(
-                                    "   type %5s id %4s partID %2d verId %2s altId %4d updated %12s feat len %10d\n" % (vtype, vid, pId, ver, altId, ival[1], len(self.__D[ival[0]]))
+                                    "   type %5s id %4s partID %2d verId %2s altId %4d updated %12s feat len %10d\n"
+                                    % (vtype, vid, pId, ver, altId, ival[1], len(self.__D[ival[0]]))
                                 )
 
         ofh.write("\n  +Sequence Group/Entity Index:\n")
