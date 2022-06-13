@@ -115,7 +115,7 @@ from wwpdb.io.locator.PathInfo import PathInfo
 class SeqModWebApp(object):
     """Handle request and response object processing for sequence editor tool application."""
 
-    def __init__(self, parameterDict={}, verbose=False, log=sys.stderr, siteId="WWPDB_DEPLOY_TEST"):
+    def __init__(self, parameterDict=None, verbose=False, log=sys.stderr, siteId="WWPDB_DEPLOY_TEST"):
         """
         Create an instance of `SeqModWebApp` to manage a sequence editor web request.
 
@@ -125,6 +125,8 @@ class SeqModWebApp(object):
          :param `log`:      stream for logging.
 
         """
+        if parameterDict is None:
+            parameterDict = {}
         self.__verbose = verbose
         self.__lfh = log
         self.__debug = False
@@ -233,9 +235,12 @@ class SeqModWebAppWorker(object):
         """
         self.__verbose = verbose
         self.__lfh = log
+        #
         self.__reqObj = reqObj
         self.__siteId = str(self.__reqObj.getValue("WWPDB_SITE_ID"))
         self.__doWfTracking = True
+        self.__sObj = None
+        self.__sessionPath = None
         #
         self.__appPathD = {
             "/service/environment/dump": "_dumpOp",
@@ -642,7 +647,7 @@ class SeqModWebAppWorker(object):
         else:
             htmlList = []
 
-        (head, tail) = os.path.split(polyLinkHtmlPath)
+        (_head, tail) = os.path.split(polyLinkHtmlPath)
         PathRel = os.path.join("/sessions", sessionId, tail)
         rC.setHtmlContentPath(PathRel)
         rC.setHtmlList(htmlList)
@@ -695,7 +700,7 @@ class SeqModWebAppWorker(object):
                 return rC
             else:
                 #
-                fId, idType = wuu.perceiveIdentifier(modelFileName)
+                fId, _idType = wuu.perceiveIdentifier(modelFileName)
                 self.__reqObj.setValue("identifier", fId)
                 self.__reqObj.setValue("UploadFileName", modelFileName)
                 self.__reqObj.setValue("UploadFileType", fileType)
@@ -795,9 +800,9 @@ class SeqModWebAppWorker(object):
         #
         self.__sObj = self.__reqObj.newSessionObj(forceNew=forceNew)
 
-        self.__sessionId = self.__sObj.getId()
+        # self.__sessionId = self.__sObj.getId()
         self.__sessionPath = self.__sObj.getPath()
-        self.__rltvSessionPath = self.__sObj.getRelativePath()
+        # self.__rltvSessionPath = self.__sObj.getRelativePath()
         #
         if useContext:
             uds = UtilDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
@@ -1420,8 +1425,12 @@ class SeqModWebAppWorker(object):
         #
 
 
-if __name__ == "__main__":
+def main():
     sTool = SeqModWebApp()
     d = sTool.doOp()
     for k, v in d.items():
         sys.stdout.write("Key - %s  value - %r\n" % (k, v))
+
+
+if __name__ == "__main__":
+    main()

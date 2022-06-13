@@ -60,13 +60,14 @@ class DataImporter(object):
 
     """
 
-    def __init__(self, reqObj=None, fileSource="local-upload", maxRefAlign=100, verbose=False, log=sys.stderr):
+    def __init__(self, reqObj=None, fileSource="local-upload", maxRefAlign=100, verbose=False, log=sys.stderr):  # pylint: disable=unused-argument
         self.__reqObj = reqObj
         self.__fileSource = fileSource
         self.__verbose = verbose
         self.__lfh = log
-        self.__maxRefAlign = maxRefAlign
+        # self.__maxRefAlign = maxRefAlign
         #
+        self.__instance = ""
         self.__setup()
         #
 
@@ -158,10 +159,12 @@ class DataImporter(object):
         includePolyLinkFile=False,
         includeSeqAssignFile=False,
         checkFileAvailability=False,
-        entityIdList=[],
+        entityIdList=None,
         messageHead="DataImporter.copyFiles()",
     ):
         """ """
+        if entityIdList is None:
+            entityIdList = []
         startIndex = 1
         if includeModelFile:
             startIndex = 0
@@ -368,19 +371,17 @@ class DataImporter(object):
             self.__lfh.write("+DataImporter.loadData() with file source %r : session path %s cache path %s\n" % (self.__fileSource, self.__sessionPath, cachePath))
             self.__lfh.flush()
         #
-        """
-        if ((cachePath is not None)  and (self.__fileSource == "local-repository")):
-            entityIdList,ok=self.loadSeqDataAssemble(cachePath=cachePath)
-            return ok
-        elif self.__fileSource == "local-repository":
-        """
+        # if ((cachePath is not None)  and (self.__fileSource == "local-repository")):
+        #     entityIdList,ok=self.loadSeqDataAssemble(cachePath=cachePath)
+        #     return ok
+        # elif self.__fileSource == "local-repository":
         if self.__fileSource == "local-repository":
             #
             # Here we have a repository input identifier (e.g. RCSB ID or D_xxxxxx) -
             #
             idCode = self.__identifier
             if idCode.lower().startswith("rcsb"):
-                modelFileName = self.__repositoryImport(idCode)
+                modelFileName = self.__repositoryImport(idCode)  # pylint: disable=assignment-from-none
                 if modelFileName is None:
                     return False
                 #
@@ -392,7 +393,7 @@ class DataImporter(object):
                     return False
                 #
                 self.__copyJMolFile(pdbxFilePath)
-                entityIdList, ok = self.loadSeqDataAssemble()
+                _entityIdList, ok = self.loadSeqDataAssemble()
                 return ok
             elif idCode.upper().startswith("D_"):
                 # reset file source to archive --
@@ -421,7 +422,7 @@ class DataImporter(object):
                 return False
             #
             self.__copyJMolFile(pdbxFilePath)
-            entityIdList, ok = self.loadSeqDataAssemble(doRefSearch=True)
+            _entityIdList, ok = self.loadSeqDataAssemble(doRefSearch=True)
             return ok
         elif self.__fileSource in ["archive", "wf-archive", "wf-instance"]:
             return self.__processArchiveOrInstanceCase()
@@ -455,7 +456,7 @@ class DataImporter(object):
 
         return [], False
 
-    def __repositoryImport(self, idCode):
+    def __repositoryImport(self, idCode):  # pylint: disable=unused-argument
         """Copies target model file from repository to the current session directory.
 
         Returns the imported model file Name or None
@@ -489,7 +490,7 @@ class DataImporter(object):
                 #
             self.__copyJMolFile(modelFileName)
             #
-        entityIdList, ok = self.loadSeqDataAssemble()
+        _entityIdList, ok = self.loadSeqDataAssemble()
         return ok
 
     def __copyJMolFile(self, pdbxModelFilePath):

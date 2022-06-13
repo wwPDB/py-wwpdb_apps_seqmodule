@@ -71,10 +71,12 @@ class SequenceDataExport(object):
                     where it is managed by the SequenceDataStore() class.
     """
 
-    def __init__(self, reqObj=None, exportList=[], verbose=False, log=sys.stderr):
+    def __init__(self, reqObj=None, exportList=None, verbose=False, log=sys.stderr):
         self.__verbose = verbose
         self.__reqObj = reqObj
         self.__lfh = log
+        if exportList is None:
+            exportList = []
         self.__debug = False
         self.__sessionObj = None
         self.__sessionPath = "."
@@ -276,7 +278,7 @@ class SequenceDataExport(object):
                             #
                             if seqAuthRefMap:
                                 authFObj = self.__sds.getFeatureObj(seqId, "auth", partId=int(partId), altId=altId, version=verId)
-                                authPartId, authSeqBeg, authSeqEnd, authSeqPartType = authFObj.getAuthPartDetails()
+                                _authPartId, authSeqBeg, authSeqEnd, _authSeqPartType = authFObj.getAuthPartDetails()
                                 partBeg = int(authSeqBeg)
                                 partEnd = int(authSeqEnd)
                                 foundMap = False
@@ -640,43 +642,43 @@ class SequenceDataExport(object):
         #
         return rptRefDbL
 
-    def __deletionReport(self, refFeatureD, allRefSeqIdxD):
-        """Return a list of content rows for the sequence deletion report."""
-        rptDeleteL = []
-        idel = 1
-        for (gId, partId), tup in refFeatureD.items():
-            if (str(gId), str(partId)) in self.__selfReferenceEntityList:
-                continue
-            #
-            sId = tup[0]
-            fD = tup[2]
-            if sId in allRefSeqIdxD:
-                if self.__verbose:
-                    self.__lfh.write("+SequenceDataExport.__exportSeqMapping() searching deletions in seqId %s\n" % sId)
-                #
-                refSeqIdx = allRefSeqIdxD[sId]
-                for sTup in refSeqIdx:
-                    if sTup[2] in ["Deletion", "deletion"]:
-                        if self.__verbose:
-                            self.__lfh.write("+SequenceDataExport.__exportSeqMapping() position %s comment %s\n" % (sTup[1], sTup[2]))
-                        #
-                        rptDeleteL.append([idel, gId, partId, self.__srd.convertDbNameToResource(fD["DB_NAME"]), fD["DB_ACCESSION"], fD["DB_ISOFORM"], sTup[0], sTup[1]])
-                        idel += 1
-                    #
-                #
-            else:
-                self.__lfh.write("+SequenceDataExport.__exportSeqMapping() delete scan missing reference sequence for seqId %s keys() %r\n" % (sId, allRefSeqIdxD.keys()))
-            #
-        #
-        return rptDeleteL
+    # def __deletionReport(self, refFeatureD, allRefSeqIdxD):
+    #     """Return a list of content rows for the sequence deletion report."""
+    #     rptDeleteL = []
+    #     idel = 1
+    #     for (gId, partId), tup in refFeatureD.items():
+    #         if (str(gId), str(partId)) in self.__selfReferenceEntityList:
+    #             continue
+    #         #
+    #         sId = tup[0]
+    #         fD = tup[2]
+    #         if sId in allRefSeqIdxD:
+    #             if self.__verbose:
+    #                 self.__lfh.write("+SequenceDataExport.__exportSeqMapping() searching deletions in seqId %s\n" % sId)
+    #             #
+    #             refSeqIdx = allRefSeqIdxD[sId]
+    #             for sTup in refSeqIdx:
+    #                 if sTup[2] in ["Deletion", "deletion"]:
+    #                     if self.__verbose:
+    #                         self.__lfh.write("+SequenceDataExport.__exportSeqMapping() position %s comment %s\n" % (sTup[1], sTup[2]))
+    #                     #
+    #                     rptDeleteL.append([idel, gId, partId, self.__srd.convertDbNameToResource(fD["DB_NAME"]), fD["DB_ACCESSION"], fD["DB_ISOFORM"], sTup[0], sTup[1]])
+    #                     idel += 1
+    #                 #
+    #             #
+    #         else:
+    #             self.__lfh.write("+SequenceDataExport.__exportSeqMapping() delete scan missing reference sequence for seqId %s keys() %r\n" % (sId, allRefSeqIdxD.keys()))
+    #         #
+    #     #
+    #     return rptDeleteL
 
     def __cifCatSelfReference(self, entityList):
         """Update entities for self reference  ---"""
         aCat = DataCategory("pdbx_seqtool_self_ref")
         aCat.appendAttribute("entity_id")
         aCat.appendAttribute("entity_part_id")
-        for id, partId in entityList:
-            aCat.append([id, partId])
+        for eid, partId in entityList:
+            aCat.append([eid, partId])
         return aCat
 
     def __writeGeneralCifCategory(self, categoryName, categoryItems, dataList):

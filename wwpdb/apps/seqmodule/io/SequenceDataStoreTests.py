@@ -22,6 +22,7 @@ import traceback
 import time
 import os
 import os.path
+import inspect
 
 from wwpdb.utils.config.ConfigInfo import ConfigInfo, getSiteId
 from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest
@@ -39,20 +40,20 @@ class SequenceDataStoreTests(unittest.TestCase):
         self.xyzSL = {}
         self.authSL = {}
         self.refFD = {}
-        for id in ["A", "B"]:
-            self.refSL[id] = self.__sE.getRefSequenceWithIndexList(id)
-            self.authSL[id] = self.__sE.getAuthSequenceWithIndexList(id)
-            self.xyzSL[id] = self.__sE.getXyzSequenceWithIndexList(id)
-            self.refFD[id] = self.__sE.getRefFeatureDict(id)
+        for sid in ["A", "B"]:
+            self.refSL[sid] = self.__sE.getRefSequenceWithIndexList(sid)
+            self.authSL[sid] = self.__sE.getAuthSequenceWithIndexList(sid)
+            self.xyzSL[sid] = self.__sE.getXyzSequenceWithIndexList(sid)
+            self.refFD[sid] = self.__sE.getRefFeatureDict(sid)
 
         #
         # Create additional auth test sequences with random insertions and deletions
         #
-        for id in ["C", "D", "E", "F", "G"]:
-            self.refSL[id] = self.__sE.getRefSequenceWithIndexList("A")
-            self.authSL[id] = self.__sE.getAuthSequenceTestWithIndexList("A")
-            self.xyzSL[id] = self.__sE.getXyzSequenceWithIndexList("A")
-            self.refFD[id] = self.__sE.getRefFeatureDict("A")
+        for sid in ["C", "D", "E", "F", "G"]:
+            self.refSL[sid] = self.__sE.getRefSequenceWithIndexList("A")
+            self.authSL[sid] = self.__sE.getAuthSequenceTestWithIndexList("A")
+            self.xyzSL[sid] = self.__sE.getXyzSequenceWithIndexList("A")
+            self.refFD[sid] = self.__sE.getRefFeatureDict("A")
 
         self.idList = ["A", "B", "C", "D", "E", "F", "G"]
         self.entryDict = {}
@@ -89,8 +90,8 @@ class SequenceDataStoreTests(unittest.TestCase):
         if sessionId is not None:
             self.__reqObj.setValue("sessionid", sessionId)
 
-        self.__sessionId = self.__reqObj.getSessionId()
-        self.__sObj = self.__reqObj.newSessionObj()
+        # self.__sessionId = self.__reqObj.getSessionId()
+        self.__sObj = self.__reqObj.newSessionObj()  # pylint: disable=unused-private-member
 
     def tearDown(self):
         pass
@@ -98,17 +99,17 @@ class SequenceDataStoreTests(unittest.TestCase):
     def testStoreExampleData(self):
         """Test creating store, serializing and deserializing data."""
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             sda = SequenceDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
             sda.reset()
-            for id in self.idList:
-                sda.setSequence(self.xyzSL[id], id, "xyz", partId=1, altId=1, version=1)
-                sda.setSequence(self.authSL[id], id, "auth", partId=1, altId=1, version=1)
+            for mid in self.idList:
+                sda.setSequence(self.xyzSL[mid], mid, "xyz", partId=1, altId=1, version=1)
+                sda.setSequence(self.authSL[mid], mid, "auth", partId=1, altId=1, version=1)
                 for altId in range(1, 10):
-                    sda.setFeature(self.refFD[id], id, "ref", partId=1, altId=altId, version=1)
-                    sda.setSequence(self.refSL[id], id, "ref", partId=1, altId=altId, version=1)
+                    sda.setFeature(self.refFD[mid], mid, "ref", partId=1, altId=altId, version=1)
+                    sda.setSequence(self.refSL[mid], mid, "ref", partId=1, altId=altId, version=1)
 
             #
             for k, v in self.groupDict.items():
@@ -130,13 +131,13 @@ class SequenceDataStoreTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
     def testReadExampleData(self):
         """Test read existing store -"""
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             sda = SequenceDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
@@ -146,9 +147,9 @@ class SequenceDataStoreTests(unittest.TestCase):
             for st in sTypes:
                 self.__lfh.write("Data for sequence type: %5s\n" % st)
                 ids = sda.getIds(dataType="sequence", seqType=st)
-                for id in ids:
-                    sL = sda.getSequence(id, st, partId=1, altId=1, version=1)
-                    self.__lfh.write("Sequence type %5s id %5s length %5d\n" % (st, id, len(sL)))
+                for sid in ids:
+                    sL = sda.getSequence(sid, st, partId=1, altId=1, version=1)
+                    self.__lfh.write("Sequence type %5s id %5s length %5d\n" % (st, sid, len(sL)))
 
         except:  # noqa: E722 pylint: disable=bare-except
             traceback.print_exc(file=self.__lfh)
@@ -157,13 +158,13 @@ class SequenceDataStoreTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
     def testAccessMethodsExampleData(self):
         """SequenceDataStore() accessor tests -"""
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             sda = SequenceDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
@@ -172,17 +173,17 @@ class SequenceDataStoreTests(unittest.TestCase):
             for st in sTypes:
                 self.__lfh.write("Data for sequence type: %5s\n" % st)
                 ids = sda.getIds(dataType="sequence", seqType=st)
-                for id in ids:
-                    verList = sda.getVersionIds(seqId=id, partId=1, altId=1, dataType="sequence", seqType=st)
-                    self.__lfh.write(" Sequence id : %5s version length %d\n" % (id, len(verList)))
+                for mid in ids:
+                    verList = sda.getVersionIds(seqId=mid, partId=1, altId=1, dataType="sequence", seqType=st)
+                    self.__lfh.write(" Sequence id : %5s version length %d\n" % (mid, len(verList)))
                     for ver in verList:
-                        sL = sda.getSequence(id, st, partId=1, altId=1, version=ver)
-                        self.__lfh.write("   Sequence type %5s id %5s version %d length %5d\n" % (st, id, ver, len(sL)))
-                    altList = sda.getAlternativeIds(seqId=id, dataType="sequence", seqType=st)
-                    self.__lfh.write(" Sequence id : %5s alternative list  length %d\n" % (id, len(altList)))
+                        sL = sda.getSequence(mid, st, partId=1, altId=1, version=ver)
+                        self.__lfh.write("   Sequence type %5s id %5s version %d length %5d\n" % (st, mid, ver, len(sL)))
+                    altList = sda.getAlternativeIds(seqId=mid, dataType="sequence", seqType=st)
+                    self.__lfh.write(" Sequence id : %5s alternative list  length %d\n" % (mid, len(altList)))
                     for altId in altList:
-                        sL = sda.getSequence(seqId=id, seqType=st, partId=1, altId=altId, version=1)
-                        self.__lfh.write("   Sequence type %5s id %5s altId %s version %d length %5d\n" % (st, id, altId, ver, len(sL)))
+                        sL = sda.getSequence(seqId=mid, seqType=st, partId=1, altId=altId, version=1)
+                        self.__lfh.write("   Sequence type %5s id %5s altId %s length %5d\n" % (st, mid, altId, len(sL)))
 
             sda.dump(self.__lfh)
             sda.filterIndex(seqId="F", dataType="sequence", seqType="ref")
@@ -197,7 +198,7 @@ class SequenceDataStoreTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
 
@@ -210,6 +211,5 @@ def suiteWriteAndReadTests():
 
 
 if __name__ == "__main__":
-    if True:
-        mySuite = suiteWriteAndReadTests()
-        unittest.TextTestRunner(verbosity=2).run(mySuite)
+    mySuite = suiteWriteAndReadTests()
+    unittest.TextTestRunner(verbosity=2).run(mySuite)

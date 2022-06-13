@@ -19,6 +19,7 @@ __version__ = "V0.07"
 import sys
 import unittest
 import shutil
+import inspect
 import traceback
 import time
 import os
@@ -32,7 +33,7 @@ from wwpdb.apps.seqmodule.control.SummaryViewDepiction import SummaryViewDepicti
 from wwpdb.utils.config.ConfigInfo import ConfigInfo, getSiteId
 from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest
 from wwpdb.io.locator.PathInfo import PathInfo
-from wwpdb.io.file.DataFileAdapter import DataFileAdapter
+from wwpdb.utils.dp.DataFileAdapter import DataFileAdapter
 
 
 class SummaryViewTests(unittest.TestCase):
@@ -72,11 +73,11 @@ class SummaryViewTests(unittest.TestCase):
         if sessionId is not None:
             self.__reqObj.setValue("sessionid", sessionId)
 
-        self.__sessionId = self.__reqObj.getSessionId()
+        # self.__sessionId = self.__reqObj.getSessionId()
         self.__sessionObj = self.__reqObj.newSessionObj()
         self.__sessionPath = self.__sessionObj.getPath()
         #
-        self.__seqDataCachePath = os.path.join(self.__reqObj.getSessionPath(), "SEQUENCE-DATA-CACHE")
+        # self.__seqDataCachePath = os.path.join(self.__reqObj.getSessionPath(), "SEQUENCE-DATA-CACHE")
 
     def testSearchAndAssembleFromUpload(self):
         """Test search each entity sequence against appropriate reference sequence database
@@ -86,7 +87,7 @@ class SummaryViewTests(unittest.TestCase):
         """
         startTime = time.time()
         self.__lfh.write("\n\n========================================================================================================\n")
-        self.__lfh.write("Starting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("Starting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
@@ -108,7 +109,8 @@ class SummaryViewTests(unittest.TestCase):
                     break
                 #
                 sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                sda.doAssemble(fileSource="local-upload")
+                # sda.doAssemble(fileSource="local-upload")
+                sda.doAssemble()
                 alstat = AlignmentStatistics(reqObj=self.__reqObj, maxRefAlign=self.__maxRefAlign, verbose=self.__verbose, log=self.__lfh)
                 alstat.doUpdate()
         except:  # noqa: E722 pylint: disable=bare-except
@@ -118,7 +120,7 @@ class SummaryViewTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
     def testSearchAndAssembleFromUpload2(self):
@@ -128,7 +130,7 @@ class SummaryViewTests(unittest.TestCase):
         Using examples files in to simulate upload file source.
         """
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
@@ -139,7 +141,8 @@ class SummaryViewTests(unittest.TestCase):
                 self.__reqObj.setValue("identifier", idCode)
                 #
                 sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                sda.doAssemble(fileSource="local-upload")
+                # sda.doAssemble(fileSource="local-upload")
+                sda.doAssemble()
                 alstat = AlignmentStatistics(reqObj=self.__reqObj, maxRefAlign=self.__maxRefAlign, verbose=self.__verbose, log=self.__lfh)
                 alstat.doUpdate()
         except:  # noqa: E722 pylint: disable=bare-except
@@ -149,7 +152,7 @@ class SummaryViewTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
     def testSearchAndAssembleFromArchive(self):
@@ -159,13 +162,14 @@ class SummaryViewTests(unittest.TestCase):
         Using archive file source.
         """
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             for dsId in self.__dsList:
                 self.__reqObj.setValue("identifier", dsId)
                 sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                sda.doAssemble(fileSource="archive")
+                # sda.doAssemble(fileSource="archive")
+                sda.doAssemble()
                 alstat = AlignmentStatistics(reqObj=self.__reqObj, maxRefAlign=self.__maxRefAlign, verbose=self.__verbose, log=self.__lfh)
                 alstat.doUpdate()
         except:  # noqa: E722 pylint: disable=bare-except
@@ -175,39 +179,39 @@ class SummaryViewTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
-    def testAssembleFromRespositoryCache(self):
-        """Test search each entity sequence against appropriate reference sequence database
-        service storing the matching sequences.
+    # def testAssembleFromRespositoryCache(self):
+    #     """Test search each entity sequence against appropriate reference sequence database
+    #     service storing the matching sequences.
 
-        Using repository cache with 'session' file source.
-        """
-        startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+    #     Using repository cache with 'session' file source.
+    #     """
+    #     startTime = time.time()
+    #     self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
-        try:
-            for dsId in self.__exampleIdList:
-                self.__reqObj.setValue("identifier", dsId)
-                sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                sda.doAssemble(fileSource="local-repository", cachePath=self.__seqDataCachePath)
-                alstat = AlignmentStatistics(reqObj=self.__reqObj, maxRefAlign=self.__maxRefAlign, verbose=self.__verbose, log=self.__lfh)
-                alstat.doUpdate()
-        except:  # noqa: E722 pylint: disable=bare-except
-            traceback.print_exc(file=self.__lfh)
-            self.fail()
+    #     try:
+    #         for dsId in self.__exampleIdList:
+    #             self.__reqObj.setValue("identifier", dsId)
+    #             sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
+    #             sda.doAssemble(fileSource="local-repository", cachePath=self.__seqDataCachePath)
+    #             alstat = AlignmentStatistics(reqObj=self.__reqObj, maxRefAlign=self.__maxRefAlign, verbose=self.__verbose, log=self.__lfh)
+    #             alstat.doUpdate()
+    #     except:  # noqa: E722 pylint: disable=bare-except
+    #         traceback.print_exc(file=self.__lfh)
+    #         self.fail()
 
-        endTime = time.time()
-        self.__lfh.write(
-            "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
-        )
+    #     endTime = time.time()
+    #     self.__lfh.write(
+    #         "\nCompleted %s %s at %s (%.2f seconds)\n"
+    #         % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+    #     )
 
     def testSummaryArchiveView(self):
         """Test construction of a summary view from a sequence data store containing pairwise alignment stats."""
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
         try:
             self.__reqObj.setValue("identifier", self.__dsList[0])
             op = "load"
@@ -227,7 +231,7 @@ class SummaryViewTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
     def testSummaryRepositoryCacheView(self):
@@ -236,7 +240,7 @@ class SummaryViewTests(unittest.TestCase):
         Use example/test case setup from repository cache -
         """
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
         try:
             self.__reqObj.setValue("identifier", self.__exampleIdList[0])
             op = "load"
@@ -256,7 +260,7 @@ class SummaryViewTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
 
@@ -277,10 +281,10 @@ def suiteSummaryViewTests():
 
 
 if __name__ == "__main__":
-    if False:
+    if False:  # pylint: disable=using-constant-test
         mySuite = suiteSearchAndAssembleTests()
         unittest.TextTestRunner(verbosity=2).run(mySuite)
 
-    if False:
+    if False:  # pylint: disable=using-constant-test
         mySuite = suiteSummaryViewTests()
         unittest.TextTestRunner(verbosity=2).run(mySuite)

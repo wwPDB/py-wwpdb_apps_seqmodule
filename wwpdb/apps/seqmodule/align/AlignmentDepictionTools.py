@@ -58,6 +58,9 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         #
         self.__refAlignIdx = -1
         self.__authAlignIdx = -1
+        #
+        self.__selectedIdList = []
+        self.__annotationDict = {}
 
     def doRender(self):
         """Render alignment, conflict table, annotations & warning"""
@@ -532,7 +535,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
             if len(alignTup[authIdx][5]) < 1:
                 continue
             #
-            aType, comment = self._decodeComment(alignTup[authIdx][5])
+            _aType, comment = self._decodeComment(alignTup[authIdx][5])
             for cType in ("engineered mutation", "expression tag", "linker"):
                 if comment.find(cType) != -1:
                     eelCommentL.append(cType)
@@ -548,18 +551,18 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
     #       fp.write("%s\n" % self.__warningMsg)
     #       fp.close()
 
-    def __writeMisMatchTypeText(self):
-        """Write over all mismatch type into the text file"""
-        textFilePath = os.path.join(self._sessionPath, "mismatch-type.txt")
-        fp = open(textFilePath, "w")
-        if not self.__misMatchTypes:
-            fp.write("%s" % "no-mismatch")
-        elif len(self.__misMatchTypes) == 1:
-            fp.write("%s" % self.__misMatchTypes[0])
-        else:
-            fp.write("%s" % "cf-all-mismatch")
-        #
-        fp.close()
+    # def __writeMisMatchTypeText(self):
+    #     """Write over all mismatch type into the text file"""
+    #     textFilePath = os.path.join(self._sessionPath, "mismatch-type.txt")
+    #     fp = open(textFilePath, "w")
+    #     if not self.__misMatchTypes:
+    #         fp.write("%s" % "no-mismatch")
+    #     elif len(self.__misMatchTypes) == 1:
+    #         fp.write("%s" % self.__misMatchTypes[0])
+    #     else:
+    #         fp.write("%s" % "cf-all-mismatch")
+    #     #
+    #     fp.close()
 
     def __updateSeqCoodConflict(self, numConflict):
         """ """
@@ -744,7 +747,7 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                 expressionTagCount = 0
                 continue
             #
-            cType, comment = self._decodeComment(alignTup[authIdx][5])
+            _cType, comment = self._decodeComment(alignTup[authIdx][5])
             if comment == "expression tag":
                 expressionTagCount += 1
             else:

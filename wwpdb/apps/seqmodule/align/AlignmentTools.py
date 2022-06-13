@@ -19,7 +19,7 @@ import traceback
 from wwpdb.utils.config.ConfigInfoApp import ConfigInfoAppCommon
 from wwpdb.apps.seqmodule.align.AlignmentToolUtils import getSeqAlignment, mergeSeqAlignment, codeSeqIndex, decodeIndex, assignConflict
 from wwpdb.apps.seqmodule.io.AlignmentDataStore import AlignmentDataStore
-from wwpdb.utils.align.alignlib import PseudoMultiAlign
+from wwpdb.utils.align.alignlib import PseudoMultiAlign  # pylint: disable=no-name-in-module
 from wwpdb.io.file.mmCIFUtil import mmCIFUtil
 
 
@@ -77,6 +77,28 @@ class AlignmentTools(AlignmentDataStore):
         #
         self.__parentCompIdMap = {}
         self.__refSeqVariantList = []
+        self.__alignFlag = True
+        self.__refLabelDict = {}
+        self.__partInfoDict = {}
+        self.__refAlignIndexDict = {}
+        self.__selectedIdList = []
+        self.__xyzLabel = []
+        self.__newXyzAlignIndexListFlag = False
+        self.__xyzAlignIndexList = []
+        self.__extraAuthLabel = []
+        # Should be safe to initialize here
+        self._partPosDict = {}
+        self._seqAlignList = []
+        self._selfRefPartIdList = []
+        self._authDefinedMutationList = []
+        self._xyzAlignList = []
+        self._missingSeqMap = {}
+        self._xyzAlignLabelIndices = {}
+        self._reverseXyzAlignLabelIndices = {}
+        self._hasAlignmentFlag = True
+        self._authLabel = ""
+        self._reverseSeqAlignLabelIndices = {}
+        self._seqAlignLabelIndices = {}
 
     def __clearLocalVariables(self):
         """Clear all local variables"""
@@ -183,8 +205,10 @@ class AlignmentTools(AlignmentDataStore):
             self._addErrorMessage(traceback.format_exc())
         #
 
-    def getAlignRefSeqRange(self, authSeqId="", partId=0, refSeqs=[]):
+    def getAlignRefSeqRange(self, authSeqId="", partId=0, refSeqs=None):
         """ """
+        if refSeqs is None:
+            refSeqs = []
         if len(refSeqs) == 0:
             return None, None
         #
@@ -196,7 +220,7 @@ class AlignmentTools(AlignmentDataStore):
         if partId not in self.__partInfoDict:
             return None, None
         #
-        alignIndexList, alignLength, numMatch, numMatchGaps = self.__getAuthRefAlignIndexList(
+        alignIndexList, _alignLength, _numMatch, _numMatchGaps = self.__getAuthRefAlignIndexList(
             authSeqs, refSeqs, self.__partInfoDict[partId][0] - 1, self.__partInfoDict[partId][1] - 1
         )
         #
@@ -590,7 +614,7 @@ class AlignmentTools(AlignmentDataStore):
             numConflict, missingAuthSeqList = self.__assignNumericConflicts(authIdx, otherIdx, "xyz", 0, len(self._seqAlignList) - 1)
             totalSeqCoodConflict += numConflict
             if missingAuthSeqList:
-                (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(otherLabel)
+                (_seqType, seqInstId, seqPartId, _seqAltId, _seqVersion) = self._getUnpackSeqLabel(otherLabel)
                 self._missingSeqMap[seqInstId] = missingAuthSeqList
             #
         #
@@ -601,7 +625,7 @@ class AlignmentTools(AlignmentDataStore):
             if (not otherLabel.startswith("ref")) or (otherLabel not in selectedIdList):
                 continue
             #
-            (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(otherLabel)
+            (_seqType, seqInstId, seqPartId, _seqAltId, _seqVersion) = self._getUnpackSeqLabel(otherLabel)
             #
             start_position = 0
             end_position = len(self._seqAlignList) - 1
@@ -637,7 +661,7 @@ class AlignmentTools(AlignmentDataStore):
         self._partPosDict[partId] = [0, 0]
         #
         for idx, alignTup in enumerate(self._seqAlignList):
-            seqIdx, comment = decodeIndex(alignTup[authIdx][3])
+            seqIdx, _comment = decodeIndex(alignTup[authIdx][3])
             if seqIdx not in SeqIdxPartIdMap:
                 continue
             #
@@ -750,8 +774,11 @@ class AlignmentTools(AlignmentDataStore):
         #
         return seq
 
-    def __getCurrentAuthCoordAlignment(self, existAuthSeqs=[]):
+    def __getCurrentAuthCoordAlignment(self, existAuthSeqs=None):
         """Generate auth/coordiates sequence alignment"""
+        if existAuthSeqs is None:
+            existAuthSeqs = []
+
         authSeqs = existAuthSeqs
         if not authSeqs:
             authSeqs = self.__getSequenceFromDataStore(self.__xyzLabel[0])
@@ -789,8 +816,11 @@ class AlignmentTools(AlignmentDataStore):
         self.__getAuthDefinedMutations()
         return True
 
-    def __getCurrentAuthRefAlignment(self, existAuthSeqs=[]):
+    def __getCurrentAuthRefAlignment(self, existAuthSeqs=None):
         """Generate auth/ref sequence alignment(s)"""
+        if existAuthSeqs is None:
+            existAuthSeqs = []
+
         if not self.__refLabelDict:
             return True
         #
@@ -849,8 +879,11 @@ class AlignmentTools(AlignmentDataStore):
         #
         return True
 
-    def __alignExtraAuthSequence(self, existAuthSeqs=[]):
+    def __alignExtraAuthSequence(self, existAuthSeqs=None):
         """ """
+        if existAuthSeqs is None:
+            existAuthSeqs = []
+
         if not self.__extraAuthLabel:
             return
         #
@@ -884,7 +917,7 @@ class AlignmentTools(AlignmentDataStore):
             self._reverseSeqAlignLabelIndices[idxPos] = label
         #
         indexList = pA.getAlignIndices()
-        errMsg, seqAlignList = getSeqAlignment(seqList, indexList, reverseIndices, [], "auth", self._gapSymbol)
+        errMsg, seqAlignList = getSeqAlignment(seqList, indexList, reverseIndices, "auth", self._gapSymbol)
         if errMsg:
             if self._verbose:
                 self._lfh.write("AlignmentTools.__alignExtraAuthSequence errMsg=%r\n" % errMsg)
@@ -990,14 +1023,14 @@ class AlignmentTools(AlignmentDataStore):
         for refId in refIdList:
             indexList = self._getRefAlignIndexList([self.__local_authLabel, refId])
             #
-            (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(refId)
+            (_seqType, _seqInstId, seqPartId, _seqAltId, _seqVersion) = self._getUnpackSeqLabel(refId)
             #
             if len(indexList) == 0:
                 authSeqs = self.__getSequenceFromDataStore(self.__local_authLabel)
                 refSeqs = self.__getSequenceFromDataStore(refId)
                 self.__checkPartInfoDict(self.__local_authLabel)
                 if authSeqs and refSeqs and (seqPartId in self.__partInfoDict):
-                    indexList, alignLength, numMatch, numMatchGaps = self.__getAuthRefAlignIndexList(
+                    indexList, _alignLength, _numMatch, _numMatchGaps = self.__getAuthRefAlignIndexList(
                         authSeqs, refSeqs, self.__partInfoDict[seqPartId][0] - 1, self.__partInfoDict[seqPartId][1] - 1
                     )
                     if len(indexList) > 0:
@@ -1071,8 +1104,11 @@ class AlignmentTools(AlignmentDataStore):
         #
         self.__refSeqVariantList = featureD["REF_SEQ_VARIANT"].split(",")
 
-    def __generateInputSeqInfoForPseudoMultiAlignFromSeqList(self, seqType="auth", inputSeqList=[], start=0, end=0):
+    def __generateInputSeqInfoForPseudoMultiAlignFromSeqList(self, seqType="auth", inputSeqList=None, start=0, end=0):
         """Generate input sequence information for PseudoMultiAlign program"""
+        if inputSeqList is None:
+            inputSeqList = []
+
         if end == 0:
             end = len(inputSeqList) - 1
         #
@@ -1107,7 +1143,7 @@ class AlignmentTools(AlignmentDataStore):
         if self.__partInfoDict:
             return
         #
-        (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(authLabel)
+        (seqType, seqInstId, _seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(authLabel)
         parIdList = self.getPartIdList(seqType, seqInstId)
         for partId in parIdList:
             seqFeatureD = self.getFeature(seqType, seqInstId, partId, seqAltId, seqVersion)
@@ -1225,11 +1261,11 @@ class AlignmentTools(AlignmentDataStore):
 
     def __consolidateConflict(self, defaultComment, authComment, refComment):
         """Consolidate default & annotated conflicts"""
-        aType, aComment = self._decodeComment(authComment)
+        _aType, aComment = self._decodeComment(authComment)
         if aComment == "chromophore":
             return authComment
         #
-        rType, rComment = self._decodeComment(refComment)
+        _rType, rComment = self._decodeComment(refComment)
         if rComment == "chromophore":
             return refComment
         #
@@ -1288,7 +1324,7 @@ class AlignmentTools(AlignmentDataStore):
             if idx not in self._reverseSeqAlignLabelIndices:
                 continue
             #
-            (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(self._reverseSeqAlignLabelIndices[idx])
+            (seqType, seqInstId, _seqPartId, _seqAltId, _seqVersion) = self._getUnpackSeqLabel(self._reverseSeqAlignLabelIndices[idx])
             if seqType != "xyz":
                 continue
             #

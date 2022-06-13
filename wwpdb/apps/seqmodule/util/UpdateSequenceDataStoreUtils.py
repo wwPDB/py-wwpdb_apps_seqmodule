@@ -270,8 +270,10 @@ class UpdateSequenceDataStoreUtils(object):
         self.__checkSequenceDataStore()
         return self.__sds.getSelectedIds()
 
-    def setCoordinateInstanceInfo(self, instanceD, statisticsMap, skipList=[]):
+    def setCoordinateInstanceInfo(self, instanceD, statisticsMap, skipList=None):
         """Load coordinate sequences & features  (coordinate sequences have no parts i.e. partId=1)"""
+        if skipList is None:
+            skipList = []
         for cId, S3L in instanceD.items():
             if cId in skipList:
                 continue
@@ -304,8 +306,10 @@ class UpdateSequenceDataStoreUtils(object):
             self.setFeature(self.__seqFeature.get(), "xyz", cId)
         #
 
-    def setMultipleEntitiesSequenceInfo(self, entityD, skipList=[]):
+    def setMultipleEntitiesSequenceInfo(self, entityD, skipList=None):
         """Load author/entity sequence and features for multiple entities"""
+        if skipList is None:
+            skipList = []
         for eId, eD in entityD.items():
             if eId in skipList:
                 continue
@@ -313,7 +317,7 @@ class UpdateSequenceDataStoreUtils(object):
             self.setSingleEntitySequenceInfo(eId, eD)
         #
 
-    def setSingleEntitySequenceInfo(self, eId, eD):
+    def setSingleEntitySequenceInfo(self, eId, eD):  # pylint: disable=unused-argument
         """Load author/entity sequence and features for single entity - for multipart entity, distinguishing sequence features are stored for each part."""
         sId = eD["ENTITY_ID"]
         #
@@ -354,8 +358,10 @@ class UpdateSequenceDataStoreUtils(object):
         entityAlignInfo["part_info"] = partInfo
         self._entityAlignInfoMap[sId] = entityAlignInfo
 
-    def setMultipleEntitiesRefSequenceInfo(self, entityD, eRefD, ownRefD, eSSRefD, skipList=[]):
+    def setMultipleEntitiesRefSequenceInfo(self, entityD, eRefD, ownRefD, eSSRefD, skipList=None):
         """Load reference sequence and features for multiple entities"""
+        if skipList is None:
+            skipList = []
         for eId, eD in entityD.items():
             if eId in skipList:
                 continue

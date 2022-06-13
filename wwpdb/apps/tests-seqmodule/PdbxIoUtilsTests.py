@@ -19,6 +19,7 @@ __version__ = "V0.07"
 import os
 import os.path
 import sys
+import inspect
 import traceback
 import unittest
 
@@ -43,7 +44,7 @@ class PdbxIoUtilsTests(unittest.TestCase):
     def testSequenceDictionary(self):
         """Test extraction of author and coordinate sequence details."""
         self.__lfh.write("\n------------------------ ")
-        self.__lfh.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        self.__lfh.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         self.__lfh.write(" -------------------------\n")
         try:
             for f in self.__examFileList:
@@ -69,7 +70,7 @@ class PdbxIoUtilsTests(unittest.TestCase):
     def testGetEntityCounts(self):
         """Get entity counts  -"""
         self.__lfh.write("\n------------------------ ")
-        self.__lfh.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        self.__lfh.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         self.__lfh.write(" ------------------------\n")
         try:
             for f in self.__examFileList:
@@ -88,7 +89,7 @@ class PdbxIoUtilsTests(unittest.TestCase):
     def testGetEntityLists(self):
         """Get entity lists  -"""
         self.__lfh.write("\n------------------------ ")
-        self.__lfh.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        self.__lfh.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         self.__lfh.write(" ------------------------\n")
         try:
             for f in self.__examFileList:
@@ -112,7 +113,7 @@ class PdbxIoUtilsTests(unittest.TestCase):
     def testGetInstIdLists(self):
         """Get entity and chain correspondences -"""
         self.__lfh.write("\n-- -------------------- ")
-        self.__lfh.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        self.__lfh.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         self.__lfh.write(" -----------------------\n")
         try:
             for f in self.__examFileList:
@@ -144,7 +145,7 @@ class PdbxIoUtilsTests(unittest.TestCase):
     def testGetSeq3Lists(self):
         """Get 3-letter-code sequences"""
         self.__lfh.write("\n-------------------- ")
-        self.__lfh.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        self.__lfh.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         self.__lfh.write(" --------------------\n")
         try:
             for f in self.__examFileList:
@@ -171,7 +172,7 @@ class PdbxIoUtilsTests(unittest.TestCase):
     def testEntitySourceDetails(self):
         """Get 3-letter-code sequences and print any alignment conflicts -"""
         self.__lfh.write("\n------------------ ")
-        self.__lfh.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        self.__lfh.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         self.__lfh.write(" ------------------\n")
         try:
             for f in self.__examFileList:
@@ -205,7 +206,7 @@ class PdbxIoUtilsTests(unittest.TestCase):
     def testGetSeq3AlignConficts(self):
         """Get 3-letter-code sequences and print any alignment conflicts -"""
         self.__lfh.write("\n------------------ ")
-        self.__lfh.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        self.__lfh.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         self.__lfh.write(" ------------------\n")
         try:
             for f in self.__examFileList:
@@ -236,7 +237,7 @@ class PdbxIoUtilsTests(unittest.TestCase):
     def testAAAGetSeqFromAtomSite(self):
         """Get sequences, occupancy and disorder from atom site -"""
         self.__lfh.write("\n-------------------- ")
-        self.__lfh.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        self.__lfh.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         self.__lfh.write(" --------------------\n")
         try:
             for f in self.__examFileList:
@@ -258,7 +259,7 @@ class PdbxIoUtilsTests(unittest.TestCase):
     def testGetEntityDetails(self):
         """Get entity lists  -"""
         self.__lfh.write("\n------------------------ ")
-        self.__lfh.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        self.__lfh.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         self.__lfh.write(" ------------------------\n")
         try:
             for f in self.__examFileList:
@@ -301,13 +302,13 @@ def suiteReadEntityDetailsTests():
 
 if __name__ == "__main__":
 
-    if True:
+    if True:  # pylint: disable=using-constant-test
         mySuite = suiteReadModelTests()
         unittest.TextTestRunner(verbosity=2).run(mySuite)
 
         mySuite = suiteReadModelSourceTests()
         unittest.TextTestRunner(verbosity=2).run(mySuite)
 
-    if True:
+    if True:  # pylint: disable=using-constant-test
         mySuite = suiteReadEntityDetailsTests()
         unittest.TextTestRunner(verbosity=2).run(mySuite)

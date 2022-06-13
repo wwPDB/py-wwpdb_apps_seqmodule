@@ -35,7 +35,7 @@ class MultiProcLimit(object):
         self.__rate = rate
         self.__delay = (1.0 / rate) + 0.0001
         self.__last = Value("d", 0.0)
-        logger.debug("Instantiated with rate %r delay %r " % (self.__rate, self.__delay))
+        logger.debug("Instantiated with rate %r delay %r ", self.__rate, self.__delay)
 
     def waitnext(self):
         """Waits for the next time to fire"""

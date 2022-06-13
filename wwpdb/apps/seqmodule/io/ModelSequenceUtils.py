@@ -29,7 +29,7 @@ class ModelSequenceUtils(object):
 
     def __init__(self, dataContainer=None, verbose=False, log=sys.stderr):
         self.__verbose = verbose
-        self.__debug = False
+        # self.__debug = False
         self.__lfh = log
         self.__sdf = ModelFileIo(dataContainer=dataContainer, verbose=self.__verbose, log=self.__lfh)
         self.__cName = dataContainer.getName()
@@ -156,7 +156,7 @@ class ModelSequenceUtils(object):
             self.__entityD = self.__getEntityDetails()
 
         instD = {}
-        for id, eD in self.__entityD.items():
+        for _id, eD in self.__entityD.items():
             instIdList = eD["INSTANCE_LIST"]
             for instId in instIdList:
                 sL = self.__sdf.getCoordinateSequenceList(instId)
@@ -247,7 +247,7 @@ class ModelSequenceUtils(object):
 
             #
             sD["SEQ_ENTITY_1"] = self.__sdf.getSequence(entityId)
-            r1L, r3L = sdr.parseSequence(sD["SEQ_ENTITY_1"], sdr.getPolymerTypeCode(sD["POLYMER_LINKING_TYPE"]))
+            r1L, _r3L = sdr.parseSequence(sD["SEQ_ENTITY_1"], sdr.getPolymerTypeCode(sD["POLYMER_LINKING_TYPE"]))
             sD["SEQ_ENTITY_1_CAN"] = "".join(r1L)
 
             if self.__verbose:

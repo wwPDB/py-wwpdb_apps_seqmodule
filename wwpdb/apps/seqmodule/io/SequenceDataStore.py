@@ -138,6 +138,17 @@ class SequenceDataStore(object):
         # self.__pickleProtocol = pickle.HIGHEST_PROTOCOL
         self.__pickleProtocol = 0
         #
+        # Declar for pylint
+        self.__D = {}
+        self.__I = Autodict()
+        self.__E = {}
+        self.__G = {}
+        self.__P = {}
+        self.__S = []
+        self.__L = []
+        self.__depositorAssignD = {}
+        self.__assignD = {}
+        #
         self.__setup()
 
     def __clear(self):
@@ -224,39 +235,39 @@ class SequenceDataStore(object):
         #
 
     def __makeId(self, dataType, seqType, seqId, partId=1, altId=1, version=1):
-        id = "%s_%s_%s_%d_%d_%d" % (dataType, seqType, seqId, int(partId), int(altId), int(version))
-        return id
+        rid = "%s_%s_%s_%d_%d_%d" % (dataType, seqType, seqId, int(partId), int(altId), int(version))
+        return rid
 
-    def __updateIndex(self, id, dataType, seqType, seqId, partId=1, altId=1, version=1):
+    def __updateIndex(self, tid, dataType, seqType, seqId, partId=1, altId=1, version=1):
         lt = time.strftime("%Y %m %d %H:%M:%S", time.localtime())
 
-        self.__I[dataType][seqType][seqId][int(partId)][int(altId)][int(version)] = (id, lt)
+        self.__I[dataType][seqType][seqId][int(partId)][int(altId)][int(version)] = (tid, lt)
 
     def setSequence(self, sL, seqId, seqType, partId=1, altId=1, version=1):
         try:
-            id = self.__makeId(dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            self.__updateIndex(id, dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            rid = self.__makeId(dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            self.__updateIndex(rid, dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
             if sL is None or len(sL) == 0:
                 if self.__verbose:
                     self.__lfh.write(
                         "+SequenceDataStore.__setSequence() - empty object seqId %s seqType %s partId %d altId %d version %d\n" % (seqId, seqType, partId, altId, version)
                     )
-            self.__D[id] = sL
+            self.__D[rid] = sL
             return True
         except:  # noqa: E722 pylint: disable=bare-except
             return False
 
     def getSequence(self, seqId, seqType, partId=1, altId=1, version=1):
         try:
-            id = self.__makeId(dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            return self.__D[id]
+            sid = self.__makeId(dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            return self.__D[sid]
         except:  # noqa: E722 pylint: disable=bare-except
             return []
 
     def dumpSequence(self, seqId, seqType, partId=1, altId=1, version=1):
         try:
-            id = self.__makeId(dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            sTupL = self.__D[id]
+            sid = self.__makeId(dataType="sequence", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            sTupL = self.__D[sid]
             self.__lfh.write("+SequenceDataStore.dumpSequence() - seqId %s seqType %s partId %d altId %d version %d\n" % (seqId, seqType, partId, altId, version))
             for sTup in sTupL:
                 self.__lfh.write("         ++ %5s %6s %d (%s)\n" % (sTup[0], sTup[1], sTup[3], sTup[2]))
@@ -266,9 +277,9 @@ class SequenceDataStore(object):
 
     def setFeature(self, fD, seqId, seqType, partId=1, altId=1, version=1):
         try:
-            id = self.__makeId(dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            self.__updateIndex(id, dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            self.__D[id] = fD
+            fid = self.__makeId(dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            self.__updateIndex(fid, dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            self.__D[fid] = fD
             return True
         except:  # noqa: E722 pylint: disable=bare-except
             return False
@@ -276,7 +287,7 @@ class SequenceDataStore(object):
     def setFeatureObj(self, sfObj, seqId, seqType, partId=1, altId=1, version=1):
         try:
             idx = self.__makeId(dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            self.__updateIndex(id, dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            self.__updateIndex(idx, dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
             self.__D[idx] = sfObj.get()
             return True
         except:  # noqa: E722 pylint: disable=bare-except
@@ -286,16 +297,16 @@ class SequenceDataStore(object):
 
     def getFeature(self, seqId, seqType, partId=1, altId=1, version=1):
         try:
-            id = self.__makeId(dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            return self.__D[id]
+            fid = self.__makeId(dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            return self.__D[fid]
         except:  # noqa: E722 pylint: disable=bare-except
             return {}
 
     def getFeatureObj(self, seqId, seqType, partId=1, altId=1, version=1):
         sf = SequenceFeature()
         try:
-            id = self.__makeId(dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
-            sf.set(self.__D[id])
+            fid = self.__makeId(dataType="feature", seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=version)
+            sf.set(self.__D[fid])
             return sf
         except:  # noqa: E722 pylint: disable=bare-except
             return sf
@@ -312,14 +323,16 @@ class SequenceDataStore(object):
         except:  # noqa: E722 pylint: disable=bare-except
             return []
 
-    def addSelectedId(self, id):
+    def addSelectedId(self, id):  # pylint: disable=redefined-builtin
         try:
             self.__S.append(id)
             return True
         except:  # noqa: E722 pylint: disable=bare-except
             return False
 
-    def setSelectedIds(self, idList=[]):
+    def setSelectedIds(self, idList=None):
+        if idList is None:
+            idList = []
         try:
             self.__S = []
             self.__S.extend(idList)
@@ -404,7 +417,9 @@ class SequenceDataStore(object):
         except:  # noqa: E722 pylint: disable=bare-except
             return []
 
-    def setGroup(self, groupId, seqIdList=[]):
+    def setGroup(self, groupId, seqIdList=None):
+        if seqIdList is None:
+            seqIdList = []
         try:
             if seqIdList is not None:
                 self.__G[groupId] = seqIdList
@@ -456,7 +471,9 @@ class SequenceDataStore(object):
         """Return the list of identifiers for the stored aligned sequences."""
         return self.__L
 
-    def setGroupParts(self, groupId, partIdList=[]):
+    def setGroupParts(self, groupId, partIdList=None):
+        if partIdList is None:
+            partIdList = []
         try:
             self.__P[groupId] = partIdList
             return True
@@ -521,13 +538,13 @@ class SequenceDataStore(object):
 
         if self.__debug:
             self.__lfh.write("\n  + %s index:\n" % dataType)
-            for type, v0 in J[dataType].items():
-                for id, v1a in v0.items():
+            for vtype, v0 in J[dataType].items():
+                for vid, v1a in v0.items():
                     for pId, v1b in v1a.items():
                         for altId, v2 in v1b.items():
                             for ver, ival in v2.items():
                                 self.__lfh.write(
-                                    "   type %5s id %4s partId %d verId %2s altId %4d updated %12s seq len %10d\n" % (type, id, pId, ver, altId, ival[1], len(self.__D[ival[0]]))
+                                    "   type %5s id %4s partId %d verId %2s altId %4d updated %12s seq len %10d\n" % (vtype, vid, pId, ver, altId, ival[1], len(self.__D[ival[0]]))
                                 )
         self.__I = J
 
@@ -542,8 +559,8 @@ class SequenceDataStore(object):
         #
         #
         nItems = 0
-        for type, v0 in self.__I["sequence"].items():
-            for id, v1a in v0.items():
+        for _type, v0 in self.__I["sequence"].items():
+            for _id, v1a in v0.items():
                 for pId, v1b in v1a.items():
                     for altId, v2 in v1b.items():
                         for ver, ival in v2.items():
@@ -553,17 +570,17 @@ class SequenceDataStore(object):
 
         if self.__debug:
             ofh.write("\n  +Sequence Index:\n")
-            for type, v0 in self.__I["sequence"].items():
-                for id, v1a in v0.items():
+            for vtype, v0 in self.__I["sequence"].items():
+                for vid, v1a in v0.items():
                     for pId, v1b in v1a.items():
                         for altId, v2 in v1b.items():
                             for ver, ival in v2.items():
                                 ofh.write(
-                                    "   type %5s id %4s partId %d verId %2s altId %4d updated %12s seq len %10d\n" % (type, id, pId, ver, altId, ival[1], len(self.__D[ival[0]]))
+                                    "   type %5s id %4s partId %d verId %2s altId %4d updated %12s seq len %10d\n" % (vtype, vid, pId, ver, altId, ival[1], len(self.__D[ival[0]]))
                                 )
         nItems = 0
-        for type, v0 in self.__I["feature"].items():
-            for id, v1a in v0.items():
+        for _type, v0 in self.__I["feature"].items():
+            for _id, v1a in v0.items():
                 for pId, v1b in v1a.items():
                     for altId, v2 in v1b.items():
                         for ver, ival in v2.items():
@@ -573,27 +590,27 @@ class SequenceDataStore(object):
 
         if self.__debug:
             ofh.write("\n  +Feature Index:\n")
-            for type, v0 in self.__I["feature"].items():
-                for id, v1a in v0.items():
+            for vtype, v0 in self.__I["feature"].items():
+                for vid, v1a in v0.items():
                     for pId, v1b in v1a.items():
                         for altId, v2 in v1b.items():
                             for ver, ival in v2.items():
                                 ofh.write(
-                                    "   type %5s id %4s partID %2d verId %2s altId %4d updated %12s feat len %10d\n" % (type, id, pId, ver, altId, ival[1], len(self.__D[ival[0]]))
+                                    "   type %5s id %4s partID %2d verId %2s altId %4d updated %12s feat len %10d\n" % (vtype, vid, pId, ver, altId, ival[1], len(self.__D[ival[0]]))
                                 )
 
         ofh.write("\n  +Sequence Group/Entity Index:\n")
         for gId, seqIdList in self.__G.items():
             ofh.write("  +Sequence group:  %5s\n" % gId)
-            for id in seqIdList:
-                ofh.write("   %2s" % id)
+            for sid in seqIdList:
+                ofh.write("   %2s" % sid)
             ofh.write("\n")
 
         ofh.write("\n  +Sequence Group/Entity Subpart Index:\n")
         for gId, partIdList in self.__P.items():
             ofh.write("   +Sequence group:  %5s\n" % gId)
-            for id in partIdList:
-                ofh.write("   %2s" % id)
+            for pid in partIdList:
+                ofh.write("   %2s" % pid)
             ofh.write("\n")
 
         ofh.write("\n  +Entry Details:\n")
@@ -623,10 +640,10 @@ class SequenceDataStore(object):
 
     def dumpData(self, ofh, seqId, seqType, dataType="sequence", partId=1):
         for altId, vOb in self.__I[dataType][seqType][seqId][partId].items():
-            for ver, ival in vOb.items():
-                id = self.__makeId(dataType=dataType, seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=ver)
+            for ver, _ival in vOb.items():
+                did = self.__makeId(dataType=dataType, seqType=seqType, seqId=seqId, partId=partId, altId=altId, version=ver)
                 ofh.write("Data contents for %10s type %5s id %5s part %d alternative %2d version %2d\n" % (dataType, seqType, seqId, partId, altId, ver))
-                if id in self.__D:
-                    pprint.pprint(self.__D[id], stream=ofh)
+                if did in self.__D:
+                    pprint.pprint(self.__D[did], stream=ofh)
                 else:
                     ofh.write(" NO DATA FOUND\n")

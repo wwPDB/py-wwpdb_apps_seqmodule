@@ -23,7 +23,7 @@ class TaxonomyDbUtils(object):
 
     def __init__(self, verbose=True, log=sys.stderr):
         self.__verbose = verbose
-        self.__lfh = log
+        self.__lfh = log  # pylint:  disable=unused-private-member
         self.__wfApi = WfDbApi(verbose=self.__verbose)
 
     def getTaxonomyNames(self, taxId):
@@ -43,12 +43,16 @@ class TaxonomyDbUtils(object):
             #
             return scientific_name, common_name
         except:  # noqa: E722 pylint: disable=bare-except
-            "", ""
+            return "", ""
         #
 
 
-if __name__ == "__main__":
+def __main():
     taxUtil = TaxonomyDbUtils()
     scientific_name, common_name = taxUtil.getTaxonomyNames(sys.argv[1])
     print("scientific_name=%s" % scientific_name)
     print("common_name=%s" % common_name)
+
+
+if __name__ == "__main__":
+    __main()

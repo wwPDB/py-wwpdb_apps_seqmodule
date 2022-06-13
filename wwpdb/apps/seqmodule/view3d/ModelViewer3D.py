@@ -55,7 +55,7 @@ class ModelViewer3D(object):
             simpleFileName = self.__identifier + ".cif"
             self.__xyzPathRel = os.path.join("/sessions", self.__sessionId, simpleFileName)
 
-            if False:
+            if False:  # pylint: disable=using-constant-test
 
                 if not os.access(self.__xyzPathRel, os.R_OK):
                     shutil.copyfile(pdbxFilePath, os.path.join(self.__sessionPath, simpleFileName))

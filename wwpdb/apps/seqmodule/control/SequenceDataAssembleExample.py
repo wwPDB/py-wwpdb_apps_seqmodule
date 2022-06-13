@@ -55,9 +55,9 @@ class SequenceDataAssembleExample(object):
         except:  # noqa: E722 pylint: disable=bare-except
             pass
 
-    def __copyExampleStructureFile(self, id, fileType="pdb"):
+    def __copyExampleStructureFile(self, did, fileType="pdb"):
 
-        fn = str(id).lower() + "." + fileType
+        fn = str(did).lower() + "." + fileType
 
         if self.__verbose:
             self.__lfh.write("+SequenceDataAssembleExample.__copyExampleStructureFile () - copying file name  %s\n" % fn)
@@ -92,25 +92,25 @@ class SequenceDataAssembleExample(object):
         refFD = {}
         xyzFD = {}
         authFD = {}
-        for id in ["A", "B"]:
-            refSL[id] = sE.getRefSequenceWithIndexList(id)
-            authSL[id] = sE.getAuthSequenceWithIndexList(id)
-            xyzSL[id] = sE.getXyzSequenceWithIndexList(id)
-            refFD[id] = sE.getRefFeatureDict(id)
-            authFD[id] = sE.getAuthFeatureDict(id)
-            xyzFD[id] = sE.getXyzFeatureDict(id)
+        for did in ["A", "B"]:
+            refSL[did] = sE.getRefSequenceWithIndexList(did)
+            authSL[did] = sE.getAuthSequenceWithIndexList(did)
+            xyzSL[did] = sE.getXyzSequenceWithIndexList(did)
+            refFD[did] = sE.getRefFeatureDict(did)
+            authFD[did] = sE.getAuthFeatureDict(did)
+            xyzFD[did] = sE.getXyzFeatureDict(did)
 
         if self.__localTest:
             #
             # Create additional auth test sequences with random insertions and deletions
             #
-            for id in ["C", "D", "E", "F", "G"]:
-                refSL[id] = sE.getRefSequenceTestWithIndexList("A")
-                authSL[id] = sE.getAuthSequenceTestWithIndexList("A")
-                xyzSL[id] = sE.getXyzSequenceTestWithIndexList("A")
-                refFD[id] = sE.getRefFeatureDict("A")
-                authFD[id] = sE.getAuthFeatureDict("A")
-                xyzFD[id] = sE.getXyzFeatureDict("A")
+            for did in ["C", "D", "E", "F", "G"]:
+                refSL[did] = sE.getRefSequenceTestWithIndexList("A")
+                authSL[did] = sE.getAuthSequenceTestWithIndexList("A")
+                xyzSL[did] = sE.getXyzSequenceTestWithIndexList("A")
+                refFD[did] = sE.getRefFeatureDict("A")
+                authFD[did] = sE.getAuthFeatureDict("A")
+                xyzFD[did] = sE.getXyzFeatureDict("A")
 
             idList = ["A", "B", "C", "D", "E", "F", "G"]
             groupDict = {}
@@ -126,14 +126,14 @@ class SequenceDataAssembleExample(object):
         #
         sds = SequenceDataStore(reqObj=self.__sessionObj, verbose=self.__verbose, log=self.__lfh)
         sds.reset()
-        for id in idList:
-            sds.setSequence(authSL[id], id, "auth", altId=1, version=1)
-            sds.setFeature(authFD[id], id, "auth", altId=1, version=1)
-            sds.setSequence(xyzSL[id], id, "xyz", altId=1, version=1)
-            sds.setFeature(xyzFD[id], id, "xyz", altId=1, version=1)
+        for did in idList:
+            sds.setSequence(authSL[did], did, "auth", altId=1, version=1)
+            sds.setFeature(authFD[did], did, "auth", altId=1, version=1)
+            sds.setSequence(xyzSL[did], did, "xyz", altId=1, version=1)
+            sds.setFeature(xyzFD[did], did, "xyz", altId=1, version=1)
             for altId in range(1, 10):
-                sds.setSequence(refSL[id], id, "ref", altId=altId, version=1)
-                sds.setFeature(refFD[id], id, "ref", altId=altId, version=1)
+                sds.setSequence(refSL[did], did, "ref", altId=altId, version=1)
+                sds.setFeature(refFD[did], did, "ref", altId=altId, version=1)
         #
         #
         entryDict = {}
@@ -147,6 +147,6 @@ class SequenceDataAssembleExample(object):
 
         sds.serialize()
 
-        self.__copyExampleStructureFile(id=sE.getIdCode(), fileType="pdb")
+        self.__copyExampleStructureFile(did=sE.getIdCode(), fileType="pdb")
 
         return {}

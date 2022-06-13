@@ -273,7 +273,7 @@ class ReferenceSequence(object):
                     newStrain = str(m[0])
 
                 if (len(newStrain) < 1) or (newStrain.upper() == "NONE"):
-                    newStrain == ""
+                    newStrain = ""
                 return str(newSourceName).strip(), str(newStrain).strip()
         except:  # noqa: E722 pylint: disable=bare-except
             if self.__verbose:
@@ -588,7 +588,7 @@ class SequenceAssignArchive(object):
             d = self.__fD[eId]
             if "ref_list" in d:
                 log.write("+SequenceAssignArchive.printIt() Archive reference list for entity %s\n" % eId)
-                for ii, rfD in enumerate(d["ref_list"]):
+                for _ii, rfD in enumerate(d["ref_list"]):
                     log.write(" +Reference %s\n" % rfD["id"])
                     for k, v in rfD.items():
                         log.write("     Key=%20s  : %s\n" % (k, v))

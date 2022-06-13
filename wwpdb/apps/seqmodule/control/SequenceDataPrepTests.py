@@ -22,6 +22,7 @@ import sys
 import unittest
 import traceback
 import time
+import inspect
 import os
 import os.path
 
@@ -36,7 +37,7 @@ from wwpdb.utils.config.ConfigInfo import ConfigInfo, getSiteId
 from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest
 
 from wwpdb.io.locator.PathInfo import PathInfo
-from wwpdb.io.file.DataFileAdapter import DataFileAdapter
+from wwpdb.utils.dp.DataFileAdapter import DataFileAdapter
 
 
 class SequenceDataPrepTests(unittest.TestCase):
@@ -44,8 +45,19 @@ class SequenceDataPrepTests(unittest.TestCase):
         #
         self.__verbose = True
         self.__lfh = sys.stderr
+
         self.__pathExamplesRel = "../tests"
         self.__pathExamples = os.path.abspath(self.__pathExamplesRel)
+
+        self.__siteId = None
+        self.__cI = None
+        self.__topPath = None
+        self.__topSessionPath = None
+        self.__reqObj = None
+        self.__templatePath = None
+        # self.__sessionId = None
+        self.__sessionObj = None
+        self.__sessionPath = None
         #
         # self.__examFileList    = ['1cbs.cif','3rer.cif','rcsb056751.cif']
         # self.__exampleFileList    = ['rcsb056751.cif']
@@ -252,7 +264,7 @@ class SequenceDataPrepTests(unittest.TestCase):
         if sessionId is not None:
             self.__reqObj.setValue("sessionid", sessionId)
 
-        self.__sessionId = self.__reqObj.getSessionId()
+        # self.__sessionId = self.__reqObj.getSessionId()
         self.__sessionObj = self.__reqObj.newSessionObj()
         self.__sessionPath = self.__sessionObj.getPath()
         self.__reqObj.printIt(ofh=self.__lfh)
@@ -267,14 +279,14 @@ class SequenceDataPrepTests(unittest.TestCase):
         """
         startTime = time.time()
         self.__lfh.write("\n\n========================================================================================================\n")
-        self.__lfh.write("Starting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("Starting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             self.__setup(sessionId="SEQUENCE-DATA-CACHE")
             pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
             for f in self.__exampleIdList:
 
-                (idCode, fExt) = os.path.splitext(f)
+                (idCode, _fExt) = os.path.splitext(f)
                 pdbxFilePath = pI.getModelPdbxFilePath(idCode, fileSource="session")
                 inpFilePath = os.path.join(self.__pathExamples, f + ".cif")
                 self.__lfh.write(
@@ -295,7 +307,8 @@ class SequenceDataPrepTests(unittest.TestCase):
                     break
                 #
                 sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                sda.doAssemble(fileSource="local-upload")
+                # sda.doAssemble(fileSource="local-upload")
+                sda.doAssemble()
                 alstat = AlignmentStatistics(reqObj=self.__reqObj, maxRefAlign=self.__maxRefAlign, verbose=self.__verbose, log=self.__lfh)
                 alstat.doUpdate()
         except:  # noqa: E722 pylint: disable=bare-except
@@ -305,7 +318,7 @@ class SequenceDataPrepTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
     #    def testSearchAndAssembleFromArchive(self):
@@ -316,7 +329,7 @@ class SequenceDataPrepTests(unittest.TestCase):
     #        """
     #        startTime = time.time()
     #        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
-    #                                                       sys._getframe().f_code.co_name,
+    #                                                       inspect.currentframe().f_code.co_name,
     #                                                       time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
     #        try:
     #            self.__setup(sessionId=None)
@@ -339,14 +352,14 @@ class SequenceDataPrepTests(unittest.TestCase):
     #
     #        endTime = time.time()
     #        self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
-    #                                                                       sys._getframe().f_code.co_name,
+    #                                                                       inspect.currentframe().f_code.co_name,
     #                                                                       time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
     #                                                                       endTime - startTime))
 
     def testSummaryView(self):
         """Test construction of a summary view from a sequence data store containing pairwise alignment stats."""
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
         try:
             self.__setup(sessionId="SEQUENCE-DATA-CACHE")
             self.__reqObj.setValue("identifier", self.__dsList[0])
@@ -367,7 +380,7 @@ class SequenceDataPrepTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
 
@@ -385,10 +398,10 @@ def suiteSequenceDataPrepTests():
 
 
 if __name__ == "__main__":
-    if True:
+    if True:  # pylint: disable=using-constant-test
         mySuite = suiteSearchAndAssembleTests()
         unittest.TextTestRunner(verbosity=2).run(mySuite)
 
-    if False:
+    if False:  # pylint: disable=using-constant-test
         mySuite = suiteSequenceDataPrepTests()
         unittest.TextTestRunner(verbosity=2).run(mySuite)

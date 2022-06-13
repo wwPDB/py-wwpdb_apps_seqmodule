@@ -346,7 +346,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
                 for partId in partIdList:
                     sFeature = self._getFeatureObjByUnpackLabelFromDataStore(seqType, seqInstId, partId, seqAltId, seqVersion)
                     sFeature.clearAlignDetails()
-                    jPartId, jSeqPartType = sFeature.getPartInfo()
+                    _jPartId, jSeqPartType = sFeature.getPartInfo()
                     if partId in self.__newPartInfoDict:
                         sFeature.setAuthPartDetails(partId, self.__newPartInfoDict[partId][0], self.__newPartInfoDict[partId][1], jSeqPartType)
                         #
@@ -400,14 +400,17 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         #
         self._xyzAlignList, self.__xyzAlignIndexList = self.__getAlignAndIndexList(inputSeqIndexList=indexList)
 
-    def __getAlignAndIndexList(self, inputSeqIndexList=[], includeAlignmentFlag=True):
+    def __getAlignAndIndexList(self, inputSeqIndexList=None, includeAlignmentFlag=True):
         """ """
+        if inputSeqIndexList is None:
+            inputSeqIndexList = []
+
         alignList = []
         alignIndexList = []
         for seqAlignTuple in self._seqAlignList:
             hasRealValue = False
             for indexTuple in inputSeqIndexList:
-                intIdx, comment = decodeIndex(seqAlignTuple[indexTuple[1]][3])
+                intIdx, _comment = decodeIndex(seqAlignTuple[indexTuple[1]][3])
                 if intIdx >= 0:
                     hasRealValue = True
                     break
@@ -443,7 +446,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
             #
             indexList = [(self._authLabel, self._seqAlignLabelIndices[self._authLabel]), (seqLabelId, i)]
             #
-            alignList, refAlignIndexList = self.__getAlignAndIndexList(inputSeqIndexList=indexList, includeAlignmentFlag=False)
+            _alignList, refAlignIndexList = self.__getAlignAndIndexList(inputSeqIndexList=indexList, includeAlignmentFlag=False)
             if refAlignIndexList:
                 self._insertRefAlignIndexList([self._authLabel, seqLabelId], refAlignIndexList)
             #

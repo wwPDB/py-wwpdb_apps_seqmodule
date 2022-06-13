@@ -106,10 +106,10 @@ class PolymerLinkageIo(object):
 
     """
 
-    def __init__(self, dataContainer=None, verbose=True, log=sys.stderr):
+    def __init__(self, dataContainer=None, verbose=True, log=sys.stderr):  # pylint: disable=unused-argument
         self.__currentContainer = dataContainer
-        self.__verbose = verbose
-        self.__lfh = log
+        # self.__verbose = verbose
+        # self.__lfh = log
 
     def getPolymerLinkDistances(self):
         """Returns a dictionary of linkage distance information of atypical linkages.  d > 1.7  or d < 1.2
@@ -194,10 +194,10 @@ class PolymerInstanceIo(object):
 
     """
 
-    def __init__(self, dataContainer=None, verbose=True, log=sys.stderr):
+    def __init__(self, dataContainer=None, verbose=True, log=sys.stderr):  # pylint: disable=unused-argument
         self.__currentContainer = dataContainer
-        self.__verbose = verbose
-        self.__lfh = log
+        # self.__verbose = verbose
+        # self.__lfh = log
 
     def getPolymerInstances(self):
         """Returns a list of polymer instances
@@ -499,7 +499,7 @@ class ModelFileIo(object):
         except:  # noqa: E722 pylint: disable=bare-except
             return ""
 
-    def getCitationTitle(self, id="primary"):
+    def getCitationTitle(self, id="primary"):  # pylint: disable=redefined-builtin
         """Return _citation.title  where id = primary"""
         try:
             catObj = self.__currentContainer.getObj("citation")
@@ -517,22 +517,22 @@ class ModelFileIo(object):
         """Get the number of entities of type polypeptide(D)"""
         return self.getPolymerEntityCount(type="polypeptide(D)")
 
-    def getEntityCount(self, type):
+    def getEntityCount(self, type):  # pylint: disable=redefined-builtin
         """Returns the integer count of entities of the input 'type'
         (polymer, non-polymer, macrolide, water)
         """
-        if type in SequenceReferenceData._entityTypes:
+        if type in SequenceReferenceData._entityTypes:  # pylint: disable=protected-access
             catObj = self.__currentContainer.getObj("entity")
             indices = catObj.selectIndices(type, "type")
             return len(indices)
         else:
             return 0
 
-    def getPolymerEntityCount(self, type):
+    def getPolymerEntityCount(self, type):  # pylint: disable=redefined-builtin
         """Returns the integer count of polymer entities of the input 'type'
         ++ allowed types are reference._polymerEntityTypes -
         """
-        if type in SequenceReferenceData._polymerEntityTypes:
+        if type in SequenceReferenceData._polymerEntityTypes:  # pylint: disable=protected-access
             catObj = self.__currentContainer.getObj("entity_poly")
             indices = catObj.selectIndices(type, "type")
             return len(indices)
@@ -564,7 +564,7 @@ class ModelFileIo(object):
         v2 = self.__firstOrDefault(vL2, default="")
         return v1, v2
 
-    def getPolymerEntityList(self, type=None):
+    def getPolymerEntityList(self, type=None):  # pylint: disable=redefined-builtin
         """Returns a list of polymer entity id's  of the input 'type'
         type is an entity type (all, polymer, non-polymer,  any)  or
             one of the polymer entity types.
@@ -575,7 +575,7 @@ class ModelFileIo(object):
                 catObj = self.__currentContainer.getObj("entity")
                 eList = catObj.selectValuesWhere("id", tType, "type")
                 return eList
-            elif type in SequenceReferenceData._polymerEntityTypes:
+            elif type in SequenceReferenceData._polymerEntityTypes:  # pylint: disable=protected-access
                 catObj = self.__currentContainer.getObj("entity_poly")
                 eList = catObj.selectValuesWhere("entity_id", type, "type")
             else:
@@ -939,7 +939,7 @@ class ModelFileIo(object):
         else:
             return default
 
-    def assignSourceDefaultList(self, entityId, seqLength=0):
+    def assignSourceDefaultList(self, entityId, seqLength=0):  # pylint: disable=unused-argument
         """Assign default dictionaries containing source feature details.
 
         'SOURCE_NAME'   scientific name   =blank
@@ -1268,8 +1268,8 @@ class ModelFileIo(object):
         # translate to one-letter-codes --
         sq = ""
         for mon in mon3List:
-            if mon in SequenceReferenceData._monDict3:
-                sq += SequenceReferenceData._monDict3[mon]
+            if mon in SequenceReferenceData._monDict3:  # pylint: disable=protected-access
+                sq += SequenceReferenceData._monDict3[mon]  # pylint: disable=protected-access
             elif (mon in [".", "?"]) or (len(mon) == 0):
                 sq += "-"
             else:

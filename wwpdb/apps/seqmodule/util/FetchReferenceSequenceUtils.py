@@ -240,8 +240,7 @@ class FetchReferenceSequenceUtils(object):
         return myD
 
 
-if __name__ == "__main__":
-    siteId = os.getenv("WWPDB_SITE_ID")
+def testmain():
     fetchUtil = FetchReferenceSequenceUtils(siteId=os.getenv("WWPDB_SITE_ID"), verbose=True)
     # myD=fetchUtil.fetchReferenceSequenceWithSeqMatch("UNP", "SYUA_HUMAN", "VVHGVATVAEKTK")
     err, myD, myList = fetchUtil.fetchReferenceSequence("UNP", "A0A2X2RSX5", None)
@@ -254,3 +253,7 @@ if __name__ == "__main__":
     for myTuple in myList:
         print(myTuple)
     #
+
+
+if __name__ == "__main__":
+    testmain()

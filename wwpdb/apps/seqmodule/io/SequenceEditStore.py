@@ -51,8 +51,17 @@ class SequenceEdit(object):
           ...
     """
 
-    def __init__(self, verbose=False):
-        self.__verbose = verbose
+    def __init__(self, verbose=False):  # pylint: disable=unused-argument
+        # self.__verbose = verbose
+
+        self.__editOpId = 0
+        self.__editType = None
+        self.__targetElementId = None
+        self.__valueNew = None
+        self.__valuePrevious = None
+        self.__stylePrevious = None
+        self.__newElementId = None
+
         self.__reset()
 
     def __reset(self):
@@ -94,7 +103,7 @@ class SequenceEdit(object):
     def getTargetElementId(self):
         return self.__targetElementId
 
-    def setEditOpId(self, id):
+    def setEditOpId(self, id):  # pylint:  disable=redefined-builtin
         self.__editOpId = id
 
     def getEditOpId(self):

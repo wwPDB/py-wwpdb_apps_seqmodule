@@ -1,3 +1,5 @@
+# There are some "global" variables and cannot determine if we "own" them
+# pylint: disable=attribute-defined-outside-init
 ##
 # File:    SequenceLabel.py
 # Date:    16-Dec-2009
@@ -324,7 +326,7 @@ class SequenceFeature(object):
         else:
             return ""
 
-    def setPolymerType(self, type):
+    def setPolymerType(self, type):  # pylint: disable=redefined-builtin
         self.__fD["POLYMER_TYPE"] = type
 
     def getPolymerType(self):
@@ -891,7 +893,7 @@ class SequenceFeature(object):
                     newStrain = str(m[0])
 
                 if (len(newStrain) < 1) or (newStrain.upper() == "NONE"):
-                    newStrain == ""
+                    newStrain = ""
                 # return str(newSourceName).strip(),str(newStrain).strip()
                 return str(sourceName).strip(), str(newStrain).strip()
         except:  # noqa: E722 pylint: disable=bare-except
@@ -927,8 +929,8 @@ class ResidueLabel(object):
 
     """
 
-    def __init__(self, verbose=False):
-        self.__versbose = verbose
+    def __init__(self, verbose=False):  # pylint: disable=unused-argument
+        # self.__versbose = verbose
         self.__reset()
 
     def __reset(self):
@@ -1125,8 +1127,8 @@ class SequenceLabel(object):
 
     """
 
-    def __init__(self, verbose=False):
-        self.__versbose = verbose
+    def __init__(self, verbose=False):  # pylint: disable=unused-argument
+        # self.__versbose = verbose
         self.__reset()
         self.__typeOrder = ["auth", "xyz", "ref"]
 
@@ -1258,14 +1260,15 @@ class SequenceLabelUtils(object):
     Utilitity functions on sequence labels.
     """
 
-    def __init__(self, verbose=False, log=sys.stderr):
-        self.__verbose = verbose
-        self.__lfh = log
+    def __init__(self, verbose=False, log=sys.stderr):  # pylint: disable=unused-argument
+        # self.__verbose = verbose
+        # self.__lfh = log
+        pass
 
     def getAlignGroupId(self, alignIdList):
         sLabel = SequenceLabel()
         for alignId in alignIdList:
             sLabel.unpack(alignId)
-            (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = sLabel.get()
+            (seqType, seqInstId, _seqPartId, _seqAltId, _seqVersion) = sLabel.get()
             if seqType in ["auth", "ref"]:
                 return seqInstId

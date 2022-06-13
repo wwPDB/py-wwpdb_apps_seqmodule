@@ -69,7 +69,7 @@ class AlignmentFrontEndUIEditor(object):
         self.__alignmentTag = ""
         #
         self.__operation = None
-        self.__sessionObj = None
+        # self.__sessionObj = None
         self.__sessionId = None
         self.__cssClassRemove = "bgcolinsert bgcolconflict bgcolundo bgcolreplace bgcoldelete bgcoldna bgcolrna ovflow cf-misc-ref cf-misc-test cf-gap-test cf-gap-ref cf-glu-gln cf-asp-asn cf-ala-gly cf-rep-ALA cf-rep-ARG cf-rep-ASN cf-rep-ASP cf-rep-ASX cf-rep-CYS cf-rep-GLN cf-rep-GLU cf-rep-GLX cf-rep-GLY cf-rep-HIS cf-rep-ILE cf-rep-LEU cf-rep-LYS cf-rep-MET cf-rep-PHE cf-rep-PRO cf-rep-SER cf-rep-THR cf-rep-TRP cf-rep-TYR cf-rep-VAL cf-rep-SEC cf-rep-PYL"  # noqa: E501
 
@@ -77,7 +77,7 @@ class AlignmentFrontEndUIEditor(object):
 
     def __setup(self):
         try:
-            self.__sessionObj = self.__reqObj.getSessionObj()
+            # self.__sessionObj = self.__reqObj.getSessionObj()
             self.__operation = self.__reqObj.getEditOp()
             self.__sessionId = self.__reqObj.getSessionId()
             if self.__verbose:
@@ -143,6 +143,7 @@ class AlignmentFrontEndUIEditor(object):
         edList = []
         srcResidueId = None
         dstResidueId = None
+        srcVal = ""  # In case of exception
         try:
             srcResidueId = self.__reqObj.getValue("source")
             dstResidueId = self.__reqObj.getValue("destination")
@@ -157,7 +158,7 @@ class AlignmentFrontEndUIEditor(object):
                     "+AlignmentFrontEndUIEditor.__editMove()  Missing source %s or destination  %s  for session id %s\n" % (srcResidueId, dstResidueId, self.__sessionId)
                 )
             #
-            rD = self.__makeResponseDict(id=srcResidueId, val=srcVal, val3=srcVal, editType="error", editOpId=None, newId=srcResidueId)
+            rD = self.__makeResponseDict(sid=srcResidueId, val=srcVal, val3=srcVal, editType="error", editOpId=None, newId=srcResidueId)
             if srcResidueId is not None:
                 rDDict[srcResidueId] = rD
             return rDDict
@@ -169,9 +170,9 @@ class AlignmentFrontEndUIEditor(object):
                 self.__lfh.write("+AlignmentMove.__editMove()  Edit(NOOP) for srcResidueId %s dstResidueId %s\n" % (srcResidueId, dstResidueId))
             #
             editType = "noop"
-            rD = self.__makeResponseDict(id=srcResidueId, val=srcVal, val3=srcVal, editType=editType, editOpId=editOpLast, newId=srcResidueId)
+            rD = self.__makeResponseDict(sid=srcResidueId, val=srcVal, val3=srcVal, editType=editType, editOpId=editOpLast, newId=srcResidueId)
             rDDict[srcResidueId] = rD
-            rD = self.__makeResponseDict(id=dstResidueId, val=dstVal, val3=dstVal, editType=editType, editOpId=editOpLast, newId=dstResidueId)
+            rD = self.__makeResponseDict(sid=dstResidueId, val=dstVal, val3=dstVal, editType=editType, editOpId=editOpLast, newId=dstResidueId)
             rDDict[srcResidueId] = rD
             return rDDict
         #
@@ -212,7 +213,7 @@ class AlignmentFrontEndUIEditor(object):
             aU = AlignmentTools(reqObj=self.__reqObj, entityId=self.__alignmentTag, verbose=self.__verbose, log=self.__lfh)
             errorMsg = aU.checkResidueMovingCompatibility(srcResidueId, dstResidueId)
             if errorMsg:
-                return self.__makeResponseDict(id=srcResidueId, val=srcCode1, val3=srcCode3, editType="error", editOpId=None, newId=None, errorText=errorMsg)
+                return self.__makeResponseDict(sid=srcResidueId, val=srcCode1, val3=srcCode3, editType="error", editOpId=None, newId=None, errorText=errorMsg)
             #
         #
         # One edit applies to source residue -- which becomes a gap -- and retains its position in alignment.
@@ -240,7 +241,7 @@ class AlignmentFrontEndUIEditor(object):
         if self.__verbose:
             sE.printIt(self.__lfh)
         #
-        rD = self.__makeResponseDict(id=srcResidueId, val=newSrcVal, val3=newSrcVal, editType=editType, editOpId=editOpNext, newId=srcIdNew)
+        rD = self.__makeResponseDict(sid=srcResidueId, val=newSrcVal, val3=newSrcVal, editType=editType, editOpId=editOpNext, newId=srcIdNew)
         rDDict[srcResidueId] = rD
         #
         # destination --
@@ -249,7 +250,7 @@ class AlignmentFrontEndUIEditor(object):
         if self.__verbose:
             sE.printIt(self.__lfh)
         #
-        rD = self.__makeResponseDict(id=dstResidueId, val=srcCode1, val3=srcCode3, editType=editType, editOpId=editOpNext, newId=dstIdNew)
+        rD = self.__makeResponseDict(sid=dstResidueId, val=srcCode1, val3=srcCode3, editType=editType, editOpId=editOpNext, newId=dstIdNew)
         rDDict[dstResidueId] = rD
         #
         ses.storeEditList(edList)
@@ -267,11 +268,11 @@ class AlignmentFrontEndUIEditor(object):
         ses = SequenceEditStore(sessionObj=self.__reqObj.newSessionObj(), fileName=esfn, verbose=self.__verbose, log=self.__lfh)
         return ses
 
-    def __makeResponseDict(self, id, val, val3, editType, editOpId=None, newId=None, errorText="Unable to save the Edit.<br />\n"):
+    def __makeResponseDict(self, sid, val, val3, editType, editOpId=None, newId=None, errorText="Unable to save the Edit.<br />\n"):
         """Convenience method for constructing the response for the edit operation.
 
         A response consists of a standard dictionary of the following attributes:
-        - id       the unique element identifier of the edited residue
+        - sid       the unique element identifier of the edited residue
         - val      displayed of the edited element
         - val3     value of edited element as the residue 3-letter-code
         - edittype     the type of edit performed (insert,replace,delete,undo,replaceid,...)
@@ -284,7 +285,7 @@ class AlignmentFrontEndUIEditor(object):
         - newid        if the editType is a replaceId type then the newId will be included.
         """
         rD = {}
-        rD["id"] = str(id)
+        rD["id"] = str(sid)
         rD["val"] = str(val)
         rD["val3"] = str(val3)
         rD["edittype"] = str(editType)
@@ -293,10 +294,10 @@ class AlignmentFrontEndUIEditor(object):
         #
         rD["errorflag"] = False
         rD["errortext"] = "none"
-        rD["debug"] = "%s = %s(%s)" % (id, val, val3)
+        rD["debug"] = "%s = %s(%s)" % (sid, val, val3)
         #
         rD["tooltip"] = self.__setToolTipText(editType, val)
-        rD["classAdd"] = self.__setCssClassAdd(editType, id, val)
+        rD["classAdd"] = self.__setCssClassAdd(editType, sid, val)
         rD["classRemove"] = self.__setCssClassRemove(editType)
 
         if editType == "replaceid":
@@ -384,7 +385,7 @@ class AlignmentFrontEndUIEditor(object):
         #
         return cssClassString
 
-    def __setCssClassRemove(self, editType=""):
+    def __setCssClassRemove(self, editType=""):  # pylint: disable=unused-argument
         return self.__cssClassRemove
 
     def __editAny(self):
@@ -412,7 +413,7 @@ class AlignmentFrontEndUIEditor(object):
                     % (residueId, editValue, priorValue, self.__sessionId)
                 )
             #
-            rD = self.__makeResponseDict(id=residueId, val=editValue, val3=editValue, editType="error", editOpId=None, newId=None)
+            rD = self.__makeResponseDict(sid=residueId, val=editValue, val3=editValue, editType="error", editOpId=None, newId=None)
             return rD
         #
         # Distinguish what we are editing using extensions on the residue id.
@@ -430,7 +431,7 @@ class AlignmentFrontEndUIEditor(object):
             if self.__verbose:
                 self.__lfh.write("+AlignmentFrontEndUIEditor.__editAny()  Edit(NOOP) for residueId %s value %s prior value %s\n" % (residueId, editValue, priorValue))
             #
-            rD = self.__makeResponseDict(id=residueId, val=editValue, val3=editValue, editType="noop", editOpId=None, newId=None)
+            rD = self.__makeResponseDict(sid=residueId, val=editValue, val3=editValue, editType="noop", editOpId=None, newId=None)
             return rD
         #
         return self.__editResidue(residueId, editValue, priorValue)
@@ -464,7 +465,7 @@ class AlignmentFrontEndUIEditor(object):
                 aU = AlignmentTools(reqObj=self.__reqObj, entityId=self.__alignmentTag, verbose=self.__verbose, log=self.__lfh)
                 errorMsg = aU.checkResidueNameReplaceCompatibility(rLabel.getAlignmentIndex(), rLabel.getResidueCode3(), rLabel.getResidueLabelIndex(), r3L[0])
                 if errorMsg:
-                    return self.__makeResponseDict(id=residueId, val=editValue, val3=editValue, editType="error", editOpId=None, newId=None, errorText=errorMsg)
+                    return self.__makeResponseDict(sid=residueId, val=editValue, val3=editValue, editType="error", editOpId=None, newId=None, errorText=errorMsg)
                 #
             #
         #
@@ -478,7 +479,7 @@ class AlignmentFrontEndUIEditor(object):
         #
         ses.storeEdit(sE)
         #
-        rD = self.__makeResponseDict(id=residueId, val=r1, val3=r3, editType=eType, editOpId=editOpNext, newId=None)
+        rD = self.__makeResponseDict(sid=residueId, val=r1, val3=r3, editType=eType, editOpId=editOpNext, newId=None)
         #
         return rD
 
@@ -499,7 +500,7 @@ class AlignmentFrontEndUIEditor(object):
                     "+Alignment.__editDetails()  Missing input residueId %s value %s prior value %s session id %s\n" % (residueId, editValue, priorValue, self.__sessionId)
                 )
             #
-            rD = self.__makeResponseDict(id=residueId, val=editValue, val3=editValue, editType="error", editOpId=None, newId=None)
+            rD = self.__makeResponseDict(sid=residueId, val=editValue, val3=editValue, editType="error", editOpId=None, newId=None)
             return rD
         #
         # Check for sequence details -
@@ -528,7 +529,7 @@ class AlignmentFrontEndUIEditor(object):
         #
         # Setup the return values -
         #
-        rD = self.__makeResponseDict(id=residueId, val=editValue, val3=editValue, editType=eType, editOpId=editOpNext, newId=None)
+        rD = self.__makeResponseDict(sid=residueId, val=editValue, val3=editValue, editType=eType, editOpId=editOpNext, newId=None)
         #
         return rD
 
@@ -552,7 +553,7 @@ class AlignmentFrontEndUIEditor(object):
                 traceback.print_exc(file=self.__lfh)
                 self.__lfh.write("+Alignment.__undo()  Missing target editOp for the undo operation in session id %s\n" % (self.__sessionId))
             #
-            rD = self.__makeResponseDict(id="", val="", val3="", editType="error", editOpId=None, newId=None)
+            rD = self.__makeResponseDict(sid="", val="", val3="", editType="error", editOpId=None, newId=None)
             return rD
         #
         if self.__verbose:
@@ -673,7 +674,7 @@ class AlignmentFrontEndUIEditor(object):
                 traceback.print_exc(file=self.__lfh)
                 self.__lfh.write("+Alignment.__delete()  Missing delete selection for session id %s\n" % (self.__sessionId))
             #
-            rD = self.__makeResponseDict(id="", val="", val3="", editType="error", editOpId=None, newId=None)
+            rD = self.__makeResponseDict(sid="", val="", val3="", editType="error", editOpId=None, newId=None)
             return rD
         #
         cssClass = "bgcoldelete"
@@ -726,7 +727,7 @@ class AlignmentFrontEndUIEditor(object):
                 #
             #
             return self.__makeResponseDict(
-                id=unCompatibleList[0][0], val=unCompatibleList[0][1], val3=unCompatibleList[0][3], editType="error", editOpId=None, newId=None, errorText=message
+                sid=unCompatibleList[0][0], val=unCompatibleList[0][1], val3=unCompatibleList[0][3], editType="error", editOpId=None, newId=None, errorText=message
             )
         #
         ses = self.__openEditStore()
@@ -741,7 +742,7 @@ class AlignmentFrontEndUIEditor(object):
             sE = self.__makeSequenceEdit(targetId=eTup[0], editType="replaceid", newValueList=[eTup[2]], priorValue=eTup[3], opId=editOpNext, newId=eTup[4])
             edList.append(sE)
             #
-            rD = self.__makeResponseDict(id=eTup[0], val=eTup[1], val3=eTup[2], editType="replaceid", editOpId=editOpNext, newId=eTup[4])
+            rD = self.__makeResponseDict(sid=eTup[0], val=eTup[1], val3=eTup[2], editType="replaceid", editOpId=editOpNext, newId=eTup[4])
             rDDict[eTup[0]] = rD
         #
         if self.__verbose:
@@ -775,7 +776,7 @@ class AlignmentFrontEndUIEditor(object):
             sE = self.__makeSequenceEdit(targetId=eTup[0], editType="replace", newValueList=[eTup[2]], priorValue=eTup[3], opId=editOpNext, newId=eTup[4])
             edList.append(sE)
             #
-            rD = self.__makeResponseDict(id=eTup[0], val=eTup[1], val3=eTup[2], editType="replace", editOpId=editOpNext, newId=eTup[4])
+            rD = self.__makeResponseDict(sid=eTup[0], val=eTup[1], val3=eTup[2], editType="replace", editOpId=editOpNext, newId=eTup[4])
             rDDict[eTup[0]] = rD
         #
         if self.__verbose:

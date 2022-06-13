@@ -20,12 +20,12 @@ __email__ = "zfeng@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.07"
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle as pickle
+# try:
+#     import cPickle as pickle
+# except ImportError:
+#     import pickle as pickle
 #
-import os
+# import os
 import sys
 
 from wwpdb.utils.config.ConfigInfo import ConfigInfo
@@ -49,7 +49,7 @@ class SearchEntityPolySeqs(object):
     def __init__(self, siteId=None, sessionPath=None, verbose=False, log=sys.stderr):
         """ """
         self.__siteId = siteId
-        self.__sessionPath = sessionPath
+        self.__sessionPath = sessionPath  # pylint: disable=unused-private-member
         self.__verbose = verbose
         self.__lfh = log
         #
@@ -75,29 +75,6 @@ class SearchEntityPolySeqs(object):
         )
         self.__dbApi.setSchemaMap(self.__schemaMap)
         #
-
-    '''
-        self.__seqMap = {}
-        self.__getSeqMap()
-
-    def searchSameSequenceEntity(self, entryId="D_1000000000", seq=""):
-        """
-        """
-        selfList = []
-        otherList = []
-        seq = str(seq).replace("\n", "").replace("\t", "").replace(" ", "").strip().upper()
-        seqLen = len(seq)
-        if (seqLen in self.__seqMap) and (seq in self.__seqMap[seqLen]):
-            for entityTup in self.__seqMap[seqLen][seq]:
-                if entityTup[0] == entryId:
-                    selfList.append(entityTup)
-                else:
-                    otherList.append(entityTup)
-                #
-            #
-        #
-        return selfList,otherList
-    '''
 
     def searchSameSequenceEntity(self, entryId="D_1000000000", seq=""):
         """ """
@@ -127,57 +104,58 @@ class SearchEntityPolySeqs(object):
         #
         return selfList, otherList
 
-    def __getSeqMap(self):
-        """ """
-        self.__pickleFileName = "EntityPolySeqs.pickle"
-        #
-        pickleFile = os.path.join(self.__sessionPath, self.__pickleFileName)
-        if os.access(pickleFile, os.F_OK):
-            self.__seqMap = self.__loadPickle(pickleFile)
-            return
-        #
-        rows = self.__dbApi.selectData(key="SELECT_ALL", parameter=())
-        for row in rows:
-            hasMissingValue = False
-            for item in ("structure_id", "entity_id", "pdb_id", "rcsb_annotator", "status_code", "date_begin_processing", "pdbx_seq_one_letter_code"):
-                if (item not in row) or (not row[item]):
-                    hasMissingValue = True
-                    break
-                #
-            #
-            if hasMissingValue:
-                continue
-            #
-            metaDataList = []
-            for item in ("structure_id", "entity_id", "pdb_id", "rcsb_annotator", "status_code", "date_begin_processing"):
-                val = ""
-                if (item in row) and row[item]:
-                    val = str(row[item]).strip()
-                #
-                metaDataList.append(val)
-            #
-            seq = str(row["pdbx_seq_one_letter_code"]).replace("\n", "").replace("\t", "").replace(" ", "").strip().upper()
-            seqLen = len(seq)
-            if seqLen in self.__seqMap:
-                if seq in self.__seqMap[seqLen]:
-                    self.__seqMap[seqLen][seq].append(metaDataList)
-                else:
-                    self.__seqMap[seqLen][seq] = [metaDataList]
-                #
-            else:
-                self.__seqMap[seqLen] = {seq: [metaDataList]}
-            #
-        #
-        self.__dumpPickle(pickleFile, self.__seqMap)
+    # Commented out as unused.  June 2022
+    # def __getSeqMap(self):
+    #     """ """
+    #     self.__pickleFileName = "EntityPolySeqs.pickle"
+    #     #
+    #     pickleFile = os.path.join(self.__sessionPath, self.__pickleFileName)
+    #     if os.access(pickleFile, os.F_OK):
+    #         self.__seqMap = self.__loadPickle(pickleFile)
+    #         return
+    #     #
+    #     rows = self.__dbApi.selectData(key="SELECT_ALL", parameter=())
+    #     for row in rows:
+    #         hasMissingValue = False
+    #         for item in ("structure_id", "entity_id", "pdb_id", "rcsb_annotator", "status_code", "date_begin_processing", "pdbx_seq_one_letter_code"):
+    #             if (item not in row) or (not row[item]):
+    #                 hasMissingValue = True
+    #                 break
+    #             #
+    #         #
+    #         if hasMissingValue:
+    #             continue
+    #         #
+    #         metaDataList = []
+    #         for item in ("structure_id", "entity_id", "pdb_id", "rcsb_annotator", "status_code", "date_begin_processing"):
+    #             val = ""
+    #             if (item in row) and row[item]:
+    #                 val = str(row[item]).strip()
+    #             #
+    #             metaDataList.append(val)
+    #         #
+    #         seq = str(row["pdbx_seq_one_letter_code"]).replace("\n", "").replace("\t", "").replace(" ", "").strip().upper()
+    #         seqLen = len(seq)
+    #         if seqLen in self.__seqMap:
+    #             if seq in self.__seqMap[seqLen]:
+    #                 self.__seqMap[seqLen][seq].append(metaDataList)
+    #             else:
+    #                 self.__seqMap[seqLen][seq] = [metaDataList]
+    #             #
+    #         else:
+    #             self.__seqMap[seqLen] = {seq: [metaDataList]}
+    #         #
+    #     #
+    #     self.__dumpPickle(pickleFile, self.__seqMap)
 
-    def __loadPickle(self, pickleFile):
-        """ """
-        fb = open(pickleFile, "rb")
-        pickleData = pickle.load(fb)
-        fb.close()
-        return pickleData
+    # def __loadPickle(self, pickleFile):
+    #     """ """
+    #     fb = open(pickleFile, "rb")
+    #     pickleData = pickle.load(fb)
+    #     fb.close()
+    #     return pickleData
 
-    def __dumpPickle(self, pickleFile, pickleData):
-        fb = open(pickleFile, "wb")
-        pickle.dump(pickleData, fb)
-        fb.close()
+    # def __dumpPickle(self, pickleFile, pickleData):
+    #     fb = open(pickleFile, "wb")
+    #     pickle.dump(pickleData, fb)
+    #     fb.close()

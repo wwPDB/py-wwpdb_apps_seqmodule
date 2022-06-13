@@ -31,7 +31,7 @@ from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceDat
 from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceFeature
 
 #
-from wwpdb.utils.align.alignlib import PairwiseAlign
+from wwpdb.utils.align.alignlib import PairwiseAlign  # pylint: disable=no-name-in-module
 
 
 class AlignmentStatistics(object):
@@ -59,8 +59,6 @@ class AlignmentStatistics(object):
         #
         self.__srd = SequenceReferenceData(verbose=self.__verbose, log=self.__lfh)
         self.__gapSymbol = self.__srd.getGapSymbol()
-        self.__alignAuthXyzStat = {}
-        self.__alignAuthRefStat = {}
         #
         self.__ok = True
         self.__setup()
@@ -75,7 +73,6 @@ class AlignmentStatistics(object):
             if self.__verbose:
                 self.__lfh.write("+AlignmentStatistics.__setup() - using session path %s failing \n" % self.__sessionPath)
             self.__ok = False
-            pass
 
     #
     def doUpdate(self):
@@ -294,7 +291,7 @@ class AlignmentStatistics(object):
                 fD = self.__sds.getFeature(seqId=seqId0, seqType="auth", partId=partId, altId=1, version=verLatest)
                 seqFeature.clear()
                 seqFeature.set(fD)
-                (pId, seqBeg, seqEnd, seqPartType) = seqFeature.getAuthPartDetails()
+                (pId, seqBeg, seqEnd, _seqPartType) = seqFeature.getAuthPartDetails()
 
                 if self.__debug:
                     self.__lfh.write("+AlignmentStatistics.__updateAuthXyzAlignments()  partId %d seqBegin %d seqEnd %d pId %d\n" % (partId, seqBeg, seqEnd, pId))

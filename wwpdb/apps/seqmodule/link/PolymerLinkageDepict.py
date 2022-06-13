@@ -22,32 +22,20 @@ import sys
 class PolymerLinkageDepict(object):
     """The PolymerLinkDepiction() class provides methods for rendering a table of polymer linkage distances."""
 
-    def __init__(self, lowerBound=1.2, upperBound=1.7, verbose=False, log=sys.stderr):
-        self.__verbose = verbose
-        self.__lfh = log
+    def __init__(self, lowerBound=1.2, upperBound=1.7, verbose=False, log=sys.stderr):  # pylint: disable=unused-argument
+        # self.__verbose = verbose
+        # self.__lfh = log
         #
         self.__upperB = upperBound
         self.__lowerB = lowerBound
         #
-        self.__colKeys = [
-            "id",
-            "PDB_model_num",
-            "auth_asym_id_1",
-            "auth_comp_id_1",
-            "auth_seq_id_1",
-            "PDB_ins_code_1",
-            "auth_asym_id_2",
-            "auth_comp_id_2",
-            "auth_seq_id_2",
-            "PDB_ins_code_2",
-            "dist",
-        ]
 
-    def buildPolymerLinkageTable(self, rowDictList=[]):
+    def buildPolymerLinkageTable(self, rowDictList=None):
         """Render data in the input list of dictionaries representing the polymer
         linkage data..
         """
-
+        if rowDictList is None:
+            rowDictList = []
         iCount = 0
         for rD in rowDictList:
             dist = float(str(rD["dist"]))
@@ -63,8 +51,10 @@ class PolymerLinkageDepict(object):
             oL.append("</div>")
             return oL
 
-    def __formatPolymerLinkageTable(self, rowDictList=[]):
+    def __formatPolymerLinkageTable(self, rowDictList=None):
         """Render data in the input list of dictionaries representing the polymer"""
+        if rowDictList is None:
+            rowDictList = []
 
         columnNameList = ["Model", "Chain 1", "Residue 1", "Chain 2", "Residue 2", "Distance"]
         oL = []

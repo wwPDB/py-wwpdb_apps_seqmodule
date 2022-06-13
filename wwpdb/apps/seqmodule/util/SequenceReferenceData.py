@@ -220,10 +220,14 @@ class SequenceReferenceData(object):
         else:
             return "polyribonucleotide"
 
-    def __parseSequenceString(self, ss, codeDict3To1={}, defaultOneCode="", codeDict1To3={}, defaultThreeCode=""):
+    def __parseSequenceString(self, ss, codeDict3To1=None, defaultOneCode="", codeDict1To3=None, defaultThreeCode=""):
         """Parse a string like AAA(MOD)(MOD)AAA and convert
         this to a list of 1- and 3-letter code residue lists.
         """
+        if codeDict3To1 is None:
+            codeDict3To1 = {}
+        if codeDict1To3 is None:
+            codeDict1To3 = {}
         r1L = []
         r3L = []
         if ss is None or len(ss) < 1:
@@ -473,7 +477,7 @@ class SequenceReferenceData(object):
         return sTup3L
 
     def cnv1To3List(self, s1S, polyTypeCode):
-        (s1L, s3L) = self.cnv1ListPlus3List(s1S, polyTypeCode)
+        (_s1L, s3L) = self.cnv1ListPlus3List(s1S, polyTypeCode)
         return s3L
 
     def cnv1ListPlus3List(self, s1S, polyTypeCode):
@@ -488,7 +492,7 @@ class SequenceReferenceData(object):
         #
 
     def toList(self, strIn):
-        (s1L, s3L) = self.__parseSequenceString(strIn)
+        (s1L, _s3L) = self.__parseSequenceString(strIn)
         return s1L
 
     def cnvList3to1(self, r3List):

@@ -204,7 +204,7 @@ class LocalBlastSearchUtils(object):
                 if partId not in inD:
                     continue
                 #
-                start_index, hitList = self.__sortHitList(inD[partId], fD["SOURCE_TAXID"], False)
+                _start_index, hitList = self.__sortHitList(inD[partId], fD["SOURCE_TAXID"], False)
                 outD[partId] = hitList
             #
             return outD
@@ -300,7 +300,7 @@ class LocalBlastSearchUtils(object):
             mpu.set(workerObj=self, workerMethod="runMultiLocalBlasts")
             mpu.setWorkingDir(self.__sessionPath)
             mpu.setOptions({"ncbilock": self.__ncbilock})
-            ok, failList, retLists, diagList = mpu.runMulti(dataList=partDataList, numProc=numProc, numResults=1)
+            _ok, _failList, _retLists, _diagList = mpu.runMulti(dataList=partDataList, numProc=numProc, numResults=1)
             id_count = 1
             for partTup in partDataList:
                 if not os.access(partTup[5], os.F_OK):
@@ -399,19 +399,19 @@ class LocalBlastSearchUtils(object):
         pickle.dump(pickleObj, fb)
         fb.close()
 
-    def __writeBlastSearchResultCifFile(self, rD):
-        """Write out the current search result mmcif file for debuging purpose"""
-        #
-        mR = []
-        for partId, rList in rD.items():
-            mR.append(rList)
-        #
-        fn = self.__pI.getReferenceSequenceFilePath(self.__dataSetId, entityId=self.__entityId, fileSource="session")
-        #
-        from wwpdb.apps.seqmodule.io.PdbxIoUtils import ReferenceSequenceIo
+    # def __writeBlastSearchResultCifFile(self, rD):
+    #     """Write out the current search result mmcif file for debuging purpose"""
+    #     #
+    #     mR = []
+    #     for _partId, rList in rD.items():
+    #         mR.append(rList)
+    #     #
+    #     fn = self.__pI.getReferenceSequenceFilePath(self.__dataSetId, entityId=self.__entityId, fileSource="session")
+    #     #
+    #     from wwpdb.apps.seqmodule.io.PdbxIoUtils import ReferenceSequenceIo
 
-        rsio = ReferenceSequenceIo(verbose=self.__verbose, log=self.__lfh)
-        rsio.writeMatchResults(self.__entityD, outFilePath=fn, matchResults=mR)
+    #     rsio = ReferenceSequenceIo(verbose=self.__verbose, log=self.__lfh)
+    #     rsio.writeMatchResults(self.__entityD, outFilePath=fn, matchResults=mR)
 
     def __checkPartRange(self, seqLength, partList):
         """Check part range definition"""
@@ -440,7 +440,7 @@ class LocalBlastSearchUtils(object):
             return False
         #
 
-    def runMultiLocalBlasts(self, dataList, procName, optionsD, workingDir):
+    def runMultiLocalBlasts(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
         """Multiple blast search processing API"""
         rList = []
         ncbilock = optionsD.get("ncbilock", None)
@@ -784,7 +784,7 @@ class LocalBlastSearchUtils(object):
             mpu = MultiProcUtil(verbose=True)
             mpu.set(workerObj=self, workerMethod="getMultiSeqAlignmentProcess")
             mpu.setWorkingDir(self.__sessionPath)
-            ok, failList, retLists, diagList = mpu.runMulti(dataList=hitList, numProc=numProc, numResults=1)
+            _ok, _failList, retLists, _diagList = mpu.runMulti(dataList=hitList, numProc=numProc, numResults=1)
             #
             for tupList in retLists:
                 for tup in tupList:
@@ -798,7 +798,7 @@ class LocalBlastSearchUtils(object):
         #
         return alignMap
 
-    def getMultiSeqAlignmentProcess(self, dataList, procName, optionsD, workingDir):
+    def getMultiSeqAlignmentProcess(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
         """Get Auth/Ref sequence alignments MultiProcUtil API"""
         rList = []
         eList = []

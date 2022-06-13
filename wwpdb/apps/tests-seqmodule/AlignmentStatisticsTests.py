@@ -25,6 +25,7 @@ import traceback
 import time
 import os
 import os.path
+import inspect
 
 if __package__ is None or __package__ == "":
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -42,7 +43,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
         #
         self.__verbose = True
         self.__lfh = sys.stderr
-        self.__pathExamples = os.path.join(HERE, "data")
+        # self.__pathExamples = os.path.join(HERE, "data")
         #
         self.__exampleFileList = ["1cbs.cif", "3rer.cif"]
         self.__dsList = ["D_000000"]
@@ -70,9 +71,9 @@ class AlignmentStatisticsTests(unittest.TestCase):
         if sessionId is not None:
             self.__reqObj.setValue("sessionid", sessionId)
 
-        self.__sessionId = self.__reqObj.getSessionId()
-        self.__sessionObj = self.__reqObj.newSessionObj()
-        self.__sessionPath = self.__sessionObj.getPath()
+        # self.__sessionId = self.__reqObj.getSessionId()
+        # self.__sessionObj = self.__reqObj.newSessionObj()
+        # self.__sessionPath = self.__sessionObj.getPath()
 
     # def testSearchAndAssembleFromUpload(self):
     #     """ Test search each entity sequence against appropriate reference sequence database
@@ -82,7 +83,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
     #     """
     #     startTime=time.time()
     #     self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
-    #                                                    sys._getframe().f_code.co_name,
+    #                                                    inspect.currentframe().f_code.co_name,
     #                                                    time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
     #     try:
@@ -102,7 +103,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
 
     #     endTime=time.time()
     #     self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
-    #                                                                  sys._getframe().f_code.co_name,
+    #                                                                  inspect.currentframe().f_code.co_name,
     #                                                                  time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
     #                                                                  endTime-startTime))
 
@@ -114,7 +115,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
     #     """
     #     startTime=time.time()
     #     self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__,
-    #                                                    sys._getframe().f_code.co_name,
+    #                                                    inspect.currentframe().f_code.co_name,
     #                                                    time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
     #     try:
@@ -129,7 +130,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
 
     #     endTime=time.time()
     #     self.__lfh.write("\nCompleted %s %s at %s (%.2f seconds)\n" % (self.__class__.__name__,
-    #                                                                  sys._getframe().f_code.co_name,
+    #                                                                  inspect.currentframe().f_code.co_name,
     #                                                                  time.strftime("%Y %m %d %H:%M:%S", time.localtime()),
 
     #                                                                 endTime-startTime))
@@ -141,11 +142,11 @@ class AlignmentStatisticsTests(unittest.TestCase):
         Uses the sequence data prepared by the testSearchAndAssemblefromUpload() test above.
         """
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             for f in self.__exampleFileList:
-                (idCode, fExt) = os.path.splitext(f)
+                (idCode, _fExt) = os.path.splitext(f)
                 self.__reqObj.setValue("identifier", idCode)
                 alstat = AlignmentStatistics(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
                 alstat.doUpdate()
@@ -156,7 +157,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
     def testAlignStatsFromArchive(self):
@@ -166,7 +167,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
         Uses the sequence data prepared by the testSearchAndAssembleFromArchive() test above.
         """
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             for dsId in self.__dsList:
@@ -180,7 +181,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
 
@@ -199,9 +200,9 @@ def suiteAlignmentTests():
 
 
 if __name__ == "__main__":
-    if True:
+    if True:  # pylint: disable=using-constant-test
         mySuite = suiteSearchAndAssembleTests()
         unittest.TextTestRunner(verbosity=2).run(mySuite)
-    if True:
+    if True:  # pylint: disable=using-constant-test
         mySuite = suiteAlignmentTests()
         unittest.TextTestRunner(verbosity=2).run(mySuite)

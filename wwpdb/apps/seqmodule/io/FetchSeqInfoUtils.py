@@ -34,8 +34,10 @@ from wwpdb.utils.seqdb_v2.FetchUnpXml import FetchUnpXml
 from wwpdb.utils.config.ConfigInfo import ConfigInfo
 
 
-def fetchUniProt(idTupleList=[], filePath=None, verbose=False, log=sys.stderr):
+def fetchUniProt(idTupleList=None, filePath=None, verbose=False, log=sys.stderr):
     """ """
+    if idTupleList is None:
+        idTupleList = []
     d = {}
     if not idTupleList:
         return d

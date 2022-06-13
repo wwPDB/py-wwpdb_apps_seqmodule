@@ -22,6 +22,7 @@ import traceback
 import time
 import os
 import os.path
+import inspect
 
 from wwpdb.apps.seqmodule.control.SequenceDataAssemble_v2 import SequenceDataAssemble
 from wwpdb.apps.seqmodule.align.AlignmentStatistics import AlignmentStatistics
@@ -31,7 +32,7 @@ from wwpdb.apps.seqmodule.control.SummaryView_v2 import SummaryView
 from wwpdb.utils.config.ConfigInfo import ConfigInfo, getSiteId
 from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest
 from wwpdb.io.locator.PathInfo import PathInfo
-from wwpdb.io.file.DataFileAdapter import DataFileAdapter
+from wwpdb.utils.dp.DataFileAdapter import DataFileAdapter
 
 
 class SequenceDataExportTests(unittest.TestCase):
@@ -71,11 +72,10 @@ class SequenceDataExportTests(unittest.TestCase):
         if sessionId is not None:
             self.__reqObj.setValue("sessionid", sessionId)
 
-        self.__sessionId = self.__reqObj.getSessionId()
+        # self.__sessionId = self.__reqObj.getSessionId()
         self.__sessionObj = self.__reqObj.newSessionObj()
         self.__sessionPath = self.__sessionObj.getPath()
         #
-        self.__seqDataCachePath = os.path.join(self.__reqObj.getSessionPath(), "SEQUENCE-DATA-CACHE")
 
     def testSearchAndAssembleFromUpload(self):
         """Test search each entity sequence against appropriate reference sequence database
@@ -85,7 +85,7 @@ class SequenceDataExportTests(unittest.TestCase):
         """
         startTime = time.time()
         self.__lfh.write("\n\n========================================================================================================\n")
-        self.__lfh.write("Starting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("Starting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
@@ -107,7 +107,7 @@ class SequenceDataExportTests(unittest.TestCase):
                     break
                 #
                 sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                sda.doAssemble(fileSource="local-upload")
+                sda.doAssemble()
                 alstat = AlignmentStatistics(reqObj=self.__reqObj, maxRefAlign=self.__maxRefAlign, verbose=self.__verbose, log=self.__lfh)
                 alstat.doUpdate()
         except:  # noqa: E722 pylint: disable=bare-except
@@ -117,7 +117,7 @@ class SequenceDataExportTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
     def testSearchAndAssembleFromArchive(self):
@@ -127,13 +127,13 @@ class SequenceDataExportTests(unittest.TestCase):
         Using archive file source.
         """
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             for dsId in self.__dsList:
                 self.__reqObj.setValue("identifier", dsId)
                 sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                sda.doAssemble(fileSource="archive")
+                sda.doAssemble()
                 alstat = AlignmentStatistics(reqObj=self.__reqObj, maxRefAlign=self.__maxRefAlign, verbose=self.__verbose, log=self.__lfh)
                 alstat.doUpdate()
         except:  # noqa: E722 pylint: disable=bare-except
@@ -143,7 +143,7 @@ class SequenceDataExportTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
     def testAssembleFromRespositoryCache(self):
@@ -153,13 +153,13 @@ class SequenceDataExportTests(unittest.TestCase):
         Using repository cache with 'session' file source.
         """
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             for dsId in self.__exampleIdList:
                 self.__reqObj.setValue("identifier", dsId)
                 sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                sda.doAssemble(fileSource="local-repository", cachePath=self.__seqDataCachePath)
+                sda.doAssemble()
                 alstat = AlignmentStatistics(reqObj=self.__reqObj, maxRefAlign=self.__maxRefAlign, verbose=self.__verbose, log=self.__lfh)
                 alstat.doUpdate()
         except:  # noqa: E722 pylint: disable=bare-except
@@ -169,7 +169,7 @@ class SequenceDataExportTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
     def testExportRepositoryCache(self):
@@ -178,12 +178,12 @@ class SequenceDataExportTests(unittest.TestCase):
         Use example/test case setup from repository cache -
         """
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
         try:
             self.__reqObj.setValue("identifier", self.__exampleIdList[0])
             # op = "load"
             sV = SummaryView(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-            defSelectList = sV.makeDefaultSelection()
+            defSelectList = sV.makeDefaultSelection()  # pylint: disable=no-member
             self.__lfh.write("Default select list is %r\n" % defSelectList)
 
             sdx = SequenceDataExport(reqObj=self.__reqObj, exportList=defSelectList, verbose=self.__verbose, log=self.__lfh)
@@ -196,7 +196,7 @@ class SequenceDataExportTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
 
@@ -216,10 +216,10 @@ def suiteExportTests():
 
 
 if __name__ == "__main__":
-    if False:
+    if False:  # pylint: disable=using-constant-test
         mySuite = suiteSearchAndAssembleTests()
         unittest.TextTestRunner(verbosity=2).run(mySuite)
 
-    if True:
+    if True:  # pylint: disable=using-constant-test
         mySuite = suiteExportTests()
         unittest.TextTestRunner(verbosity=2).run(mySuite)

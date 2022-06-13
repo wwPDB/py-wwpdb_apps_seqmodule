@@ -44,6 +44,24 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         self._srd = SequenceReferenceData(verbose=self._verbose, log=self._lfh)
         self._gapSymbol = self._srd.getGapSymbol()
         #
+        self.__errorMsg = ""
+        self._authLabel = ""
+        self._xyzAlignList = []
+        self.__instIdMap = {}
+        self.__partInfoDict = {}
+        self.__xyzAlignIndexListMap = {}
+        self.__xyzAlignIndexListIndices = {}
+        self.__refAlignIndexListMap = {}
+        self.__refAlignIndexListIndices = {}
+        self._hasAlignmentFlag = False
+        self._seqAlignLabelIndices = {}
+        self._reverseSeqAlignLabelIndices = {}
+        self._seqAlignList = []
+        self._xyzAlignLabelIndices = {}
+        self._missingSeqMap = {}
+        self._authDefinedMutationList = []
+        self._reverseXyzAlignLabelIndices = {}
+        #
         self._clearAllPersistVariables()
         #
         self.__filePath = ""
@@ -228,7 +246,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
 
     def _getXyzAlignIndexList(self, alignIdList):
         """Get xyz align index list info."""
-        oldIdList, alignIndexList = self.__getAlignIndexList(alignIdList, self.__xyzAlignIndexListMap, self.__xyzAlignIndexListIndices)
+        _oldIdList, alignIndexList = self.__getAlignIndexList(alignIdList, self.__xyzAlignIndexListMap, self.__xyzAlignIndexListIndices)
         return alignIndexList
 
     def _insertRefAlignIndexList(self, alignIdList, alignIndexList):
@@ -244,7 +262,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
 
     def _getRefAlignIndexList(self, alignIdList):
         """Get ref align index list info."""
-        oldIdList, alignIndexList = self.__getAlignIndexList(alignIdList, self.__refAlignIndexListMap, self.__refAlignIndexListIndices)
+        _oldIdList, alignIndexList = self.__getAlignIndexList(alignIdList, self.__refAlignIndexListMap, self.__refAlignIndexListIndices)
         return alignIndexList
 
     def _copyXyzAlignmentToSeqAlignment(self):
@@ -345,14 +363,14 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
         """Check the input alignIds and return proper proper alignIds for doing alignment"""
         chainIdList = self.getGroup(self._entityId)
         #
-        inputAuthList, inputXyzMap, inputRefMap, inputSelfMap = self.__getSubSeqList(inputIdList, chainIdList)
+        inputAuthList, inputXyzMap, inputRefMap, _inputSelfMap = self.__getSubSeqList(inputIdList, chainIdList)
         #
         selectAuthList, selectXyzMap, selectRefMap, selectSelfMap = self.__getSubSeqList(allSelectedIdList, chainIdList)
         #
         currXyzMap, currRefMap = self.__getCurrentSubSeqList()
         #
         authSeqId, extraAuthIdList = self.__getSeqId("auth", self._entityId, 1, self._authLabel, inputAuthList, selectAuthList)
-        (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(authSeqId)
+        (seqType, seqInstId, _seqPartId, _seqAltId, _seqVersion) = self._getUnpackSeqLabel(authSeqId)
         #
         partIdList = self.getPartIdList(seqType, seqInstId)
         #
@@ -465,7 +483,7 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
     def __updateAlignIndexListIndices(self, oldAlignIndexListIndices, oldEntityId):
         """ """
         newAlignIndexListIndices = {}
-        for k, tupL in oldAlignIndexListIndices.items():
+        for _k, tupL in oldAlignIndexListIndices.items():
             alignIdList = []
             for alignId in tupL[1]:
                 alignIdList.append(self.__replaceEntityId(alignId, oldEntityId))

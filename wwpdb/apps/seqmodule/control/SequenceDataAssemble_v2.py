@@ -235,7 +235,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             sdu.updateAuthEntityDetails(selectIdList=defaultSelectedIdList)
             #
             dataExport = SequenceDataExport(reqObj=self._reqObj, exportList=defaultSelectedIdList, verbose=self._verbose, log=self._lfh)
-            ok, numConflicts, conflictList, warningMsg = dataExport.exportAssignments()
+            ok, numConflicts, _conflictList, _warningMsg = dataExport.exportAssignments()
             if (not ok) or (numConflicts > 0):
                 assignFilePath = self.__pI.getSequenceAssignmentFilePath(self.__dataSetId, fileSource="session", versionId="latest")
                 if assignFilePath and os.access(assignFilePath, os.R_OK):
@@ -469,7 +469,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         tmpPolyLinkPath = os.path.join(self.__sessionPath, self.__dataSetId + "-poly-link.json")
         self.__calcPolymerLinkages(pdbxFilePath=prevModelFilePath, polyLinkPath=tmpPolyLinkPath)
         #
-        ok, no_coord_issue, seqSimilarityInfoList, polymerLinkDistList, entryD, prevEntityD, prevInstanceD, statisticsMap, depSeqAssign, seqAssign = self.__readJsonObject(
+        ok, _no_coord_issue, _seqSimilarityInfoList, _polymerLinkDistList, _entryD, prevEntityD, prevInstanceD, _statisticsMap, _depSeqAssign, _seqAssign = self.__readJsonObject(
             tmpPolyLinkPath
         )
         if not ok:
@@ -686,7 +686,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 refD = self.__runSeqBlastSearch(blastList)
             #
             if refD:
-                for k, v in refD.items():
+                for k, _v in refD.items():
                     if k in naList:
                         self.__autoProcessFlag = False
                     #
@@ -717,68 +717,69 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         return {}, {}, {}
 
-    def __runSeqAllSearches(self, entityTupList):
-        """Perform all searches of the reference sequences"""
-        try:
-            startTime = time.time()
-            #
-            if self.__cI.get("USE_COMPUTE_CLUSTER"):
-                numProc = len(entityTupList)
-            else:
-                numProc = int(multiprocessing.cpu_count() / 2)
-            mpu = MultiProcUtil(verbose=True)
-            mpu.set(workerObj=self, workerMethod="runMultiReferenceSearches")
-            mpu.setWorkingDir(self.__sessionPath)
-            #
-            # Setup limits for NCBI requets
-            apikey = self.__cI.get("NCBI_API_KEY")
-            apirate = self.__cI.get("NCBI_API_RATE")
-            if apikey:
-                if apirate:
-                    rate = int(apirate)
-                else:
-                    rate = 5
-                #
-            else:
-                rate = 1
-            #
-            mpl = MultiProcLimit(rate)
-            mpu.setOptions({"ncbilock": mpl})
-            #
-            ok, failList, retLists, diagList = mpu.runMulti(dataList=entityTupList, numProc=numProc, numResults=1)
-            #
-            refD = {}
-            ownRefD = {}
-            otherRefD = {}
-            for tupList in retLists:
-                for tup in tupList:
-                    if tup[1]:
-                        refD[tup[0]] = tup[1]
-                    #
-                    if tup[2]:
-                        ownRefD[tup[0]] = tup[2]
-                    #
-                    if tup[3]:
-                        otherRefD[tup[0]] = tup[3]
-                    #
-                #
-            #
-            if self._verbose:
-                endTime = time.time()
-                self._lfh.write(
-                    "+SequenceDataAssemble.__runSeqAllSearches()  completed at %s (%.2f seconds)\n" % (time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
-                )
-            #
-            return refD, ownRefD, otherRefD
-        except:  # noqa: E722 pylint: disable=bare-except
-            if self._verbose:
-                self._lfh.write("+SequenceDataAssemble.__runSeqAllSearches() - failing \n")
-                traceback.print_exc(file=self._lfh)
-            #
-        #
-        return {}, {}, {}
+    # def __runSeqAllSearches(self, entityTupList):
+    #     """Perform all searches of the reference sequences"""
+    #     try:
+    #         startTime = time.time()
+    #         #
+    #         if self.__cI.get("USE_COMPUTE_CLUSTER"):
+    #             numProc = len(entityTupList)
+    #         else:
+    #             numProc = int(multiprocessing.cpu_count() / 2)
+    #         mpu = MultiProcUtil(verbose=True)
+    #         mpu.set(workerObj=self, workerMethod="runMultiReferenceSearches")
+    #         mpu.setWorkingDir(self.__sessionPath)
+    #         #
+    #         # Setup limits for NCBI requets
+    #         apikey = self.__cI.get("NCBI_API_KEY")
+    #         apirate = self.__cI.get("NCBI_API_RATE")
+    #         if apikey:
+    #             if apirate:
+    #                 rate = int(apirate)
+    #             else:
+    #                 rate = 5
+    #             #
+    #         else:
+    #             rate = 1
+    #         #
+    #         mpl = MultiProcLimit(rate)
+    #         mpu.setOptions({"ncbilock": mpl})
+    #         #
+    #         _ok, _failList, retLists, _diagList = mpu.runMulti(dataList=entityTupList, numProc=numProc, numResults=1)
+    #         #
+    #         refD = {}
+    #         ownRefD = {}
+    #         otherRefD = {}
+    #         for tupList in retLists:
+    #             for tup in tupList:
+    #                 if tup[1]:
+    #                     refD[tup[0]] = tup[1]
+    #                 #
+    #                 if tup[2]:
+    #                     ownRefD[tup[0]] = tup[2]
+    #                 #
+    #                 if tup[3]:
+    #                     otherRefD[tup[0]] = tup[3]
+    #                 #
+    #             #
+    #         #
+    #         if self._verbose:
+    #             endTime = time.time()
+    #             self._lfh.write(
+    #                 "+SequenceDataAssemble.__runSeqAllSearches()  completed at %s (%.2f seconds)\n" % (time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+    #             )
+    #         #
+    #         return refD, ownRefD, otherRefD
+    #     except:  # noqa: E722 pylint: disable=bare-except
+    #         if self._verbose:
+    #             self._lfh.write("+SequenceDataAssemble.__runSeqAllSearches() - failing \n")
+    #             traceback.print_exc(file=self._lfh)
+    #         #
+    #     #
+    #     return {}, {}, {}
 
-    def runMultiReferenceSearches(self, dataList, procName, optionsD, workingDir):
+    # EP: Believe unused
+    def runMultiReferenceSearches(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
         """Multiple reference sequence search processing API"""
         ncbilock = optionsD.get("ncbilock", None)
         rList = []
@@ -805,7 +806,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             mpu.set(workerObj=self, workerMethod="runMultiSameSeqAnnotationSearches")
             mpu.setWorkingDir(self.__sessionPath)
             #
-            ok, failList, retLists, diagList = mpu.runMulti(dataList=entityTupList, numProc=numProc, numResults=1)
+            _ok, _failList, retLists, _diagList = mpu.runMulti(dataList=entityTupList, numProc=numProc, numResults=1)
             #
             ownRefD = {}
             otherRefD = {}
@@ -835,7 +836,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         return {}, {}
 
-    def runMultiSameSeqAnnotationSearches(self, dataList, procName, optionsD, workingDir):
+    def runMultiSameSeqAnnotationSearches(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
         """Multiple same sequence annotation search processing API"""
         rList = []
         for tupL in dataList:
@@ -873,7 +874,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             mpl = MultiProcLimit(rate)
             mpu.setOptions({"ncbilock": mpl})
             #
-            ok, failList, retLists, diagList = mpu.runMulti(dataList=entityTupList, numProc=numProc, numResults=1)
+            _ok, _failList, retLists, _diagList = mpu.runMulti(dataList=entityTupList, numProc=numProc, numResults=1)
             #
             refD = {}
             for tupList in retLists:
@@ -898,7 +899,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         return {}
 
-    def runMultiBlastReferenceSearches(self, dataList, procName, optionsD, workingDir):
+    def runMultiBlastReferenceSearches(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
         """Multiple blast reference sequence search processing API"""
         ncbilock = optionsD.get("ncbilock", None)
         rList = []
@@ -1072,25 +1073,25 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         if not self._entityAlignInfoMap:
             return
         #
-        """
-        try:
-            numProc = multiprocessing.cpu_count() / 2
-            mpu = MultiProcUtil(verbose = True)
-            mpu.set(workerObj = self, workerMethod = "multiCreateAlignmentProcess")
-            mpu.setWorkingDir(self.__sessionPath)
-            ok,failList,retLists,diagList = mpu.runMulti(dataList = self._entityAlignInfoMap.values(), numProc = numProc, numResults = 1)
-            #
-        except:  # noqa: E722 pylint: disable=bare-except
-            if (self._verbose):
-                traceback.print_exc(file=self._lfh)
-            #
         #
-        """
+        # try:
+        #     numProc = multiprocessing.cpu_count() / 2
+        #     mpu = MultiProcUtil(verbose = True)
+        #     mpu.set(workerObj = self, workerMethod = "multiCreateAlignmentProcess")
+        #     mpu.setWorkingDir(self.__sessionPath)
+        #     ok,failList,retLists,diagList = mpu.runMulti(dataList = self._entityAlignInfoMap.values(), numProc = numProc, numResults = 1)
+        #     #
+        # except:  # noqa: E722 pylint: disable=bare-except
+        #     if (self._verbose):
+        #         traceback.print_exc(file=self._lfh)
+        #     #
+        # #
+        #
         for dataD in self._entityAlignInfoMap.values():
             self.__createDefaultAlignmentObject(dataD)
         #
 
-    def multiCreateAlignmentProcess(self, dataList, procName, optionsD, workingDir):
+    def multiCreateAlignmentProcess(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
         """Miltiple auth vs coord vs ref sequences alignment processing API"""
         rList = []
         for dataD in dataList:

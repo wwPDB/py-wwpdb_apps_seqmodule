@@ -46,7 +46,7 @@ class UpdatePolymerEntityReference(UpdateSequenceDataStoreUtils):
             self.__siteId = self._reqObj.getValue("WWPDB_SITE_ID")
             self.__sessionId = self._reqObj.getSessionId()
             self.__sessionObj = self._reqObj.getSessionObj()
-            self.__sessionPath = self.__sessionObj.getPath()
+            # self.__sessionPath = self.__sessionObj.getPath()
             #
             self.__selectIdList = self._reqObj.getSummarySelectList()
             #
@@ -88,7 +88,7 @@ class UpdatePolymerEntityReference(UpdateSequenceDataStoreUtils):
         </div>
         """
         #
-        dbName, dbCode, dbAccession, dbIsoform, dbSeqBegin, dbSeqEnd = self.__getCurrentRefDetails(entityId, partId=int(partId))
+        dbName, _dbCode, dbAccession, dbIsoform, dbSeqBegin, dbSeqEnd = self.__getCurrentRefDetails(entityId, partId=int(partId))
         selectedAuthId = ""
         for sId in self.__selectIdList:
             if sId.startswith("auth"):
@@ -141,7 +141,8 @@ class UpdatePolymerEntityReference(UpdateSequenceDataStoreUtils):
             dbName = self._reqObj.getValue("dbname")
             dbAccession = self._reqObj.getValue("dbaccession")
             if (dbName == self.__placeHolderValue) or (dbAccession == self.__placeHolderValue):
-                return packedSeqLabel  # noqa: F821  This will cause a crash - until we can figure out what is supposed to happen
+                # This will cause a crash - until we can figure out what is supposed to happen
+                return packedSeqLabel  # noqa: F821 pylint: disable=undefined-variable
             #
             dbSeqBegin = self._reqObj.getValue("dbseqbegin")
             dbSeqEnd = self._reqObj.getValue("dbseqend")
@@ -233,7 +234,7 @@ class UpdatePolymerEntityReference(UpdateSequenceDataStoreUtils):
         for sId in self.__selectIdList:
             if sId.startswith("ref"):
                 sL.unpack(sId)
-                seqType, seqInstId, seqPartId, seqAltId, seqVersion = sL.get()
+                _seqType, seqInstId, seqPartId, seqAltId, seqVersion = sL.get()
                 self._lfh.write("+UpdatePolymerEntityReference.__getCurrentRefDetails() testing seqInstId %r seqPartId %r\n" % (seqInstId, seqPartId))
                 if entityId == seqInstId and partId == seqPartId:
                     fD = self.getFeature("ref", seqInstId, seqPartId, seqAltId, seqVersion)

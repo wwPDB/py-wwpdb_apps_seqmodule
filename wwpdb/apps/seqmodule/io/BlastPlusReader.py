@@ -42,7 +42,7 @@ class BlastPlusReader:
 
     def __init__(self, verbose=True, log=sys.stderr):
         self.__verbose = verbose
-        self.__debug = True
+        # self.__debug = True
         self.__lfh = log
         self._resultList = []
         self.__sequenceType = "polypeptide(L)"
@@ -76,8 +76,8 @@ class BlastPlusReader:
 
     def _parse(self, domObj):
         resultList = []
-        list = domObj.getElementsByTagName("Hit")
-        if not list:
+        dlist = domObj.getElementsByTagName("Hit")
+        if not dlist:
             return resultList
 
         length = None
@@ -89,7 +89,7 @@ class BlastPlusReader:
                 length = node.firstChild.data
                 break
 
-        for node in list:
+        for node in dlist:
             if node.nodeType != node.ELEMENT_NODE:
                 continue
 
@@ -123,9 +123,9 @@ class BlastPlusReader:
             elif node.tagName == "Hit_len":
                 length = node.firstChild.data
             elif node.tagName == "Hit_hsps":
-                list = self._ProcessHit_hspsTag(node.childNodes, length)
-                if list:
-                    for li in list:
+                plist = self._ProcessHit_hspsTag(node.childNodes, length)
+                if plist:
+                    for li in plist:
                         alignlist.append(li)
 
         if not accCode or not alignlist:
@@ -149,13 +149,13 @@ class BlastPlusReader:
         dbCode = ""
         dbName = ""
         isoForm = ""
-        list = data.split("|")
-        if len(list) >= 2 and list[2] != "pdb":
-            f0 = str(list[0]).upper()
+        dlist = data.split("|")
+        if len(dlist) >= 2 and dlist[2] != "pdb":
+            f0 = str(dlist[0]).upper()
             if f0 in ["TR", "SP"]:
                 dbName = f0
-                accCode = str(list[1])
-                dbCode = str(list[2])
+                accCode = str(dlist[1])
+                dbCode = str(dlist[2])
                 isoForm = ""
                 if accCode is not None and (accCode.find("-") != -1):
                     tL = accCode.split("-")
@@ -165,9 +165,9 @@ class BlastPlusReader:
                         isoForm = accCode
                         accCode = tL[0]
             elif f0 in ["GI"]:
-                dbName = str(list[2]).upper()
-                accCode = str(list[1])
-                dbCode = str(list[3])
+                dbName = str(dlist[2]).upper()
+                accCode = str(dlist[1])
+                dbCode = str(dlist[3])
 
         return dbName, dbCode, accCode, isoForm
 
@@ -179,55 +179,55 @@ class BlastPlusReader:
             if node.tagName != "Hsp":
                 continue
 
-            dict = self._GetMatchAlignment(node.childNodes, length)
-            if dict:
-                resultList.append(dict)
+            adict = self._GetMatchAlignment(node.childNodes, length)
+            if adict:
+                resultList.append(adict)
         return resultList
 
-    def _GetMatchAlignment(self, nodelist, length):
-        dict = {}
+    def _GetMatchAlignment(self, nodelist, length):  # pylint: disable=unused-argument
+        rdict = {}
         hsp_num = ""
         for node in nodelist:
             if node.nodeType != node.ELEMENT_NODE:
                 continue
 
             if node.tagName == "Hsp_identity":
-                dict["identity"] = node.firstChild.data
+                rdict["identity"] = node.firstChild.data
             elif node.tagName == "Hsp_positive":
-                dict["positive"] = node.firstChild.data
+                rdict["positive"] = node.firstChild.data
             elif node.tagName == "Hsp_gaps":
-                dict["gaps"] = node.firstChild.data
+                rdict["gaps"] = node.firstChild.data
             elif node.tagName == "Hsp_midline":
                 if self.__sequenceType == "polyribonucleotide":
-                    dict["midline"] = node.firstChild.data.replace("T", "U")
+                    rdict["midline"] = node.firstChild.data.replace("T", "U")
                 else:
-                    dict["midline"] = node.firstChild.data
+                    rdict["midline"] = node.firstChild.data
             elif node.tagName == "Hsp_qseq":
                 if self.__sequenceType == "polyribonucleotide":
-                    dict["query"] = node.firstChild.data.replace("T", "U")
+                    rdict["query"] = node.firstChild.data.replace("T", "U")
                 else:
-                    dict["query"] = node.firstChild.data
+                    rdict["query"] = node.firstChild.data
             elif node.tagName == "Hsp_query-from":
-                dict["queryFrom"] = node.firstChild.data
+                rdict["queryFrom"] = node.firstChild.data
             elif node.tagName == "Hsp_query-to":
-                dict["queryTo"] = node.firstChild.data
+                rdict["queryTo"] = node.firstChild.data
             elif node.tagName == "Hsp_hseq":
                 if self.__sequenceType == "polyribonucleotide":
-                    dict["subject"] = node.firstChild.data.replace("T", "U")
+                    rdict["subject"] = node.firstChild.data.replace("T", "U")
                 else:
-                    dict["subject"] = node.firstChild.data
+                    rdict["subject"] = node.firstChild.data
             elif node.tagName == "Hsp_hit-from":
-                dict["hitFrom"] = node.firstChild.data
+                rdict["hitFrom"] = node.firstChild.data
             elif node.tagName == "Hsp_hit-to":
-                dict["hitTo"] = node.firstChild.data
+                rdict["hitTo"] = node.firstChild.data
             elif node.tagName == "Hsp_align-len":
-                dict["alignLen"] = node.firstChild.data
-                dict["match_length"] = node.firstChild.data
+                rdict["alignLen"] = node.firstChild.data
+                rdict["match_length"] = node.firstChild.data
             elif node.tagName == "Hsp_num":
                 hsp_num = node.firstChild.data
 
         # only take the first alignment within the hit
         if str(hsp_num) != "1":
-            dict.clear()
+            rdict.clear()
 
-        return dict
+        return rdict

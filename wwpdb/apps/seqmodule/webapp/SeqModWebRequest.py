@@ -329,8 +329,8 @@ class SeqModResponseContent(ResponseContent):
 
         """
         super(SeqModResponseContent, self).__init__(reqObj, verbose=verbose, log=log)
-        self.__verbose = verbose
-        self.__lfh = log
+        # self.__verbose = verbose
+        # self.__lfh = log
         #
         self._kyList = [
             "title",

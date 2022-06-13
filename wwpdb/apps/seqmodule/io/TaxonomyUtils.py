@@ -29,7 +29,6 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
-from wwpdb.utils.config.ConfigInfo import ConfigInfo
 from wwpdb.utils.config.ConfigInfoApp import ConfigInfoAppCommon
 
 
@@ -42,11 +41,10 @@ class TaxonomyUtils(object):
 
     def __init__(self, siteId="WWPDB_DEPLOY_TEST", verbose=True, log=sys.stderr):
         self.__verbose = verbose
-        self.__debug = True
+        # self.__debug = True
         self.__lfh = log
         self.__siteId = siteId
 
-        self.__cI = ConfigInfo(self.__siteId)
         self.__cIAppCommon = ConfigInfoAppCommon(self.__siteId)
         self.__taxPath = self.__cIAppCommon.get_taxdump_path()
 

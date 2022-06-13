@@ -1,7 +1,7 @@
 from wwpdb.apps.seqmodule.util.Autodict import Autodict
 
 
-def test1(num=4):
+def test1():
     I = Autodict()  # noqa: E741
     I["A"]["feature"][1][1][1] = (1, 2)
     I["A"]["feature"][1][2][1] = (1, 2)

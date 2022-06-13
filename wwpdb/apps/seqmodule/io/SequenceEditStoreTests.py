@@ -22,6 +22,7 @@ import traceback
 import time
 import os
 import os.path
+import inspect
 
 from wwpdb.utils.config.ConfigInfo import ConfigInfo, getSiteId
 from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest
@@ -44,20 +45,20 @@ class SequenceEditStoreTests(unittest.TestCase):
         self.xyzSL = {}
         self.authSL = {}
         self.refFD = {}
-        for id in ["A", "B"]:
-            self.refSL[id] = self.__sE.getRefSequenceWithIndexList(id)
-            self.authSL[id] = self.__sE.getAuthSequenceWithIndexList(id)
-            self.xyzSL[id] = self.__sE.getXyzSequenceWithIndexList(id)
-            self.refFD[id] = self.__sE.getRefFeatureDict(id)
+        for cid in ["A", "B"]:
+            self.refSL[cid] = self.__sE.getRefSequenceWithIndexList(cid)
+            self.authSL[cid] = self.__sE.getAuthSequenceWithIndexList(cid)
+            self.xyzSL[cid] = self.__sE.getXyzSequenceWithIndexList(cid)
+            self.refFD[cid] = self.__sE.getRefFeatureDict(cid)
 
         #
         # Create additional auth test sequences with random insertions and deletions
         #
-        for id in ["C", "D", "E", "F", "G"]:
-            self.refSL[id] = self.__sE.getRefSequenceWithIndexList("A")
-            self.authSL[id] = self.__sE.getAuthSequenceTestWithIndexList("A")
-            self.xyzSL[id] = self.__sE.getXyzSequenceWithIndexList("A")
-            self.refFD[id] = self.__sE.getRefFeatureDict("A")
+        for cid in ["C", "D", "E", "F", "G"]:
+            self.refSL[cid] = self.__sE.getRefSequenceWithIndexList("A")
+            self.authSL[cid] = self.__sE.getAuthSequenceTestWithIndexList("A")
+            self.xyzSL[cid] = self.__sE.getXyzSequenceWithIndexList("A")
+            self.refFD[cid] = self.__sE.getRefFeatureDict("A")
 
         self.idList = ["A", "B", "C", "D", "E", "F", "G"]
 
@@ -88,7 +89,7 @@ class SequenceEditStoreTests(unittest.TestCase):
         if sessionId is not None:
             self.__reqObj.setValue("sessionid", sessionId)
 
-        self.__sessionId = self.__reqObj.getSessionId()
+        # self.__sessionId = self.__reqObj.getSessionId()
         self.__sObj = self.__reqObj.newSessionObj()
 
     def tearDown(self):
@@ -97,15 +98,15 @@ class SequenceEditStoreTests(unittest.TestCase):
     def testStoreAndEdit(self):
         """ """
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             sda = SequenceDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-            for id in self.idList:
-                sda.setSequence(self.refSL[id], id, "ref", version=1)
-                sda.setSequence(self.xyzSL[id], id, "xyz", version=1)
-                sda.setSequence(self.authSL[id], id, "auth", version=1)
-                sda.setFeature(self.refFD[id], id, "ref", version=1)
+            for sid in self.idList:
+                sda.setSequence(self.refSL[sid], sid, "ref", version=1)
+                sda.setSequence(self.xyzSL[sid], sid, "xyz", version=1)
+                sda.setSequence(self.authSL[sid], sid, "auth", version=1)
+                sda.setFeature(self.refFD[sid], sid, "ref", version=1)
             #
             sda.serialize()
             #
@@ -116,12 +117,12 @@ class SequenceEditStoreTests(unittest.TestCase):
 
             ses = SequenceEditStore(sessionObj=self.__sObj, verbose=self.__verbose)
             resLabel = ResidueLabel()
-            for id in self.idList:
+            for cid in self.idList:
                 seqType = "xyz"
                 seqAltId = 1
                 seqVersion = 1
-                seqInstId = id
-                aL = self.xyzSL[id]
+                seqInstId = cid
+                aL = self.xyzSL[cid]
                 ibeg = 10
                 iend = 20
                 for sPos in range(ibeg, iend):
@@ -176,16 +177,16 @@ class SequenceEditStoreTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
     def testRestore(self):
         """ """
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         self.__lfh.write("\n------------------------ ")
-        self.__lfh.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        self.__lfh.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         self.__lfh.write(" -------------------------\n")
         try:
             sda = SequenceDataStore(reqObj=self.__reqObj, verbose=True, log=self.__lfh)
@@ -196,9 +197,9 @@ class SequenceEditStoreTests(unittest.TestCase):
             sTypes = sda.getSequenceTypes()
             for st in sTypes:
                 ids = sda.getIds(seqType=st, dataType="sequence")
-                for id in ids:
-                    sL = sda.getSequence(id, st, version=1)
-                    self.__lfh.write("Sequence type %5s id %5s length %5d\n" % (st, id, len(sL)))
+                for cid in ids:
+                    sL = sda.getSequence(cid, st, version=1)
+                    self.__lfh.write("Sequence type %5s id %5s length %5d\n" % (st, cid, len(sL)))
 
         except:  # noqa: E722 pylint: disable=bare-except
             traceback.print_exc(file=self.__lfh)
@@ -206,7 +207,7 @@ class SequenceEditStoreTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
 
@@ -218,6 +219,5 @@ def suiteWriteAndReadTests():
 
 
 if __name__ == "__main__":
-    if True:
-        mySuite = suiteWriteAndReadTests()
-        unittest.TextTestRunner(verbosity=2).run(mySuite)
+    mySuite = suiteWriteAndReadTests()
+    unittest.TextTestRunner(verbosity=2).run(mySuite)

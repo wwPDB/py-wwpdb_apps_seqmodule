@@ -67,15 +67,18 @@ class SummaryView(object):
         #
         # placeholders for sequence identifiers picked on the summary page as selected and/or to be aligned.
         self.__summarySeqAlignList = []
+        self.__summarySeqSelectList = ""
         #
         self.__natureSourceTaxIds = {}
         self.__partRangeErrorMsg = ""
+        self.__sds = None
+
         self.__setup()
 
     def __setup(self):
         try:
             self.__sessionObj = self.__reqObj.getSessionObj()
-            self.__sessionPath = self.__sessionObj.getPath()
+            # self.__sessionPath = self.__sessionObj.getPath()
             self.__sds = SequenceDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
             self.__sdu = UpdatePolymerEntitySourceDetails(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
             #
@@ -133,21 +136,10 @@ class SummaryView(object):
                 self.__lfh.write("+SummaryView.__finish() sessionId %s failed\n" % (self.__sessionObj.getId()))
                 traceback.print_exc(file=self.__lfh)
 
-    def __findId(self, qId, idList):
-        """find matching '[self]ref_id_part_' in idList."""
-        try:
-            fL = qId.split("_")
-            ss = "_".join(fL[:3])
-            ss1 = "selfref" + "_".join(fL[1:3])
-            for tId in idList:
-                if tId.startswith(ss) or tId.startswith(ss1):
-                    return tId
-        except Exception as _e:  # noqa: F841
-            pass
+    def getEntryDetails(self, kyList=None):
+        if kyList is None:
+            kyList = ["STRUCT_TITLE", "CITATION_TITLE", "PDB_ID"]
 
-        return None
-
-    def getEntryDetails(self, kyList=["STRUCT_TITLE", "CITATION_TITLE", "PDB_ID"]):
         eD = {}
         for ky in kyList:
             eD[ky] = self.__sds.getEntryDetail(detailKey=ky)
@@ -305,12 +297,12 @@ class SummaryView(object):
             isSelected = seqAuthId in self.__summarySeqSelectList
             isAligned = seqAuthId in self.__summarySeqAlignList
             #
-            """
-            if op == 'reload':
-                isSelected = (ver == max(verList))
-                isAligned = (ver == max(verList))
             #
-            """
+            # if op == 'reload':
+            #     isSelected = (ver == max(verList))
+            #     isAligned = (ver == max(verList))
+            # #
+            #
             rowStatusList.append((isSelected, isAligned))
             #
             rowDataDict = {}
@@ -503,7 +495,7 @@ class SummaryView(object):
                     rowDataDict["ROW_IS_SELECTED"] = isSelected
                     rowDataDict["ROW_IS_ALIGNED"] = isAligned
                     # rowDataDict.update(seqRefFD)
-                    for key, val in seqRefFD.items():
+                    for key, _val in seqRefFD.items():
                         if (key == "SOURCE_TAXID") and taxIdWarningFlag:
                             rowDataDict[key] = '<span style="color:red">' + seqRefFD[key] + "</span>"
                         else:

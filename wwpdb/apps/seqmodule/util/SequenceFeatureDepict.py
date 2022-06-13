@@ -21,11 +21,11 @@ import sys
 class SequenceFeatureDepict(object):
     """Methods to markup sequence feature details."""
 
-    def __init__(self, sfObj=None, verbose=False, log=sys.stderr):
+    def __init__(self, sfObj=None, verbose=False, log=sys.stderr):  # pylint: disable=unused-argument
         """sfObj is a sequence feature object -"""
         self.__sfObj = sfObj
-        self.__versbose = verbose
-        self.__lfh = log
+        # self.__verbose = verbose
+        # self.__lfh = log
         #
         self.__fD = self.__sfObj.get()
 
@@ -41,7 +41,7 @@ class SequenceFeatureDepict(object):
             annInitial=self.__fD["REF_ENTRY_ANN"],
         )
 
-    def __markupDatabaseReferenceWithUrl(self, dbName, dbAccession, dbIsoForm="", seqAltId=0, entryId="", entityId="", statusCode="", annInitial=""):
+    def __markupDatabaseReferenceWithUrl(self, dbName, dbAccession, dbIsoForm="", seqAltId=0, entryId="", entityId="", statusCode="", annInitial=""):  # pylint: disable=unused-argument
 
         displayCode = dbAccession
         if len(dbIsoForm) > 0:
@@ -59,8 +59,8 @@ class SequenceFeatureDepict(object):
         #
         return lab
 
-    def markupAuthorFeatures(self):
-        return self.__markupAlignmentFeatures(dbSourceOrg=self.__fD["SOURCE_ORGANISM"], taxId=self.__fD["SOURCE_TAXID"])
+    # def markupAuthorFeatures(self):
+    #     return self.__markupAlignmentFeatures(dbSourceOrg=self.__fD["SOURCE_ORGANISM"], taxId=self.__fD["SOURCE_TAXID"])
 
     def markupReferenceSimilarttFeatures(self):
         return self.__markupSimilarttFeatures(seqSimWithGaps=self.__fD["AUTH_REF_SEQ_SIM_WITH_GAPS"], seqSim=self.__fD["AUTH_REF_SEQ_SIM"])
@@ -88,7 +88,12 @@ class SequenceFeatureDepict(object):
 
         return "\n".join(dL)
 
-    def __markupAlignmentFeatures(self, refSeqFullLength=0, alignLength=0, seqSim=0.0, seqSimWithGaps=0.0, alignBegin=0, alignEnd=0):
+    def __markupAlignmentFeatures(self,  # pylint: disable=unused-argument
+                                  refSeqFullLength=0, alignLength=0,
+                                  seqSim=0.0,  # pylint: disable=unused-argument
+                                  seqSimWithGaps=0.0,  # pylint: disable=unused-argument
+                                  alignBegin=0,
+                                  alignEnd=0):
 
         dL = []
 
@@ -96,15 +101,15 @@ class SequenceFeatureDepict(object):
             tS = '<span class="detailkey">Full sequence length: </span><span class="detailvalue">%d</span><br />' % int(refSeqFullLength)
             dL.append(tS)
 
-        """
-        if ( seqSim > 0.001):
-            tS='<span class="detailkey">Identity (w/o gaps): </span><span class="detailvalue">%6.3f</span><br />' % float(seqSim)
-            dL.append(tS)
+        # """
+        # if ( seqSim > 0.001):
+        #     tS='<span class="detailkey">Identity (w/o gaps): </span><span class="detailvalue">%6.3f</span><br />' % float(seqSim)
+        #     dL.append(tS)
 
-        if ( seqSimWithGaps > 0.001):
-            tS='<span class="detailkey">Identity (w/ gaps): </span><span class="detailvalue">%6.3f</span><br />' % float(seqSimWithGaps)
-            dL.append(tS)
-        """
+        # if ( seqSimWithGaps > 0.001):
+        #     tS='<span class="detailkey">Identity (w/ gaps): </span><span class="detailvalue">%6.3f</span><br />' % float(seqSimWithGaps)
+        #     dL.append(tS)
+        # """
 
         if alignLength > 0:
             tS = '<span class="detailkey">Align length (w/ author sequence): </span><span class="detailvalue">%d</span><br />' % int(alignLength)

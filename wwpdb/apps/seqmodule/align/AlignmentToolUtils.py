@@ -12,7 +12,7 @@ __version__ = "V0.09"
 import sys
 
 
-def getSeqAlignment(seqList, alignIndicesList, labelIndexDict, testSeqType, gapSymbol):
+def getSeqAlignment(seqList, alignIndicesList, labelIndexDict, testSeqType, gapSymbol):  # pylint: disable=unused-argument
     """Materialize sequences alignment based sequences alignment index"""
     for alignIndex in alignIndicesList:
         if len(alignIndex) != len(seqList):
@@ -30,7 +30,7 @@ def getSeqAlignment(seqList, alignIndicesList, labelIndexDict, testSeqType, gapS
         #
     #
     alignList = []
-    for idx, alignIndex in enumerate(alignIndicesList):
+    for _idx, alignIndex in enumerate(alignIndicesList):
         alignPos = len(alignList)
         alignTup = []
         for i in range(0, len(alignIndex)):
@@ -59,7 +59,7 @@ def mergeSeqAlignment(seqList, indicesList, gapSymbol):
             return "mergeSeqAlignment: Align indices number is not same as sequence alignment number.", []
         #
         for i in range(0, len(alignIndex)):
-            intIdx, annotatedComment = decodeIndex(alignIndex[i])
+            intIdx, _annotatedComment = decodeIndex(alignIndex[i])
             #
             if intIdx < 0:
                 continue
@@ -74,7 +74,7 @@ def mergeSeqAlignment(seqList, indicesList, gapSymbol):
         alignPos = len(alignList)
         alignTup = []
         for i in range(0, len(alignIndex)):
-            intIdx, annotatedComment = decodeIndex(alignIndex[i])
+            intIdx, _annotatedComment = decodeIndex(alignIndex[i])
             #
             if intIdx < 0:
                 if i == 0:
@@ -120,7 +120,7 @@ def codeSeqIndex(index):
     if index == "":
         return index
     #
-    intIdx, comment = decodeIndex(index)
+    intIdx, _comment = decodeIndex(index)
     if intIdx < 0:
         return ""
     #
@@ -179,7 +179,7 @@ def assignConflict(refSeqType, refCompId, testSeqType, testCompId, gapSymbol):
     return isConflict, refConflict, testConflict
 
 
-def assignConflictType(r3Ref, refSeqType, r3Test, testSeqType, gapSymbol):
+def assignConflictType(r3Ref, refSeqType, r3Test, testSeqType, gapSymbol):  # pylint: disable=unused-argument
     """Assign conflict type as  -
 
      0 - None
@@ -241,8 +241,10 @@ def assignConflictType(r3Ref, refSeqType, r3Test, testSeqType, gapSymbol):
     return ((1, r3Ref), (10, r3Test))
 
 
-def printAlignment(lfh=sys.stderr, alignList=[], shortFlag=True):
+def printAlignment(lfh=sys.stderr, alignList=None, shortFlag=True):
     """Print alignment"""
+    if alignList is None:
+        alignList = []
     lfh.write("Alignment length = %d\n" % len(alignList))
     for alignTup in alignList:
         first = True

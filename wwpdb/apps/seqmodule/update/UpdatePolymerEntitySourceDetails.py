@@ -22,7 +22,6 @@ import traceback
 from wwpdb.apps.seqmodule.io.SequenceDataStore import SequenceDataStore
 from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel, SequenceFeature, SequenceFeatureMap
 from wwpdb.apps.seqmodule.util.SequenceAssign import SequenceAssignArchive, SequenceAssignDepositor
-from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
 
 
 class UpdatePolymerEntitySourceDetails(object):
@@ -34,11 +33,6 @@ class UpdatePolymerEntitySourceDetails(object):
         self.__debug = False
         self.__reqObj = reqObj
         self.__lfh = log
-        self.__defaultInsertSortMetric = 100000
-        #
-        self.__srd = SequenceReferenceData(verbose=self.__verbose, log=self.__lfh)
-        self.__gapSymbol = self.__srd.getGapSymbol()
-        self.__maxRefAlign = 100
         #
         self.__entityReviewItemList = [
             "ENTITY_DESCRIPTION",
@@ -72,15 +66,16 @@ class UpdatePolymerEntitySourceDetails(object):
             "CURRENT_REF_SELECT_ID",
         ]
 
+        self.__selectIdList = []
         self.__setup()
 
     def __setup(self):
         try:
             self.__placeHolderValue = "click-to-edit"
-            self.__siteId = self.__reqObj.getValue("WWPDB_SITE_ID")
+            # self.__siteId = self.__reqObj.getValue("WWPDB_SITE_ID")
             self.__sessionId = self.__reqObj.getSessionId()
             self.__sessionObj = self.__reqObj.getSessionObj()
-            self.__sessionPath = self.__sessionObj.getPath()
+            # self.__sessionPath = self.__sessionObj.getPath()
             #
             self.__selectIdList = self.__reqObj.getSummarySelectList()
             self.__sds = SequenceDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
@@ -109,10 +104,10 @@ class UpdatePolymerEntitySourceDetails(object):
             self.__lfh.write("+UpdatePolymerEntitySourceDetails.updateAuthEntityDetails() entityId %r instanceId %r partIdList %r\n" % (entityId, instanceId, partIdList))
             sfm = SequenceFeatureMap(verbose=self.__verbose, log=self.__lfh)
             for partId in partIdList:
-                authSelectId, authSL, authFdObj = self.__getCurrentAuthSelection(entityId, partId=partId)
-                seqType, seqInstId, seqPartId, seqAltId, seqVersion = authSL.get()
+                _authSelectId, authSL, authFdObj = self.__getCurrentAuthSelection(entityId, partId=partId)
+                _seqType, seqInstId, _seqPartId, seqAltId, seqVersion = authSL.get()
                 #
-                refSelectId, refSL, refFdObj = self.__getCurrentRefSelection(entityId, partId=partId)
+                refSelectId, _refSL, refFdObj = self.__getCurrentRefSelection(entityId, partId=partId)
                 #
                 # filter special cases -
                 #
@@ -541,9 +536,9 @@ class UpdatePolymerEntitySourceDetails(object):
                 v = refFD[k]
                 self.__lfh.write(" ++++    %-40s   --  %s\n" % (k, v))
                 self.__lfh.write("+UpdatePolymerEntitySourceDetails.makeEntityReview() author sequence feature dictionary contents:\n")
-                for k in sorted(pD.keys()):
-                    v = pD[k]
-                    self.__lfh.write(" ++++    %-40s   --  %s\n" % (k, v))
+                for k2 in sorted(pD.keys()):
+                    v = pD[k2]
+                    self.__lfh.write(" ++++    %-40s   --  %s\n" % (k2, v))
                 #
             #
         #
@@ -607,7 +602,7 @@ class UpdatePolymerEntitySourceDetails(object):
             for sId in self.__selectIdList:
                 if sId.startswith("auth"):
                     sL.unpack(sId)
-                    seqType, seqInstId, seqPartId, seqAltId, seqVersion = sL.get()
+                    _seqType, seqInstId, seqPartId, seqAltId, seqVersion = sL.get()
                     if instanceId == seqInstId and seqPartId == 1:
                         fdObj = self.__sds.getFeatureObj(seqInstId, seqType="auth", partId=partId, altId=seqAltId, version=seqVersion)
                         self.__lfh.write(
@@ -635,7 +630,7 @@ class UpdatePolymerEntitySourceDetails(object):
             for sId in self.__selectIdList:
                 if sId.startswith("ref"):
                     sL.unpack(sId)
-                    seqType, seqInstId, seqPartId, seqAltId, seqVersion = sL.get()
+                    _seqType, seqInstId, seqPartId, seqAltId, seqVersion = sL.get()
                     if instanceId == seqInstId and partId == seqPartId:
                         fObj = self.__sds.getFeatureObj(seqInstId, seqType="ref", partId=seqPartId, altId=seqAltId, version=seqVersion)
                         self.__lfh.write(
@@ -663,25 +658,25 @@ class UpdatePolymerEntitySourceDetails(object):
         )
         return None, False, None
 
-    def __getCurrentRefDetails(self, entityId, partId=1):
-        # seqIdList = self.__sds.getGroup(entityId)
-        # JDW CHANGE
-        # seqId=seqIdList[0]
-        seqId = entityId
-        self.__lfh.write("+UpdatePolymerEntitySourceDetails.__getCurrentRefDetails() entityId %r partId %r seqId %r\n" % (entityId, partId, seqId))
-        self.__lfh.write("+UpdatePolymerEntitySourceDetails.__getCurrentRefDetails() selectIdList %r\n" % (self.__selectIdList))
-        sL = SequenceLabel()
-        for sId in self.__selectIdList:
-            if sId.startswith("ref"):
-                sL.unpack(sId)
-                seqType, seqInstId, seqPartId, seqAltId, seqVersion = sL.get()
-                self.__lfh.write("+UpdatePolymerEntitySourceDetails.__getCurrentRefDetails() testing seqInstId %r seqPartId %r\n" % (seqInstId, seqPartId))
-                if seqId == seqInstId and partId == seqPartId:
-                    fObj = self.__sds.getFeatureObj(seqInstId, seqType="ref", partId=seqPartId, altId=seqAltId, version=seqVersion)
-                    fD = fObj.get()
-                    return fD["DB_NAME"], fD["DB_CODE"], fD["DB_ACCESSION"], fD["REF_MATCH_BEGIN"], fD["REF_MATCH_END"]
+    # def __getCurrentRefDetails(self, entityId, partId=1):
+    #     # seqIdList = self.__sds.getGroup(entityId)
+    #     # JDW CHANGE
+    #     # seqId=seqIdList[0]
+    #     seqId = entityId
+    #     self.__lfh.write("+UpdatePolymerEntitySourceDetails.__getCurrentRefDetails() entityId %r partId %r seqId %r\n" % (entityId, partId, seqId))
+    #     self.__lfh.write("+UpdatePolymerEntitySourceDetails.__getCurrentRefDetails() selectIdList %r\n" % (self.__selectIdList))
+    #     sL = SequenceLabel()
+    #     for sId in self.__selectIdList:
+    #         if sId.startswith("ref"):
+    #             sL.unpack(sId)
+    #             seqType, seqInstId, seqPartId, seqAltId, seqVersion = sL.get()
+    #             self.__lfh.write("+UpdatePolymerEntitySourceDetails.__getCurrentRefDetails() testing seqInstId %r seqPartId %r\n" % (seqInstId, seqPartId))
+    #             if seqId == seqInstId and partId == seqPartId:
+    #                 fObj = self.__sds.getFeatureObj(seqInstId, seqType="ref", partId=seqPartId, altId=seqAltId, version=seqVersion)
+    #                 fD = fObj.get()
+    #                 return fD["DB_NAME"], fD["DB_CODE"], fD["DB_ACCESSION"], fD["REF_MATCH_BEGIN"], fD["REF_MATCH_END"]
 
-        return None, None, None, None, None
+    #     return None, None, None, None, None
 
     def __getAuthRefAssignments(self, entityId):
         """Get author provided reference assignments.   Return a lists of reference database accessions.

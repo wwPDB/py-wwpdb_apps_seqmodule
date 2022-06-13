@@ -26,6 +26,7 @@ import traceback
 import time
 import os
 import os.path
+import inspect
 
 from wwpdb.apps.seqmodule.align.AlignmentStatistics import AlignmentStatistics
 from wwpdb.apps.seqmodule.control.SequenceDataAssemble_v2 import SequenceDataAssemble
@@ -68,7 +69,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
         if sessionId is not None:
             self.__reqObj.setValue("sessionid", sessionId)
 
-        self.__sessionId = self.__reqObj.getSessionId()
+        # self.__sessionId = self.__reqObj.getSessionId()
         self.__sessionObj = self.__reqObj.newSessionObj()
         self.__sessionPath = self.__sessionObj.getPath()
 
@@ -79,19 +80,19 @@ class AlignmentStatisticsTests(unittest.TestCase):
         Using upload file source.
         """
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
             for f in self.__exampleFileList:
-                (idCode, fExt) = os.path.splitext(f)
+                (idCode, _fExt) = os.path.splitext(f)
                 pdbxFilePath = pI.getModelPdbxFilePath(idCode, fileSource="session")
                 inpFilePath = os.path.join(self.__pathExamples, f)
                 shutil.copyfile(inpFilePath, pdbxFilePath)
                 self.__reqObj.setValue("identifier", idCode)
                 #
                 sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                sda.doAssemble(fileSource="local-upload")
+                sda.doAssemble()
         except:  # noqa: E722 pylint: disable=bare-except
             traceback.print_exc(file=self.__lfh)
             self.fail()
@@ -99,7 +100,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
     def testSearchAndAssembleFromArchive(self):
@@ -109,14 +110,14 @@ class AlignmentStatisticsTests(unittest.TestCase):
         Using archive file source.
         """
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             for dsId in self.__dsList:
                 self.__reqObj.setValue("identifier", dsId)
                 #
                 sda = SequenceDataAssemble(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
-                sda.doAssemble(fileSource="archive")
+                sda.doAssemble()
         except:  # noqa: E722 pylint: disable=bare-except
             traceback.print_exc(file=self.__lfh)
             self.fail()
@@ -124,7 +125,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
     def testAlignStatsFromUpload(self):
@@ -134,11 +135,11 @@ class AlignmentStatisticsTests(unittest.TestCase):
         Uses the sequence data prepared by the testSearchAndAssemblefromUpload() test above.
         """
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             for f in self.__exampleFileList:
-                (idCode, fExt) = os.path.splitext(f)
+                (idCode, _fExt) = os.path.splitext(f)
                 self.__reqObj.setValue("identifier", idCode)
                 alstat = AlignmentStatistics(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
                 alstat.doUpdate()
@@ -149,7 +150,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
     def testAlignStatsFromArchive(self):
@@ -159,7 +160,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
         Uses the sequence data prepared by the testSearchAndAssembleFromArchive() test above.
         """
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
 
         try:
             for dsId in self.__dsList:
@@ -173,7 +174,7 @@ class AlignmentStatisticsTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
 
@@ -192,9 +193,9 @@ def suiteAlignmentTests():
 
 
 if __name__ == "__main__":
-    if True:
+    if True:  # pylint: disable=using-constant-test
         mySuite = suiteSearchAndAssembleTests()
         unittest.TextTestRunner(verbosity=2).run(mySuite)
-    if True:
+    if True:  # pylint: disable=using-constant-test
         mySuite = suiteAlignmentTests()
         unittest.TextTestRunner(verbosity=2).run(mySuite)

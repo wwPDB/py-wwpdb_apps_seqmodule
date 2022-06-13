@@ -429,7 +429,7 @@ class GetSameSeqAnnotation(object):
                 gbD[idCode] = fetchNcbiGi(idCode, siteId=self.__siteId)
             #
         #
-        for partId, infoDic in dbRefMap.items():
+        for _partId, infoDic in dbRefMap.items():
             dbDic = {}
             if "db_name" in infoDic:
                 if infoDic["db_name"] == "UNP":
@@ -574,18 +574,22 @@ class GetSameSeqAnnotation(object):
         return True
 
 
-if __name__ == "__main__":
-    from wwpdb.utils.config.ConfigInfo import ConfigInfo
-    from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest
+def __mymain():
+    # from wwpdb.utils.config.ConfigInfo import ConfigInfo
+    # from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest
 
     #
-    siteId = os.getenv("WWPDB_SITE_ID")
-    cI = ConfigInfo(siteId)
+    # siteId = os.getenv("WWPDB_SITE_ID")
+    # cI = ConfigInfo(siteId)
     #
-    myReqObj = SeqModInputRequest({}, verbose=True, log=sys.stderr)
-    myReqObj.setValue("TopSessionPath", cI.get("SITE_WEB_APPS_TOP_SESSIONS_PATH"))
-    myReqObj.setValue("TopPath", cI.get("SITE_WEB_APPS_TOP_PATH"))
-    myReqObj.setValue("WWPDB_SITE_ID", siteId)
-    myReqObj.setValue("sessionid", "447a9d00e63720c7df7ca0bf755f004dec2acb44")
-    annObj = GetSameSeqAnnotation(reqObj=myReqObj, verbose=True, log=sys.stderr)
+    # myReqObj = SeqModInputRequest({}, verbose=True, log=sys.stderr)
+    # myReqObj.setValue("TopSessionPath", cI.get("SITE_WEB_APPS_TOP_SESSIONS_PATH"))
+    # myReqObj.setValue("TopPath", cI.get("SITE_WEB_APPS_TOP_PATH"))
+    # myReqObj.setValue("WWPDB_SITE_ID", siteId)
+    # myReqObj.setValue("sessionid", "447a9d00e63720c7df7ca0bf755f004dec2acb44")
+    annObj = GetSameSeqAnnotation(verbose=True, log=sys.stderr)
     annObj.testGetSeqAnnotationFromAssignFile(sys.argv[1], sys.argv[2], [sys.argv[3]])
+
+
+if __name__ == "__main__":
+    __mymain()

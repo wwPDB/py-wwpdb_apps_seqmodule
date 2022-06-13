@@ -56,7 +56,7 @@ class AlignmentExport(AlignmentTools):
             #
         #
         if errorFlag:
-            return [], [], [], [], "", 0
+            return [], [], [], [], [], "", 0
         #
         rptRefL, rptCommentL, rptCommentModL, rptDeleteL, warningMsg = self.__alignRefReport(self._seqAlignLabelIndices[idAuthSeq], idListRef, sourceType)
         rptXyzL, numConflicts = self.__alignXyzReport(self._seqAlignLabelIndices[idAuthSeq], idListXyz)
@@ -100,7 +100,7 @@ class AlignmentExport(AlignmentTools):
                 break
             #
             if len(alignTup[authIdx][5]) > 0:
-                cType, comment = self._decodeComment(alignTup[authIdx][5])
+                _cType, comment = self._decodeComment(alignTup[authIdx][5])
                 #
                 if comment == "expression tag":
                     expressionTagCount += 1
@@ -131,7 +131,7 @@ class AlignmentExport(AlignmentTools):
                         end = len(self._seqAlignList)
                     #
                     for idx1 in range(start, end):
-                        cType1, comment1 = self._decodeComment(self._seqAlignList[idx1][authIdx][5])
+                        _cType1, comment1 = self._decodeComment(self._seqAlignList[idx1][authIdx][5])
                         if (
                             (comment1 == "chromophore")
                             and str(self._seqAlignList[idx1][authIdx][1])
@@ -196,13 +196,13 @@ class AlignmentExport(AlignmentTools):
             #
             xyzSeqList = self._getSequenceByPackLabelFromDataStore(idXyz)
             xyzIdx = self._seqAlignLabelIndices[idXyz]
-            (seqTypeT, seqInstIdT, seqPartIdT, seqAltIdT, seqVersionT) = self._getUnpackSeqLabel(idXyz)
+            (_seqTypeT, seqInstIdT, _seqPartIdT, _seqAltIdT, _seqVersionT) = self._getUnpackSeqLabel(idXyz)
             #
             for alignTup in self._seqAlignList:
                 if (str(alignTup[authIdx][1]) in (".", "?", "")) and (str(alignTup[xyzIdx][1]) in (".", "?", "")):
                     continue
                 #
-                seqIdx, comment = decodeIndex(alignTup[xyzIdx][3])
+                seqIdx, _comment = decodeIndex(alignTup[xyzIdx][3])
                 orgName = "."
                 if (seqIdx >= 0) and (seqIdx < len(xyzSeqList)):
                     orgName = xyzSeqList[seqIdx][5]

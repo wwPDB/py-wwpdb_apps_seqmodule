@@ -55,8 +55,8 @@ class SummaryViewDepiction(object):
     """
 
     def __init__(self, verbose=False, log=sys.stderr):
-        self.__verbose = verbose
-        self.__lfh = log
+        self.__verbose = verbose  # pylint: disable=unused-private-member
+        self.__lfh = log  # pylint: disable=unused-private-member
         #
 
     def isRealValue(self, val):
@@ -69,8 +69,10 @@ class SummaryViewDepiction(object):
         else:
             return False
 
-    def buildSummaryView(self, summaryDataObj={}, activeGroupId=None):
+    def buildSummaryView(self, summaryDataObj=None, activeGroupId=None):
         """Render data in the input summaryDataObj  -"""
+        if summaryDataObj is None:
+            summaryDataObj = {}
         oL = []
         gIdList = list(summaryDataObj.keys())
 

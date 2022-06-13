@@ -16,10 +16,11 @@ __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.06"
 
 import sys
+import inspect
 import traceback
 import unittest
 
-from wwpdb.utils.align.alignlib import PairwiseAlign
+from wwpdb.utils.align.alignlib import PairwiseAlign  # pylint: disable=no-name-in-module
 
 from wwpdb.apps.seqmodule.util.SequenceExamples import SequenceExamples
 
@@ -44,7 +45,7 @@ class PairwiseAlignTests(unittest.TestCase):
     def testAlign(self):
         """Run internal alignment test embedded in the class -  This is a basic santity check."""
         sys.stdout.write("\n------------------------ ")
-        sys.stdout.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        sys.stdout.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         sys.stdout.write(" -------------------------\n")
         try:
             pA = PairwiseAlign()
@@ -58,7 +59,7 @@ class PairwiseAlignTests(unittest.TestCase):
         via getAlignment() -
         """
         sys.stdout.write("\n------------------------ ")
-        sys.stdout.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        sys.stdout.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         sys.stdout.write(" -------------------------\n")
         try:
             pA = PairwiseAlign()
@@ -85,7 +86,7 @@ class PairwiseAlignTests(unittest.TestCase):
         Returning the name of any sequence that is not part of the consensus.
         """
         sys.stdout.write("\n------------------------ ")
-        sys.stdout.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        sys.stdout.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         sys.stdout.write(" -------------------------\n")
         try:
             pA = PairwiseAlign()
@@ -112,7 +113,7 @@ class PairwiseAlignTests(unittest.TestCase):
     def testAlign4(self):
         """Consensus alignment for reference and 5 test sequences"""
         sys.stdout.write("\n------------------------ ")
-        sys.stdout.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        sys.stdout.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         sys.stdout.write(" -------------------------\n")
         try:
             pA = PairwiseAlign()
@@ -135,7 +136,7 @@ class PairwiseAlignTests(unittest.TestCase):
     def testAlign5(self):
         """Consensus alignment for reference and 5 test sequences"""
         sys.stdout.write("\n------------------------ ")
-        sys.stdout.write("Starting test function  %s" % sys._getframe().f_code.co_name)
+        sys.stdout.write("Starting test function  %s" % inspect.currentframe().f_code.co_name)
         sys.stdout.write(" -------------------------\n")
         try:
             pA = PairwiseAlign()

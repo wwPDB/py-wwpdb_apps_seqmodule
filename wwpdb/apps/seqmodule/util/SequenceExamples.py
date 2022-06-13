@@ -2855,21 +2855,21 @@ class SequenceExamples(object):
             maxInsertSeq = 2
             # random insert
             iLen = random.randint(1, maxInsert)
-            for i in range(1, iLen):
+            for _i in range(1, iLen):
                 idx = random.randint(0, lenS)
                 aa = random.choice(self.aaList)
                 self.__insert(seqIn, idx, aa)
 
             iLen = random.randint(1, maxInsertSeq)
-            for i in range(1, iLen):
+            for _i in range(1, iLen):
                 idx = random.randint(0, lenS)
                 aa = random.choice(self.aaList)
-                for ii in range(1, random.randint(1, 10)):
+                for _ii in range(1, random.randint(1, 10)):
                     self.__insert(seqIn, idx, aa)
 
             # deletions < 5
             dLen = random.randint(1, maxDelete)
-            for i in range(1, dLen):
+            for _i in range(1, dLen):
                 idx = random.randint(0, lenS)
                 self.__remove(seqIn, idx)
 
@@ -2886,7 +2886,7 @@ class SequenceExamples(object):
             maxDelete = 5
             # deletions < 5
             dLen = random.randint(1, maxDelete)
-            for i in range(1, dLen):
+            for _i in range(1, dLen):
                 idx = random.randint(0, lenS)
                 self.__remove(seqIn, idx)
         except:  # noqa: E722 pylint: disable=bare-except
@@ -2896,12 +2896,6 @@ class SequenceExamples(object):
     def __remove(self, seq3List, index):
         try:
             seq3List.remove(index)
-        except:  # noqa: E722 pylint: disable=bare-except
-            pass
-
-    def __replace(self, seq3List, index, sInp):
-        try:
-            seq3List[index] = sInp
         except:  # noqa: E722 pylint: disable=bare-except
             pass
 
@@ -2959,8 +2953,6 @@ class SequenceExamples(object):
             ir += 1
         return oSeq
 
-        return oSeq
-
     def toList(self, strIn):
         sL = []
         for ss in strIn:
@@ -2988,13 +2980,13 @@ class SequenceExamples(object):
             seqFeature.setItem("MATCH_LENGTH", len(self.refSequenceA.strip()))
             return seqFeature.get()
 
-    def getAuthFeatureDict(self, chainId):
+    def getAuthFeatureDict(self, chainId):  # pylint: disable=unused-argument
         seqFeature = SequenceFeature()
         seqFeature.setId(dbName="PDB", dbCode="3IJE", dbAccession="3IJE")
         seqFeature.setSource(organism="Homo sapiens", strain="", taxid="")
         return seqFeature.get()
 
-    def getXyzFeatureDict(self, chainId):
+    def getXyzFeatureDict(self, chainId):  # pylint: disable=unused-argument
         seqFeature = SequenceFeature()
         seqFeature.setId(dbName="PDB", dbCode="3IJE", dbAccession="3IJE")
         seqFeature.setSource(organism="Homo sapiens", strain="", taxid="")
@@ -3061,7 +3053,7 @@ def formatCpp(sL, seqName):
     sys.stdout.write('""};\n')
 
 
-if __name__ == "__main__":
+def mainTest():
     sE = SequenceExamples()
     # sL=sE.getRefSequenceWithIndexList('A')
     sL = sE.getRefSequence3List("A")
@@ -3073,7 +3065,10 @@ if __name__ == "__main__":
     # Test sequence with random insertions and deletions
     #
 
-    sTests = {}
     for tt in ["authAT1", "authAT2", "authAT3", "authAT4", "authAT5", "authAT6", "authAT7", "authAT8", "authAT9", "authAT10"]:
         sL = sE.getAuthSequenceListTest("A")
         formatCpp(sL, tt)
+
+
+if __name__ == "__main__":
+    mainTest()

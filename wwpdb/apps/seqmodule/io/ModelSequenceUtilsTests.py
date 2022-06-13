@@ -23,7 +23,7 @@ import traceback
 import time
 import os
 import os.path
-
+import inspect
 
 from wwpdb.apps.seqmodule.io.ModelSequenceUtils import ModelSequenceUtils
 from wwpdb.apps.seqmodule.io.PdbxIoUtils import PdbxFileIo
@@ -31,7 +31,7 @@ from wwpdb.io.misc.FormatOut import FormatOut
 from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.utils.config.ConfigInfo import ConfigInfo, getSiteId
 from wwpdb.apps.seqmodule.webapp.SeqModWebRequest import SeqModInputRequest
-from wwpdb.io.file.DataFileAdapter import DataFileAdapter
+from wwpdb.utils.dp.DataFileAdapter import DataFileAdapter
 
 
 class ModelSequenceUtilsTests(unittest.TestCase):
@@ -65,7 +65,6 @@ class ModelSequenceUtilsTests(unittest.TestCase):
         """Simulate the web application environment for managing session storage of
         temporaty data files.
         """
-        self.__maxRefAlign = 100
         self.__siteId = getSiteId(defaultSiteId="WWPDB_DEPLOY_TEST")
         self.__cI = ConfigInfo(self.__siteId)
         self.__topPath = self.__cI.get("SITE_WEB_APPS_TOP_PATH")
@@ -82,18 +81,17 @@ class ModelSequenceUtilsTests(unittest.TestCase):
         if sessionId is not None:
             self.__reqObj.setValue("sessionid", sessionId)
 
-        self.__sessionId = self.__reqObj.getSessionId()
         self.__sessionObj = self.__reqObj.newSessionObj()
         self.__sessionPath = self.__sessionObj.getPath()
 
     def testGetModelSequence(self):
         """Test extraction of author and coordinate sequence data."""
         startTime = time.time()
-        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
+        self.__lfh.write("\nStarting %s %s at %s\n" % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime())))
         try:
             pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)
             for f in self.__exampleFileList:
-                (idCode, fExt) = os.path.splitext(f)
+                (idCode, _fExt) = os.path.splitext(f)
                 pdbxFilePath = pI.getModelPdbxFilePath(idCode, fileSource="session")
                 inpFilePath = os.path.join(self.__pathExamples, f)
                 self.__lfh.write("+testSearchAndAssembleFromUpload() Starting with id %s \n + input file %s \n   + pdbxfile %s\n" % (idCode, inpFilePath, pdbxFilePath))
@@ -132,7 +130,7 @@ class ModelSequenceUtilsTests(unittest.TestCase):
         endTime = time.time()
         self.__lfh.write(
             "\nCompleted %s %s at %s (%.2f seconds)\n"
-            % (self.__class__.__name__, sys._getframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+            % (self.__class__.__name__, inspect.currentframe().f_code.co_name, time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
         )
 
 
@@ -143,6 +141,5 @@ def suiteGetModelSeqTests():
 
 
 if __name__ == "__main__":
-    if True:
-        mySuite = suiteGetModelSeqTests()
-        unittest.TextTestRunner(verbosity=2).run(mySuite)
+    mySuite = suiteGetModelSeqTests()
+    unittest.TextTestRunner(verbosity=2).run(mySuite)
