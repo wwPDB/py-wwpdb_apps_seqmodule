@@ -74,9 +74,7 @@ class UpdatePolymerEntityReference(UpdateSequenceDataStoreUtils):
                <th>Seq End</th>
              </tr>
             <tr>
-            <td><span id="dbname"      class="ief %(dbname_css)s" data-ief-edittype="select"
-                                       data-ief-selectvalues='[{"value":"UNP","label":"UNP","selected":false},{"value":"GB","label":"GB","selected":false}]'>
-                                       %(dbname)s</span></td>
+            <td><span id="dbname"      class="ief %(dbname_css)s" data-ief-edittype="select" data-ief-selectvalues='[{"value":"UNP","label":"UNP","selected":false},{"value":"GB","label":"GB","selected":false}]'>%(dbname)s</span></td>
             <td><span id="dbaccession" class="ief %(dbaccession_css)s">%(dbaccession)s</span></td>
             <td><span id="dbseqbegin"  class="ief %(dbseqbegin_css)s">%(dbseqbegin)s</span></td>
             <td><span id="dbseqend"    class="ief %(dbseqend_css)s">%(dbseqend)s</span></td>
