@@ -86,19 +86,9 @@ class AlignmentTools(AlignmentDataStore):
         self.__newXyzAlignIndexListFlag = False
         self.__xyzAlignIndexList = []
         self.__extraAuthLabel = []
-        # Should be safe to initialize here
+        # Should be safe to initialize here - not in base class
         self._partPosDict = {}
-        self._seqAlignList = []
         self._selfRefPartIdList = []
-        self._authDefinedMutationList = []
-        self._xyzAlignList = []
-        self._missingSeqMap = {}
-        self._xyzAlignLabelIndices = {}
-        self._reverseXyzAlignLabelIndices = {}
-        self._hasAlignmentFlag = True
-        self._authLabel = ""
-        self._reverseSeqAlignLabelIndices = {}
-        self._seqAlignLabelIndices = {}
 
     def __clearLocalVariables(self):
         """Clear all local variables"""
