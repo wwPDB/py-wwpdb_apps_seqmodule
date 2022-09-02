@@ -355,8 +355,7 @@ class UpdatePolymerEntitySourceDetails(object):
 
              <tr>
                 <td>Source Method</td>
-                <td class="bgcolcurrent"><span id="SOURCE_METHOD" class="ief my-editable-cell" data-ief-edittype="select"  data-ief-selectvalues='%(SOURCE_METHOD_SELECT)s'>
-                       %(SOURCE_METHOD)s</span></td>
+                <td class="bgcolcurrent"><span id="SOURCE_METHOD" class="ief my-editable-cell" data-ief-edittype="select"  data-ief-selectvalues='%(SOURCE_METHOD_SELECT)s'>%(SOURCE_METHOD)s</span></td>
                 <td></td>
                 <td class="bgcolauthor"><span id="SOURCE_METHOD_ORIG" class="my-cell-static">%(SOURCE_METHOD_ORIG)s</span></td>
              <tr>
