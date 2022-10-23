@@ -53,7 +53,7 @@ from wwpdb.apps.seqmodule.link.PolymerLinkageDepict import PolymerLinkageDepict
 from wwpdb.apps.seqmodule.update.UpdatePolymerEntitySourceDetails import UpdatePolymerEntitySourceDetails
 from wwpdb.apps.seqmodule.util.LocalBlastSearchUtils import LocalBlastSearchUtils
 from wwpdb.apps.seqmodule.util.SeqReferenceSearchUtils import SeqAnnotationSearchUtils
-from wwpdb.apps.seqmodule.util.SeqReferenceSearchUtils import SeqReferenceSearchUtils
+# from wwpdb.apps.seqmodule.util.SeqReferenceSearchUtils import SeqReferenceSearchUtils
 from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel
 from wwpdb.apps.seqmodule.util.UpdateSequenceDataStoreUtils import UpdateSequenceDataStoreUtils
 from wwpdb.apps.seqmodule.util.MultiProcLimit import MultiProcLimit
@@ -384,8 +384,8 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             refList = []
             for refD in valD["ref_list"]:
                 data = []
-                for item in ( "db_name", "db_accession", "db_code", "seq_align_begin", "seq_align_end", "db_align_end", \
-                              "db_align_beg", "db_seq_one_letter_code" ):
+                for item in ("db_name", "db_accession", "db_code", "seq_align_begin", "seq_align_end", "db_align_end",
+                             "db_align_beg", "db_seq_one_letter_code"):
                     if (item in refD) and refD[item]:
                         data.append(refD[item].strip().upper())
                     else:
@@ -395,7 +395,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 if (data[0] == "") or ((data[1] == "") and (data[2] == "")):
                     continue
                 #
-                for idx in ( 1, 2 ):
+                for idx in (1, 2):
                     val = data[idx]
                     if val and (val not in codeList):
                         codeList.append(val)
@@ -699,7 +699,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             #
             refD = {}
             if blastList:
-                autoMatchStatus,refD = self.__runSeqBlastSearch(blastList)
+                autoMatchStatus, refD = self.__runSeqBlastSearch(blastList)
                 if (not autoMatchStatus) or (not refD):
                     self.__autoProcessFlag = False
                 #
@@ -918,14 +918,14 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                     "+SequenceDataAssemble.__runSeqBlastSearch()  completed at %s (%.2f seconds)\n" % (time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
                 )
             #
-            return autoMatchStatus,refD
+            return autoMatchStatus, refD
         except:  # noqa: E722 pylint: disable=bare-except
             if self._verbose:
                 self._lfh.write("+SequenceDataAssemble.__runSeqBlastSearch() - failing \n")
                 traceback.print_exc(file=self._lfh)
             #
         #
-        return False,{}
+        return False, {}
 
     def runMultiBlastReferenceSearches(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
         """Multiple blast reference sequence search processing API"""
@@ -941,7 +941,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 log=self._lfh,
                 ncbilock=ncbilock,
             )
-            autoMatchStatus,eRefD = seqSearchUtil.searchSeqReference(dataSetId=self.__dataSetId, entityD=tupL[1], authRefList=tupL[2])
+            autoMatchStatus, eRefD = seqSearchUtil.searchSeqReference(dataSetId=self.__dataSetId, entityD=tupL[1], authRefList=tupL[2])
             rList.append((tupL[0], eRefD, autoMatchStatus))
             #
         #

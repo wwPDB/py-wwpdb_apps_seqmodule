@@ -1014,13 +1014,13 @@ class SeqModWebAppWorker(object):
     def __getSummaryPageContent(self, spObj):
         """ Generate summary page content
         """
-        columnNameKeyList = ( ( "Entity", "entity_id" ), ( "Chain", "chain_ids" ), ( "Type", "entity_types" ), \
-                              ( "Molecule name<br/>(Depositor-provided name)", "mol_names" ), \
-                              ( "Source name/strain<br/>(Depositor-provided source name)", "source_names" ), \
-                              ( "Source TaxID<br/>(Depositor-provided TaxID)", "tax_ids" ), \
-                              ( "Scores", "identity_scores" ), \
-                              ( "Top hit ID<br/>(Depositor-provided ID)", "ref_db_ids" ), \
-                              ( "Mismatch and differences", "warn_err_msgs" ) )
+        columnNameKeyList = (("Entity", "entity_id"), ("Chain", "chain_ids"), ("Type", "entity_types"),
+                             ("Molecule name<br/>(Depositor-provided name)", "mol_names"),
+                             ("Source name/strain<br/>(Depositor-provided source name)", "source_names"),
+                             ("Source TaxID<br/>(Depositor-provided TaxID)", "tax_ids"),
+                             ("Scores", "identity_scores"),
+                             ("Top hit ID<br/>(Depositor-provided ID)", "ref_db_ids"),
+                             ("Mismatch and differences", "warn_err_msgs"))
         #
         oL = []
         oL.append('<table class="summary_table">\n')

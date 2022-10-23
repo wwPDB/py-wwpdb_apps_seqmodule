@@ -16,11 +16,13 @@ __email__ = "zfeng@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.09"
 
-import os, string, sys
+import os
+import string
+import sys
 
 from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import fetchUniProt, fetchNcbiGi
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
-from wwpdb.utils.align.alignlib import PseudoMultiAlign
+from wwpdb.utils.align.alignlib import PseudoMultiAlign  # pylint: disable=no-name-in-module
 
 
 class FetchReferenceSequenceUtils(object):
@@ -133,15 +135,15 @@ class FetchReferenceSequenceUtils(object):
             if dbCode:
                 self.__accCode, self.__refInfoD = self.__getRefInfo(dbName, dbCode, "", 0, 0)
                 if (not self.__refInfoD) or ("sequence" not in self.__refInfoD):
-                    return False,{}
+                    return False, {}
                 #
             else:
-                return False,{}
+                return False, {}
             #
         #
         # Skip reference sequence with different Taxonomy ID
         if ("taxonomy_id" in self.__refInfoD) and (self.__refInfoD["taxonomy_id"]) and taxId and (self.__refInfoD["taxonomy_id"] != taxId):
-            return False,{}
+            return False, {}
         #
         mutationMap = {}
         for val in mutationList:
@@ -159,12 +161,12 @@ class FetchReferenceSequenceUtils(object):
                 #
             #
         #
-        autoMatchStatus,alignInfoD = self.runSeqAlignment(self.__refInfoD["sequence"], authSeq, seqNumBeg, mutationList, mutationMap)
+        autoMatchStatus, alignInfoD = self.runSeqAlignment(self.__refInfoD["sequence"], authSeq, seqNumBeg, mutationList, mutationMap)
         if alignInfoD:
             self.__refInfoD.update(alignInfoD)
-            return autoMatchStatus,self.__refInfoD
+            return autoMatchStatus, self.__refInfoD
         else:
-            return False,{}
+            return False, {}
         #
 
     def runSeqAlignment(self, refSeq, authSeq, seqNumBeg, mutationList, mutationMap):
@@ -182,14 +184,14 @@ class FetchReferenceSequenceUtils(object):
         blockList = []
         start = -1
         end = -1
-        for idx,alignIdx in enumerate(alignIndexList):
-            ref = "-"
+        for idx, alignIdx in enumerate(alignIndexList):
+            ref = "-"  # pylint: disable=unused-variable
             if alignIdx[0] >= 0:
-                ref = refSeqList[alignIdx[0]][0]
+                ref = refSeqList[alignIdx[0]][0]  # noqa: F841
             #
-            auth = "-"
+            auth = "-"  # pylint: disable=unused-variable
             if alignIdx[1] >= 0:
-                auth = authSeqList[alignIdx[1]][0]
+                auth = authSeqList[alignIdx[1]][0]  # noqa: F841
             #
             if (alignIdx[0] >= 0) and (alignIdx[1] >= 0):
                 if start < 0:
@@ -199,22 +201,22 @@ class FetchReferenceSequenceUtils(object):
             else:
                 # Only insert aligned block with more than one residue
                 if (start >= 0) and (end > start):
-                    blockList.append( ( start, end ) )
+                    blockList.append((start, end))
                 #
                 start = -1
                 end = -1
             #
         #
         if (start >= 0) and (end > start):
-            blockList.append( ( start, end ) )
+            blockList.append((start, end))
         #
         if not blockList:
-            return False,{}
+            return False, {}
         #
         start = blockList[0][0]
         end = blockList[-1][1]
         if (start < 0) or ((2 * (end - start + 1)) < len(authSeqList)):
-            return False,{}
+            return False, {}
         #
         identity = 0
         mutation = 0
@@ -267,7 +269,7 @@ class FetchReferenceSequenceUtils(object):
         #
         seq_sim = float(identity) / float(end - start + 1)
         if seq_sim < 0.7:
-            return False,{}
+            return False, {}
         #
         retD = {}
         retD["db_length"] = str(len(refSeqList))
@@ -289,9 +291,9 @@ class FetchReferenceSequenceUtils(object):
         retD["sort_order"] = "1"
         #
         if (identity + mutation) == len(authSeqList):
-            return True,retD
+            return True, retD
         else:
-            return False,retD
+            return False, retD
         #
 
     def __getRefInfo(self, dbName, dbAccession, dbIsoform, start, end):
@@ -358,7 +360,7 @@ class FetchReferenceSequenceUtils(object):
             if ss in string.whitespace:
                 continue
             #
-            sL.append( (ss, str(count) ) )
+            sL.append((ss, str(count)))
             count += 1
         #
         return sL
@@ -391,6 +393,7 @@ class FetchReferenceSequenceUtils(object):
             #
         #
         return myD
+
 
 def testmain():
     fetchUtil = FetchReferenceSequenceUtils(siteId=os.getenv("WWPDB_SITE_ID"), verbose=True)

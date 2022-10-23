@@ -392,7 +392,7 @@ class UpdateSequenceDataStoreUtils(object):
 #               #
             #
             if (eId in eSSRefD) and eSSRefD[eId] and (str(partNo) in eSSRefD[eId]) and eSSRefD[eId][str(partNo)] and ("selfref" not in eSSRefD[eId][str(partNo)]):
-                #rList.append(eSSRefD[eId][str(partNo)])
+                # rList.append(eSSRefD[eId][str(partNo)])
                 if ("auto_match_status" in eSSRefD[eId][str(partNo)]) and eSSRefD[eId][str(partNo)]["auto_match_status"]:
                     autoList.append(eSSRefD[eId][str(partNo)])
                 else:
@@ -403,7 +403,7 @@ class UpdateSequenceDataStoreUtils(object):
                 if ("selfref" in ownRefD[eId][str(partNo)]) and ownRefD[eId][str(partNo)]["selfref"]:
                     selfRefFlag = True
                 else:
-                    #rList.append(ownRefD[eId][str(partNo)])
+                    # rList.append(ownRefD[eId][str(partNo)])
                     if ("auto_match_status" in ownRefD[eId][str(partNo)]) and ownRefD[eId][str(partNo)]["auto_match_status"]:
                         autoList.append(ownRefD[eId][str(partNo)])
                     else:

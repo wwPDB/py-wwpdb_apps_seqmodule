@@ -42,7 +42,8 @@ except ImportError:
     import pickle as pickle
 #
 
-import os,sys
+import os
+import sys
 import traceback
 
 from wwpdb.apps.seqmodule.io.SequenceDataStore import SequenceDataStore
@@ -217,13 +218,13 @@ class SummaryView(object):
             #
             summaryDataObj[gId] = {}
             #
-            dT, polyALA_assignment,authSummaryPageD,method,polyType,dbAccessionList = self.__buildAuthSection(groupId=gId, op=op)
+            dT, polyALA_assignment, authSummaryPageD, method, polyType, dbAccessionList = self.__buildAuthSection(groupId=gId, op=op)
             if polyALA_assignment > 0:
                 polyAlaCaseList.append((gId, polyALA_assignment))
             #
             summaryDataObj[gId]["auth"] = dT
             #
-            rL,withGapScoreList,withoutGapScoreList,hitDbInfoList,hitDbIdList = self.__buildReferenceSection(groupId=gId)
+            rL, withGapScoreList, withoutGapScoreList, hitDbInfoList, hitDbIdList = self.__buildReferenceSection(groupId=gId)
             summaryDataObj[gId]["ref"] = rL
             #
             summaryDataObj[gId]["xyz"] = self.__buildCoordinateSection(groupId=gId)
@@ -238,18 +239,18 @@ class SummaryView(object):
             if decoration_start:
                 self.__summaryPageInfoMap[gId]["entity_id"] = decoration_start + '<span class="width20px"> &nbsp;' + gId + '&nbsp; </span>' + decoration_end
             else:
-                #self.__summaryPageInfoMap[gId]["entity_id"] = '<a id="page_' + gId + '" href="#" class="page_control"><span class="width20px"> &nbsp;' \
+                # self.__summaryPageInfoMap[gId]["entity_id"] = '<a id="page_' + gId + '" href="#" class="page_control"><span class="width20px"> &nbsp;' \
                 self.__summaryPageInfoMap[gId]["entity_id"] = '<a id="page_' + gId + '" href="#closecompleted" class="page_control"><span class="width20px">' \
-                                                            + ' &nbsp;' + gId + '&nbsp; </span></a>'
+                    + ' &nbsp;' + gId + '&nbsp; </span></a>'
             #
             self.__summaryPageInfoMap[gId]["chain_ids"] = ",".join(self.__sds.getGroup(gId))
-            for tupL in ( ( "mol_names", "ENTITY_DESCRIPTION" ), ( "source_names", "SOURCE_ORGANISM" ), ( "tax_ids", "SOURCE_TAXID" ) ):
+            for tupL in (("mol_names", "ENTITY_DESCRIPTION"), ("source_names", "SOURCE_ORGANISM"), ("tax_ids", "SOURCE_TAXID")):
                 self.__summaryPageInfoMap[gId][tupL[0]] = decoration_start + self.__buildNameSourceSummaryPage(tupL[1], authSummaryPageD) + decoration_end
             #
             if (len(withGapScoreList) > 0) and (len(withoutGapScoreList) > 0):
                 self.__summaryPageInfoMap[gId]["identity_scores"] = decoration_start + '<span class="detailkey">w/ gaps: </span><span class="detailvalue">' + \
-                         ",".join(withGapScoreList) + '</span><br/><span class="detailkey">w/o gaps: </span><span class="detailvalue">' + \
-                         ",".join(withoutGapScoreList) + '</span>' + decoration_end
+                    ",".join(withGapScoreList) + '</span><br/><span class="detailkey">w/o gaps: </span><span class="detailvalue">' + \
+                    ",".join(withoutGapScoreList) + '</span>' + decoration_end
             #
             if len(hitDbInfoList) > 0:
                 self.__summaryPageInfoMap[gId]["ref_db_ids"] = decoration_start + ",".join(hitDbInfoList) + "<br/>"
@@ -277,7 +278,7 @@ class SummaryView(object):
                 warningErrorD = pickle.load(fb)
                 fb.close()
                 #
-                for item in ( "conflict", "engineered mutation", "expression tag", "initiating methionine", "mismatch", "variant" ):
+                for item in ("conflict", "engineered mutation", "expression tag", "initiating methionine", "mismatch", "variant"):
                     if item not in warningErrorD:
                         continue
                     #
@@ -355,31 +356,31 @@ class SummaryView(object):
         #
         # Each author entity sequence is shown once and is labeled by its first instance in the group.
         #
-        #seqId0 = groupId
+        # seqId0 = groupId
         #
         partIdList = self.__sds.getPartIds(groupId, dataType="sequence", seqType="auth")
         if len(partIdList) == 0:
-            return {},0,{},"","",[]
+            return {}, 0, {}, "", "", []
         #
         altId = 1
         verList = self.__sds.getVersionIds(groupId, partId=partIdList[0], altId=altId, dataType="sequence", seqType="auth")
         if len(verList) == 0:
-            return {},0,{},"","",[]
+            return {}, 0, {}, "", "", []
         #
         if self.__verbose:
             self.__lfh.write("SummaryView.__buildAuthSection() groupId %r op %s \n" % (groupId, op))
         #
-        detailsD,dbAccessionList = self.__getAuthFeaturesAll(groupId, groupId, partIdList)
+        detailsD, dbAccessionList = self.__getAuthFeaturesAll(groupId, groupId, partIdList)
         #
         dT = self.__getAuthSection(groupId, partIdList[0], altId, verList, detailsD, len(partIdList))
         #
         # Get polyALA_assignment
         #
-        polyALA_assignment,method,polyType = self.__checkPolyAlaAssignment(seqId=groupId, partId=partIdList[0], altId=altId, version=verList[0])
+        polyALA_assignment, method, polyType = self.__checkPolyAlaAssignment(seqId=groupId, partId=partIdList[0], altId=altId, version=verList[0])
         #
         summaryPageD = self.__getSummaryPageInfo(seqId=groupId, partIdList=partIdList, altId=altId)
         #
-        return dT,polyALA_assignment,summaryPageD,method,polyType,dbAccessionList
+        return dT, polyALA_assignment, summaryPageD, method, polyType, dbAccessionList
 
     def __buildCoordinateSection(self, groupId=None):
         """Assemble the data content for the coordinate sequence summary view.
@@ -542,9 +543,9 @@ class SummaryView(object):
                         if ("AUTH_REF_SEQ_SIM" in seqRefFD) and (float(seqRefFD["AUTH_REF_SEQ_SIM"]) > 0.001):
                             withoutGapScoreList.append("%6.3f" % float(seqRefFD["AUTH_REF_SEQ_SIM"]))
                         #
-                        dbName = ""
+                        dbName = ""  # noqa: F841 pylint: disable=unused-variable
                         if ("DB_NAME" in seqRefFD) and seqRefFD["DB_NAME"]:
-                            dbName = seqRefFD["DB_NAME"]
+                            dbName = seqRefFD["DB_NAME"]  # noqa: F841
                         #
                         dbAccession = ""
                         if ("DB_ACCESSION" in seqRefFD) and seqRefFD["DB_ACCESSION"]:
@@ -553,8 +554,8 @@ class SummaryView(object):
                         if ("DB_ISOFORM" in seqRefFD) and seqRefFD["DB_ISOFORM"]:
                             dbAccession = seqRefFD["DB_ISOFORM"]
                         #
-#                       if dbName and dbAccession:
-#                           hitDbInfoList.append(dbName + ":" + dbAccession)
+                        # if dbName and dbAccession:
+                        #     hitDbInfoList.append(dbName + ":" + dbAccession)
                         if dbAccession:
                             hitDbInfoList.append(dbAccession)
                             if dbAccession not in hitDbIdList:
@@ -604,7 +605,7 @@ class SummaryView(object):
         #
         self.__checkPartRange(groupId, partInfoList)
         #
-        return rL,withGapScoreList,withoutGapScoreList,hitDbInfoList,hitDbIdList
+        return rL, withGapScoreList, withoutGapScoreList, hitDbInfoList, hitDbIdList
 
     def __buildNameSourceSummaryPage(self, key, summaryInfoD):
         """
@@ -655,7 +656,7 @@ class SummaryView(object):
             self.__lfh.write("+SummaryView.__getAuthFeaturesAll() entityId %r seqId0 %r partIdList %r\n" % (entityId, seqId0, partIdList))
 
         #
-        authRefAssignText,dbAccessionList = self.__markupAuthorAssignments(entityId)
+        authRefAssignText, dbAccessionList = self.__markupAuthorAssignments(entityId)
         #
         #
         altId = 1
@@ -691,14 +692,14 @@ class SummaryView(object):
             fOut.writeStream(self.__lfh)
             fOut.clear()
         #
-        return detailsD,dbAccessionList
+        return detailsD, dbAccessionList
 
     def __checkPolyAlaAssignment(self, seqId="", partId="1", altId=1, version="1"):
         """Check if the sequence contains 10 or more consecutive ALA residues
         """
         authFObj = self.__sds.getFeatureObj(seqId, "auth", partId=partId, altId=altId, version=version)
         if authFObj.getPolymerType() != "AA":
-            return 0,authFObj.getEntitySourceMethod(),authFObj.getPolymerLinkingType()
+            return 0, authFObj.getEntitySourceMethod(), authFObj.getPolymerLinkingType()
         #
         seqAuth = self.__sds.getSequence(seqId=seqId, seqType="auth", partId=partId, altId=altId, version=version)
         has_consecutive_ALA = False
@@ -717,16 +718,19 @@ class SummaryView(object):
             has_consecutive_ALA = True
         #
         if count == len(seqAuth):
-            return 1,authFObj.getEntitySourceMethod(),authFObj.getPolymerLinkingType()
+            return 1, authFObj.getEntitySourceMethod(), authFObj.getPolymerLinkingType()
         elif has_consecutive_ALA:
-            return 2,authFObj.getEntitySourceMethod(),authFObj.getPolymerLinkingType()
+            return 2, authFObj.getEntitySourceMethod(), authFObj.getPolymerLinkingType()
         #
-        return 0,authFObj.getEntitySourceMethod(),authFObj.getPolymerLinkingType()
+        return 0, authFObj.getEntitySourceMethod(), authFObj.getPolymerLinkingType()
 
-    def __getSummaryPageInfo(self, seqId="1", partIdList=[], altId=1):
+    def __getSummaryPageInfo(self, seqId="1", partIdList=None, altId=1):
         """
         """
-        infoKeys = ( "ENTITY_DESCRIPTION", "ENTITY_DESCRIPTION_ORIG", "SOURCE_ORGANISM", "SOURCE_ORGANISM_ORIG", "SOURCE_TAXID", "SOURCE_TAXID_ORIG" )
+        if partIdList is None:
+            partIdList = []
+
+        infoKeys = ("ENTITY_DESCRIPTION", "ENTITY_DESCRIPTION_ORIG", "SOURCE_ORGANISM", "SOURCE_ORGANISM_ORIG", "SOURCE_TAXID", "SOURCE_TAXID_ORIG")
         #
         retValD = {}
         for partId in partIdList:
@@ -752,7 +756,7 @@ class SummaryView(object):
                 #
             #
             if ("SOURCE_TAXID" in valD) and ("SOURCE_TAXID_ORIG" in valD) and (valD["SOURCE_TAXID"] != valD["SOURCE_TAXID_ORIG"]):
-                for key in ( "SOURCE_ORGANISM_ORIG", "SOURCE_TAXID_ORIG" ):
+                for key in ("SOURCE_ORGANISM_ORIG", "SOURCE_TAXID_ORIG"):
                     if (key in valD) and valD[key]:
                         valD[key] = '<span style="color:red">' + valD[key] + '</span>'
                     #
@@ -766,7 +770,7 @@ class SummaryView(object):
                 if key in retValD:
                     retValD[key].append(val)
                 else:
-                    retValD[key] = [ val ]
+                    retValD[key] = [val]
                 #
             #
         #
@@ -857,7 +861,7 @@ class SummaryView(object):
         if self.__verbose:
             self.__lfh.write("+SummaryView.__markupAuthorAssignments() depositor reference assignments for entity %s : %s\n" % (entityId, authRefAssignText))
         #
-        return authRefAssignText,dbAccessionList
+        return authRefAssignText, dbAccessionList
 
     def __checkPartRange(self, entityId, partInfoList):
         """Check part range definition and write out the warning message if there are errors"""

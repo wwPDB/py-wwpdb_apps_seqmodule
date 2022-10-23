@@ -431,7 +431,7 @@ class GetSameSeqAnnotation(object):
             if auto_match_status:
                 infoDic["auto_match_status"] = True
             #
-            
+
             if "db_name" in infoDic:
                 if infoDic["db_name"] == "UNP":
                     try:

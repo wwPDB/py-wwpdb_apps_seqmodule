@@ -605,7 +605,7 @@ class AlignmentTools(AlignmentDataStore):
         #
         authIdx = self._seqAlignLabelIndices[authLabel]
         #
-        self.__conflictMap = {}
+        self.__conflictMap = {}  # pylint: disable=attribute-defined-outside-init
         totalSeqCoodConflict = 0
         for otherIdx in sorted(self._reverseSeqAlignLabelIndices.keys()):
             otherLabel = self._reverseSeqAlignLabelIndices[otherIdx]
@@ -1128,7 +1128,7 @@ class AlignmentTools(AlignmentDataStore):
                 continue
             #
             if seqType == "xyz":
-                # added 'auth_numbering' as 4th value in seqTuple. See setCoordinateInstanceInfo() method in 
+                # added 'auth_numbering' as 4th value in seqTuple. See setCoordinateInstanceInfo() method in
                 # util/UpdateSequenceDataStoreUtils.py for the definition of all values in coordinate seqTup
                 returnSeqList.append((str(seqTup[0]).upper(), str(i), str(seqTup[6]), str(seqTup[1])))
             else:
@@ -1249,7 +1249,7 @@ class AlignmentTools(AlignmentDataStore):
             finalComment = self.__consolidateConflict(comment, self._seqAlignList[i][authIdx][5], self._seqAlignList[i][refIdx][5])
             self._seqAlignList[i][authIdx][5] = finalComment
             if writeConflictFlag:
-                commentType, commentValue = self._decodeComment(finalComment)
+                _commentType, commentValue = self._decodeComment(finalComment)
                 if commentValue in self.__conflictMap:
                     self.__conflictMap[commentValue] += 1
                 else:

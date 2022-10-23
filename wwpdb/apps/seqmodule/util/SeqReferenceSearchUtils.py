@@ -55,7 +55,7 @@ class SeqReferenceSearchUtils(object):
                 log=self.__lfh,
                 ncbilock=self.__ncbilock,
             )
-            autoMatchStatus,eRefD = lbsUtil.searchSeqReference(dataSetId=dataSetId, entityD=eD, authRefList=authDefinedRefList)
+            _autoMatchStatus, eRefD = lbsUtil.searchSeqReference(dataSetId=dataSetId, entityD=eD, authRefList=authDefinedRefList)
         #
         return eRefD, selfRefD, sameSeqRefD
 
@@ -98,11 +98,11 @@ class SeqAnnotationSearchUtils(object):
                 annObj = GetSameSeqAnnotation(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, verbose=self.__verbose, log=self.__lfh)
                 annObj.setEntitySeq(seq=eD["SEQ_ENTITY_1"], polyTypeCode=eD["POLYMER_TYPE_CODE"])
                 if len(selfList) > 0:
-                    selfInfoMap = annObj.getSeqAnnotationFromAssignFile(retList=selfList, authPartsTaxIdInfoList=partsTaxIdInfoList, \
+                    selfInfoMap = annObj.getSeqAnnotationFromAssignFile(retList=selfList, authPartsTaxIdInfoList=partsTaxIdInfoList,
                                                                         authRefList=authRefList, includeSelfRef=True)
                 #
                 if len(sameSeqEntryList) > 0:
-                    sameSeqInfoMap = annObj.getSeqAnnotationFromAssignFile(retList=sameSeqEntryList, authPartsTaxIdInfoList=partsTaxIdInfoList, \
+                    sameSeqInfoMap = annObj.getSeqAnnotationFromAssignFile(retList=sameSeqEntryList, authPartsTaxIdInfoList=partsTaxIdInfoList,
                                                                            authRefList=authRefList)
                 #
             #
