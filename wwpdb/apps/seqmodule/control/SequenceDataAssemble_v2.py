@@ -15,6 +15,9 @@
 #  24-Aug-2017  zf  remove __doAssembleFromArchive() & __doAssembleFromModel(), move all file copy operations into DataImporter.py
 #                   modify __calcPolymerLinkages(), also modify backend C++ code to speed up file process
 #                   modify __doReferenceSearch() to use previous blast results if existing & applicable
+#  01-Oct-2022  zf  modified __getAuthDefinedRefD() method to include author provided "seq_align_begin", "seq_align_end", "db_align_end",
+#                   "db_align_beg", & "db_seq_one_letter_code" information
+#                   improved process to handle the author-provided reference IDs and new entity summary page
 ##
 """
 Assemble sequence and other required data to start/restart the sequence editor tool.
@@ -381,28 +384,41 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             refList = []
             for refD in valD["ref_list"]:
                 data = []
-                for item in ("db_accession", "db_code"):
-                    if (item not in refD) or (not refD[item]):
-                        continue
+                for item in ( "db_name", "db_accession", "db_code", "seq_align_begin", "seq_align_end", "db_align_end", \
+                              "db_align_beg", "db_seq_one_letter_code" ):
+                    if (item in refD) and refD[item]:
+                        data.append(refD[item].strip().upper())
+                    else:
+                        data.append("")
                     #
-                    data.append(refD[item].strip().upper())
                 #
-                if not data:
+                if (data[0] == "") or ((data[1] == "") and (data[2] == "")):
                     continue
                 #
-                for val in data:
-                    if val not in codeList:
+                for idx in ( 1, 2 ):
+                    val = data[idx]
+                    if val and (val not in codeList):
                         codeList.append(val)
                     #
                 #
-                if ("db_name" in refD) and refD["db_name"]:
-                    data.insert(0, refD["db_name"].strip().upper())
-                    refList.append(data)
+                refList.append(data)
+            #
+            if len(refList) == 0:
+                continue
+            elif len(refList) > 1:
+                # Chimera case: check the "seq_align_begin", "seq_align_end" values
+                missingSeqAlignRange = False
+                for refData in refList:
+                    if (refData[3] == "") or (refData[4] == ""):
+                        missingSeqAlignRange = True
+                        break
+                    #
+                #
+                if missingSeqAlignRange:
+                    continue
                 #
             #
-            if len(codeList) > 0:
-                self.__authDefinedRefD[entity_id] = (codeList, refList)
-            #
+            self.__authDefinedRefD[entity_id] = (codeList, refList)
         #
 
     def __renderPolymerLinkages(self, polymerLinkDistList, polyLinkHtmlPath):
@@ -650,11 +666,11 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             else:
                 for entityTup in entityTupList:
                     hasOwnRef = False
-                    if entityTup[0] in ownRefD:
+                    if (entityTup[0] in ownRefD) and ("auto_match_status" in ownRefD[entityTup[0]]) and ownRefD[entityTup[0]]["auto_match_status"]:
                         hasOwnRef = True
                     #
                     hasSameSeqRef = False
-                    if entityTup[0] in otherRefD:
+                    if (entityTup[0] in otherRefD) and ("auto_match_status" in otherRefD[entityTup[0]]) and otherRefD[entityTup[0]]["auto_match_status"]:
                         hasSameSeqRef = True
                     #
                     if hasOwnRef:
@@ -674,8 +690,8 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                         if not entityTup[3]:
                             if entityTup[4]:
                                 naList.append(entityTup[0])
-                            else:
-                                self.__autoProcessFlag = False
+#                           else:
+#                               self.__autoProcessFlag = False
                             #
                         #
                     #
@@ -683,7 +699,10 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             #
             refD = {}
             if blastList:
-                refD = self.__runSeqBlastSearch(blastList)
+                autoMatchStatus,refD = self.__runSeqBlastSearch(blastList)
+                if (not autoMatchStatus) or (not refD):
+                    self.__autoProcessFlag = False
+                #
             #
             if refD:
                 for k, _v in refD.items():
@@ -779,19 +798,19 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
     #     return {}, {}, {}
 
     # EP: Believe unused
-    def runMultiReferenceSearches(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
-        """Multiple reference sequence search processing API"""
-        ncbilock = optionsD.get("ncbilock", None)
-        rList = []
-        for tupL in dataList:
-            seqSearchUtil = SeqReferenceSearchUtils(
-                siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, verbose=self._verbose, log=self._lfh, ncbilock=ncbilock
-            )
-            eRefD, selfRefD, sameSeqRefD = seqSearchUtil.run(self.__dataSetId, tupL[1], tupL[2], self.__doRefSearchFlag, self.__forceBlastSearchFlag)
-            rList.append((tupL[0], eRefD, selfRefD, sameSeqRefD))
-            #
-        #
-        return rList, rList, []
+#   def runMultiReferenceSearches(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
+#       """Multiple reference sequence search processing API"""
+#       ncbilock = optionsD.get("ncbilock", None)
+#       rList = []
+#       for tupL in dataList:
+#           seqSearchUtil = SeqReferenceSearchUtils(
+#               siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, verbose=self._verbose, log=self._lfh, ncbilock=ncbilock
+#           )
+#           eRefD, selfRefD, sameSeqRefD = seqSearchUtil.run(self.__dataSetId, tupL[1], tupL[2], self.__doRefSearchFlag, self.__forceBlastSearchFlag)
+#           rList.append((tupL[0], eRefD, selfRefD, sameSeqRefD))
+#           #
+#       #
+#       return rList, rList, []
 
     def __runSameSeqAnnotationSearch(self, entityTupList):
         """Search same sequence annotation information from processed entries"""
@@ -841,7 +860,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         rList = []
         for tupL in dataList:
             seqSearchUtil = SeqAnnotationSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, verbose=self._verbose, log=self._lfh)
-            selfRefD, sameSeqRefD = seqSearchUtil.getSameSeqRefInfo(self.__dataSetId, tupL[1])
+            selfRefD, sameSeqRefD = seqSearchUtil.getSameSeqRefInfo(self.__dataSetId, tupL[1], tupL[2])
             rList.append((tupL[0], selfRefD, sameSeqRefD))
         #
         return rList, rList, []
@@ -876,13 +895,22 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             #
             _ok, _failList, retLists, _diagList = mpu.runMulti(dataList=entityTupList, numProc=numProc, numResults=1)
             #
+            autoMatchStatus = True
             refD = {}
             for tupList in retLists:
                 for tup in tupList:
                     if tup[1]:
                         refD[tup[0]] = tup[1]
+                        if (len(tup) != 3) or (not tup[2]):
+                            autoMatchStatus = False
+                        #
+                    else:
+                        autoMatchStatus = False
                     #
                 #
+            #
+            if not refD:
+                autoMatchStatus = False
             #
             if self._verbose:
                 endTime = time.time()
@@ -890,14 +918,14 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                     "+SequenceDataAssemble.__runSeqBlastSearch()  completed at %s (%.2f seconds)\n" % (time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
                 )
             #
-            return refD
+            return autoMatchStatus,refD
         except:  # noqa: E722 pylint: disable=bare-except
             if self._verbose:
                 self._lfh.write("+SequenceDataAssemble.__runSeqBlastSearch() - failing \n")
                 traceback.print_exc(file=self._lfh)
             #
         #
-        return {}
+        return False,{}
 
     def runMultiBlastReferenceSearches(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
         """Multiple blast reference sequence search processing API"""
@@ -913,8 +941,8 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 log=self._lfh,
                 ncbilock=ncbilock,
             )
-            eRefD = seqSearchUtil.searchSeqReference(dataSetId=self.__dataSetId, entityD=tupL[1], authRefList=tupL[2])
-            rList.append((tupL[0], eRefD))
+            autoMatchStatus,eRefD = seqSearchUtil.searchSeqReference(dataSetId=self.__dataSetId, entityD=tupL[1], authRefList=tupL[2])
+            rList.append((tupL[0], eRefD, autoMatchStatus))
             #
         #
         return rList, rList, []

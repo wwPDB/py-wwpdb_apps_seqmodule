@@ -2,6 +2,9 @@
 # File:  UpdateSequenceDataStoreUtils.py
 # Date:  23-Nov-2018
 #
+# Updates:
+#  03-Oct-2022 zf  improve the handling for author provided reference sequence information
+#
 ##
 """
 Wrap class to update SequenceDataStore storage
@@ -376,19 +379,41 @@ class UpdateSequenceDataStoreUtils(object):
         sId = eD["ENTITY_ID"]
         for (partNo, pD) in enumerate(eD["PART_LIST"], start=1):
             rList = []
+            autoList = []
             selfRefFlag = False
             if (eId in eRefD) and eRefD[eId] and (str(partNo) in eRefD[eId]) and eRefD[eId][str(partNo)]:
                 rList = eRefD[eId][str(partNo)]
+#               for refD in eRefD[eId][str(partNo)]:
+#                   if ("auto_match_status" in refD) and refD["auto_match_status"]:
+#                       autoList.append(refD)
+#                   else:
+#                       rList.append(refD)
+#                   #
+#               #
             #
             if (eId in eSSRefD) and eSSRefD[eId] and (str(partNo) in eSSRefD[eId]) and eSSRefD[eId][str(partNo)] and ("selfref" not in eSSRefD[eId][str(partNo)]):
-                rList.append(eSSRefD[eId][str(partNo)])
+                #rList.append(eSSRefD[eId][str(partNo)])
+                if ("auto_match_status" in eSSRefD[eId][str(partNo)]) and eSSRefD[eId][str(partNo)]["auto_match_status"]:
+                    autoList.append(eSSRefD[eId][str(partNo)])
+                else:
+                    rList.append(eSSRefD[eId][str(partNo)])
+                #
             #
             if (eId in ownRefD) and ownRefD[eId] and (str(partNo) in ownRefD[eId]) and ownRefD[eId][str(partNo)]:
                 if ("selfref" in ownRefD[eId][str(partNo)]) and ownRefD[eId][str(partNo)]["selfref"]:
                     selfRefFlag = True
                 else:
-                    rList.append(ownRefD[eId][str(partNo)])
+                    #rList.append(ownRefD[eId][str(partNo)])
+                    if ("auto_match_status" in ownRefD[eId][str(partNo)]) and ownRefD[eId][str(partNo)]["auto_match_status"]:
+                        autoList.append(ownRefD[eId][str(partNo)])
+                    else:
+                        rList.append(ownRefD[eId][str(partNo)])
+                    #
                 #
+            #
+            # put auto_match_status=True references at the bottom
+            if len(autoList) > 0:
+                rList.extend(autoList)
             #
             if (len(rList) > 0) and (not selfRefFlag):
                 if ("statistics" in rList[-1]) and (rList[-1]["statistics"][2] > 0.899999):
@@ -556,6 +581,9 @@ class UpdateSequenceDataStoreUtils(object):
             if item in rD:
                 self.__seqFeature.setItem(item, rD[item])
             #
+        #
+        if "author_provided_id" in rD:
+            self.__seqFeature.setItem("IS_AUTH_PROVIDED_ID", rD["author_provided_id"])
         #
         return self.__seqFeature
 

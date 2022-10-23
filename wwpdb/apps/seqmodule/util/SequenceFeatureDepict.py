@@ -4,6 +4,8 @@
 #
 # Updates:
 # 10-Nov-2013  -- Add entity detail dictionary markup
+# 19-Oct-2022  zf add author provided reference sequence information
+#
 ##
 """
 Convenience methods to markup sequence features.
@@ -39,22 +41,32 @@ class SequenceFeatureDepict(object):
             entityId=self.__fD["REF_ENTRY_ENTITY_ID"],
             statusCode=self.__fD["REF_ENTRY_STATUS"],
             annInitial=self.__fD["REF_ENTRY_ANN"],
+            isAuthProvidedId=self.__fD["IS_AUTH_PROVIDED_ID"]
         )
 
     def __markupDatabaseReferenceWithUrl(
-        self, dbName, dbAccession, dbIsoForm="", seqAltId=0, entryId="", entityId="", statusCode="", annInitial=""
+        self, dbName, dbAccession, dbIsoForm="", seqAltId=0, entryId="", entityId="", statusCode="", annInitial="", isAuthProvidedId=False
     ):  # pylint: disable=unused-argument
 
+        style = ""
+        span_start = ""
+        span_end = ""
+        if isAuthProvidedId:
+            style = 'style="color:green;"'
+            span_start = '<span style="color:green;">'
+            span_end = '</span>'
+        #
         displayCode = dbAccession
         if len(dbIsoForm) > 0:
             displayCode = dbIsoForm
         #
         if dbName in ["UNP", "SP", "TR"]:
-            lab = '<a href="http://www.uniprot.org/uniprot/%s" target="blank"><span class="nowrap">%s</span></a>' % (dbAccession, dbName + ":" + displayCode)
-        elif dbName in ["GENBANK", "GB"]:
-            lab = dbName + ":" + displayCode
+            lab = '<a href="http://www.uniprot.org/uniprot/%s" target="blank"><span %s class="nowrap">%s</span></a>' \
+                  % (dbAccession, style, dbName + ":" + displayCode)
+#       elif dbName in ["GENBANK", "GB"]:
+#           lab = dbName + ":" + displayCode
         else:
-            lab = dbName + ":" + displayCode
+            lab = span_start + dbName + ":" + displayCode + span_end
         #
         if entryId:
             lab += "<br/><br/>From:<br/>DepID:" + entryId + "<br/>EntityID:" + entityId + "<br/>Status:" + statusCode + "<br/>Ann:" + annInitial

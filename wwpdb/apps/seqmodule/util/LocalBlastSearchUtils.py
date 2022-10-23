@@ -17,7 +17,8 @@
 #                  reduce the number of id lookups and try to find distant matching SP entries.
 #  1-Aug-2014  jdw update handling of annotation fetch failures
 #  8-Dec-2015  jdw change isoform annoation processing -
-# 24-Aug-2018  zf
+#  3-Oct-2022  zf  update __runBlastSearch() & __fetchAuthProvidedRefSequence() methods for better handling author provided
+#                  reference sequence cases.
 ##
 """
 Methods to manage local and sequence search services and package matching reference sequence data.
@@ -138,16 +139,16 @@ class LocalBlastSearchUtils(object):
         if (not self.__dataSetId) or (not self.__entityD):
             return {}
         #
-        rD = self.__getExistingSearchResult()
+        autoMatchStatus,rD = self.__getExistingSearchResult()
         if rD:
-            return rD
+            return autoMatchStatus,rD
         #
-        rD = self.__runBlastSearch()
+        autoMatchStatus,rD = self.__runBlastSearch()
         if rD:
             self.__writeSearchResult(rD)
             # self.__writeBlastSearchResultCifFile(rD)
         #
-        return rD
+        return autoMatchStatus,rD
 
     def __getExistingSearchResult(self):
         """Get prvious blast search result"""
@@ -177,7 +178,7 @@ class LocalBlastSearchUtils(object):
                 or (self.__entitySeq != pickleObj["sequence"])
                 or (len(self.__entityD["PART_LIST"]) != len(pickleObj["part_info"]))
             ):
-                return {}
+                return False,{}
             #
             for partNum, fD in enumerate(self.__entityD["PART_LIST"], start=1):
                 if (
@@ -185,7 +186,7 @@ class LocalBlastSearchUtils(object):
                     or (fD["SEQ_NUM_BEG"] != pickleObj["part_info"][partNum][0])
                     or (fD["SEQ_NUM_END"] != pickleObj["part_info"][partNum][1])
                 ):
-                    return {}
+                    return False,{}
                 #
             #
             if self.__verbose:
@@ -193,11 +194,12 @@ class LocalBlastSearchUtils(object):
             #
             return self.__getReSortHitInfo(pickleObj["ref_data"])
         #
-        return {}
+        return False,{}
 
     def __getReSortHitInfo(self, inD):
         """ """
         try:
+            autoMatchList = []
             outD = {}
             for partNum, fD in enumerate(self.__entityD["PART_LIST"], start=1):
                 partId = str(partNum)
@@ -206,10 +208,17 @@ class LocalBlastSearchUtils(object):
                 #
                 _start_index, hitList = self.__sortHitList(inD[partId], fD["SOURCE_TAXID"], False)
                 outD[partId] = hitList
+                if (len(hitList) == 1) and ("auto_match_status" in hitList[0]) and hitList[0]["auto_match_status"]:
+                    autoMatchList.append(True)
+                #
             #
-            return outD
+            autoMatchStatus = False
+            if (len(autoMatchList) > 0) and (len(autoMatchList) == len(self.__entityD["PART_LIST"])):
+                autoMatchStatus = True
+            #
+            return autoMatchStatus,outD
         except:  # noqa: E722 pylint: disable=bare-except
-            return {}
+            return False,{}
         #
 
     def __runBlastSearch(self):
@@ -230,10 +239,11 @@ class LocalBlastSearchUtils(object):
         #
         authRefD = {}
         if not self.__checkPartRange(len(self.__fullOneLetterSeq), self.__entityD["PART_LIST"]):
-            return authRefD
+            return False,authRefD
         #
-        partIdList = []
+        foundPerfectMatch = True
         partDataList = []
+        blastDataList = []
         for partNum, fD in enumerate(self.__entityD["PART_LIST"], start=1):
             seqPartType = fD["SEQ_PART_TYPE"]
             seqPartId = fD["SEQ_PART_ID"]
@@ -271,42 +281,74 @@ class LocalBlastSearchUtils(object):
                 #
                 continue
             #
-            partIdList.append(str(partNum))
-            #
             taxId = fD["SOURCE_TAXID"]
-            sequence = oneLetterCodeSeq[(int(seqNumBeg) - 1) : int(seqNumEnd)]
             searchSequence = oneLetterSearchSeq[(int(seqNumBeg) - 1) : int(seqNumEnd)]
-            #
-            authHitList = self.__fetchAuthProvidedRefSequence(sequence, seqNumBeg, seqNumEnd, str(partNum))
-            if authHitList:
-                authRefD[str(partNum)] = authHitList
-                if len(sequence) <= self.__shortSequenceLengthLimit:
-                    continue
-                #
             #
             xmlFilePath = os.path.join(self.__sessionPath, self.__dataSetId + "_blast-match_E" + self.__entityId + "_P" + str(partNum) + ".xml")
             if os.access(xmlFilePath, os.F_OK):
                 os.remove(xmlFilePath)
             #
             partDataList.append((str(partNum), searchSequence, seqNumBeg, seqNumEnd, taxId, xmlFilePath))
+            #
+            mutationList = []
+            if ("MUTATION_DETAILS" in self.__entityD) and self.__entityD["MUTATION_DETAILS"]:
+                for val in self.__entityD["MUTATION_DETAILS"].strip().upper().replace(",", " ").split(" "):
+                    if (not val) or (len(val) < 3) or (not val[0].isalpha()) or (not val[len(val) - 1].isalpha()):
+                        continue
+                    #
+                    hasDigit = False
+                    allDigit = True
+                    for i in range(1, len(val) - 1):
+                        if val[i].isdigit():
+                            hasDigit = True
+                        else:
+                            allDigit = False
+                        #
+                    #
+                    if hasDigit and allDigit:
+                        mutationList.append(val)
+                    #
+                #
+            #
+            autoMatchStatus,authHitList = self.__fetchAuthProvidedRefSequence(searchSequence, seqNumBeg, seqNumEnd, str(partNum), taxId, mutationList, \
+                                                                              len(self.__entityD["PART_LIST"]))
+            if not autoMatchStatus:
+                foundPerfectMatch = False
+            #
+            if authHitList:
+                authRefD[str(partNum)] = authHitList
+                # Skip blast search if found perfect author provided reference sequence match
+                if autoMatchStatus:
+                    continue
+                #
+                # Skip blast search for short sequence
+                if len(searchSequence) <= self.__shortSequenceLengthLimit:
+                    continue
+                #
+            else:
+                foundPerfectMatch = False
+            #
+            blastDataList.append((str(partNum), searchSequence, seqNumBeg, seqNumEnd, taxId, xmlFilePath))
         #
         if not partDataList:
-            return authRefD
+            return foundPerfectMatch,authRefD
         #
         rD = {}
         try:
-            numProc = int(multiprocessing.cpu_count() / 2)
-            mpu = MultiProcUtil(verbose=True)
-            mpu.set(workerObj=self, workerMethod="runMultiLocalBlasts")
-            mpu.setWorkingDir(self.__sessionPath)
-            mpu.setOptions({"ncbilock": self.__ncbilock})
-            _ok, _failList, _retLists, _diagList = mpu.runMulti(dataList=partDataList, numProc=numProc, numResults=1)
+            if blastDataList:
+                numProc = int(multiprocessing.cpu_count() / 2)
+                mpu = MultiProcUtil(verbose=True)
+                mpu.set(workerObj=self, workerMethod="runMultiLocalBlasts")
+                mpu.setWorkingDir(self.__sessionPath)
+                mpu.setOptions({"ncbilock": self.__ncbilock})
+                _ok, _failList, _retLists, _diagList = mpu.runMulti(dataList=blastDataList, numProc=numProc, numResults=1)
+            #
             id_count = 1
             for partTup in partDataList:
-                if not os.access(partTup[5], os.F_OK):
-                    continue
-                #
-                hitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0], authTaxId=partTup[4], blastResultXmlPath=partTup[5])
+                hitList = []
+                if os.access(partTup[5], os.F_OK):
+                    hitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0], authTaxId=partTup[4], \
+                                                            blastResultXmlPath=partTup[5])
                 #
                 if hitList:
                     SeqAlignmentMap = self.__getRefSeqAlignments(hitList)
@@ -336,53 +378,68 @@ class LocalBlastSearchUtils(object):
                         #
                     #
                 #
+                # Merge author provided reference sequence match result
+                #
+                if (partTup[0] in authRefD) and authRefD[partTup[0]]:
+                    if partTup[0] not in rD:
+                        rD[partTup[0]] = authRefD[partTup[0]]
+                    else:
+                        rD[partTup[0]] = self.__mergeAuthorProvidedRefSeqMath(rD[partTup[0]], authRefD[partTup[0]], partTup[4])
+                    #
+                #
             #
             if self.__verbose:
                 self.__lfh.write("+LocalBlastSearchUtils.__runBlastSearch() COMPLETED search for entity %r\n" % self.__entityId)
-        #
+            #
         except:  # noqa: E722 pylint: disable=bare-except
             if self.__verbose:
                 traceback.print_exc(file=self.__lfh)
                 self.__lfh.write("+LocalBlastSearchUtils.__runBlastSearch() search for entity %r failed\n" % self.__entityId)
             #
         #
-        # Merge author provided short sequence reference match result
-        #
-        for partId in partIdList:
-            if (partId in authRefD) and (partId not in rD):
-                rD[partId] = authRefD[partId]
-            #
-        #
-        return rD
+        return foundPerfectMatch,rD
 
-    def __fetchAuthProvidedRefSequence(self, sequence, seqNumBeg, seqNumEnd, seqPartId):
+    def __fetchAuthProvidedRefSequence(self, sequence, seqNumBeg, seqNumEnd, seqPartId, taxId, mutationList, partNumbers):
         """Fetch reference sequence based on author provided ref IDs"""
-        if not self.__authRefDataList:
-            return []
+        if (not self.__authRefDataList) or (len(self.__authRefDataList) > partNumbers):
+            return False,[]
         #
-        fetchUtil = FetchReferenceSequenceUtils(siteId=self.__siteId, seqReferenceData=self.__srd, verbose=self.__verbose, log=self.__lfh)
-        #
-        for refIDList in self.__authRefDataList:
-            for accession in refIDList[1:]:
-                hitD = fetchUtil.fetchReferenceSequenceWithSeqMatch(refIDList[0], accession, sequence)
-                if not hitD:
-                    continue
-                #
-                hitD["beg_seq_num"] = seqNumBeg
-                hitD["end_seq_num"] = seqNumEnd
-                hitD["fragment_id"] = seqPartId
-                #
-                alignIndex, sTup3L, alignLength, seqSim, seqSimWithGaps, error = self.__getSeqAlignIndex(hitD)
-                if error:
+        refData = []
+        if partNumbers > 1:
+            for aRefData in self.__authRefDataList:
+                if aRefData[3] and aRefData[4] and (int(seqNumBeg) <= int(aRefData[3])) and (int(seqNumEnd) >= int(aRefData[4])):
+                    refData = aRefData
                     break
                 #
+            #
+        else:
+            refData = self.__authRefDataList[0]
+        #
+        if not refData:
+            return False,[]
+        #
+        fetchUtil = FetchReferenceSequenceUtils(siteId=self.__siteId, seqReferenceData=self.__srd, verbose=self.__verbose, log=self.__lfh)
+        autoMatchStatus,hitD = fetchUtil.fetchReferenceSequenceWithSeqMatch(refData[0], refData[1], refData[2], taxId, sequence, seqNumBeg, mutationList)
+        if hitD:
+            hitD["beg_seq_num"] = seqNumBeg
+            hitD["end_seq_num"] = seqNumEnd
+            hitD["fragment_id"] = seqPartId
+            #
+            alignIndex, sTup3L, alignLength, seqSim, seqSimWithGaps, error = self.__getSeqAlignIndex(hitD)
+            if not error:
                 hitD["alignment"] = alignIndex
                 hitD["seq_tup_list"] = sTup3L
                 hitD["statistics"] = (alignLength, seqSim, seqSimWithGaps)
-                return [hitD]
+                hitD["author_provided_id"] = True
+                if autoMatchStatus:
+                    hitD["auto_match_status"] = True
+                #
+                return autoMatchStatus,[hitD]
+            else:
+                self.__lfh.write("+LocalBlastSearchUtils.__fetchAuthProvidedRefSequence() get sequence alignment index error: %s\n" % error)
             #
         #
-        return []
+        return False,[]
 
     def __writeSearchResult(self, rD):
         """Write out the current search result pickle file"""
@@ -683,10 +740,13 @@ class LocalBlastSearchUtils(object):
                     hit["db_score"] = 0
                 #
             #
-            if self.__authRefIdList and ((hit["db_code"].strip().upper() in self.__authRefIdList) or (hit["db_accession"].strip().upper() in self.__authRefIdList)):
+            if self.__authRefIdList and ((hit["db_code"].strip().upper() in self.__authRefIdList) or (hit["db_accession"].strip().upper() in \
+               self.__authRefIdList) or (hit["db_isoform"].strip().upper() in self.__authRefIdList)):
                 if hit["identity_score"] < lowest_identity_score_with_refid_match:
                     lowest_identity_score_with_refid_match = hit["identity_score"]
                 #
+                hit["auto_match_status"] = True
+                hit["author_provided_id"] = True
                 hit["code_score"] = 1
             else:
                 hit["code_score"] = 0
@@ -739,12 +799,14 @@ class LocalBlastSearchUtils(object):
         cutoff_identity_score = 0
         if highest_identity_score_with_taxid_match > 0:
             cutoff_identity_score = 0.85 * highest_identity_score_with_taxid_match
-            if lowest_identity_score_with_taxid_match < cutoff_identity_score:
-                cutoff_identity_score = lowest_identity_score_with_taxid_match
+            if lowest_identity_score_with_refid_match < cutoff_identity_score:
+                cutoff_identity_score = lowest_identity_score_with_refid_match
             #
             if lowest_identity_score_with_taxid_match < cutoff_identity_score:
                 cutoff_identity_score = lowest_identity_score_with_taxid_match
             #
+        #
+        # The highest score hit is at the bottom of the list.
         #
         hitList.sort(key=itemgetter("identity_score", "taxid_match", "code_score", "db_score", "non_isoform_score"))
         #
@@ -797,6 +859,44 @@ class LocalBlastSearchUtils(object):
             #
         #
         return alignMap
+
+    def __mergeAuthorProvidedRefSeqMath(self, blastHitList, authHitList, authTaxId):
+        """ Merge author provided reference sequence match with blast search match(es)
+            See ticket DAOTHER-7903 the rule for displaying row(s)
+        """
+        mergedHitList = []
+        for authD in authHitList:
+            found = False
+            for blastD in blastHitList:
+                if ("db_accession" in authD) and ("db_isoform" in authD) and ("db_accession" in blastD) and ("db_isoform" in blastD) and \
+                   (authD["db_accession"] == blastD["db_accession"]) and (authD["db_isoform"] == blastD["db_isoform"]):
+                    blastD["auto_match_status"] = True
+                    found = True
+                    break
+                #
+            #
+            if not found:
+                mergedHitList.append(authD)
+            #
+        #
+        mergedHitList.extend(blastHitList)
+        start_index, finalList = self.__sortHitList(mergedHitList, authTaxId, True)
+        if ("auto_match_status" in finalList[-1]) and finalList[-1]["auto_match_status"]:
+            return finalList[-1:]
+        else:
+            mergedHitList = []
+            autoIdx = 0
+            for (idx,hitD) in enumerate(finalList, start=1):
+                if ("auto_match_status" in hitD) and hitD["auto_match_status"]:
+                    mergedHitList.append(hitD)
+                    autoIdx = idx
+                #
+            #
+            if autoIdx < len(finalList):
+                mergedHitList.append(finalList[-1])
+            #
+            return mergedHitList
+        #
 
     def getMultiSeqAlignmentProcess(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
         """Get Auth/Ref sequence alignments MultiProcUtil API"""

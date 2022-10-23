@@ -38,6 +38,8 @@
 #                  ANNO_EDIT_DB_ALIGN_END
 #                  updated updateAuth() to keep original author's molecular name for DNA/RNA entities if existing
 #  02-Sep-2020 zf  Excluded 'Uncharacterized protein' molecule name from Uniprot
+#  03-Oct-2022 zf  Excluded "SOURCE_STRAIN" from updateAuth() method.
+#                  add IS_AUTH_PROVIDED_ID
 ##
 """
 Containers for sequence and residue labels/features used as identifiers and classifiers
@@ -262,7 +264,7 @@ class SequenceFeature(object):
         ]
 
         self.__fListFloat = ["AUTH_XYZ_SEQ_SIM", "AUTH_XYZ_SEQ_SIM_WITH_GAPS", "AUTH_REF_SEQ_SIM", "AUTH_REF_SEQ_SIM_WITH_GAPS", "AUTH_REF_SEQ_SIM_BLAST", "REF_SORT_METRIC"]
-        self.__fListBool = ["HAS_MANUAL_EDIT"]
+        self.__fListBool = ["HAS_MANUAL_EDIT", "IS_AUTH_PROVIDED_ID"]
 
         # self.__fIndex={k:k for k in  self.__fListStr + self.__fListInt + self.__fListBool}
         self.__fD = {}

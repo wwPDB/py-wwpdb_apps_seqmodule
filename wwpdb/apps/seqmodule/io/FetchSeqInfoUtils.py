@@ -18,6 +18,7 @@
 #  1-Aug-2014  jdw update handling of annotation fetch failures
 #  8-Dec-2015  jdw change isoform annoation processing -
 # 30-Dec-2020   zf Use FetchUnpXml instead of FetchUniProtEntry class. Allow the location specific feature names if exist.
+# 29-Sep-2022   zf Added input 'begin' & 'end' values checking from idTupleList in fetchUniProt() method.
 ##
 """
 Utility methods to retrieve information from NCBI & Uniprot databases
@@ -71,7 +72,8 @@ def fetchUniProt(idTupleList=None, filePath=None, verbose=False, log=sys.stderr)
                 found = False
                 diff = -1
                 for retD in multiResultDicts[idTuple[0]]:
-                    if ("begin" not in retD) or ("end" not in retD) or (idTuple[1] < retD["begin"]) or (idTuple[2] > retD["end"]):
+                    if ("begin" not in retD) or ("end" not in retD) or (idTuple[1] and (idTuple[1] < retD["begin"])) or \
+                       (idTuple[2] and (idTuple[2] > retD["end"])):
                         continue
                     #
                     if diff == -1:

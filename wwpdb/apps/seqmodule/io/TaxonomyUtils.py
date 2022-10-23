@@ -6,6 +6,7 @@
 #   24-Feb-2013  jdw add serialization
 #   25-Feb-2013  jdw replace dependency request object with siteId on the request object
 #   20-Mar-2013  jdw add method to lookup organism name from taxid
+#   17-Oct-2022   zf add checking if pickle file exists
 ##
 """
 Accessors for NCBI taxonomy names and organizational data hierarchy.
@@ -83,19 +84,26 @@ class TaxonomyUtils(object):
             fb.close()
         except:  # noqa: E722 pylint: disable=bare-except
             pass
+        #
 
     def __deserialize(self, fn):
         try:
-            fb = open(fn, "rb")
-            d = pickle.load(fb)
-            fb.close()
-            if self.__verbose:
-                self.__lfh.write("+TaxonomyUtils.__deserialize() return %d records for file %s\n" % (len(d), fn))
-            return d
+            if os.access(fn, os.F_OK):
+                fb = open(fn, "rb")
+                d = pickle.load(fb)
+                fb.close()
+                if self.__verbose:
+                    self.__lfh.write("+TaxonomyUtils.__deserialize() return %d records for file %s\n" % (len(d), fn))
+                return d
+            else:
+                return {}
+            #
         except:  # noqa: E722 pylint: disable=bare-except
             if self.__verbose:
                 self.__lfh.write("+TaxonomyUtils.__deserialize() failed for file %s\n" % fn)
+            #
             return {}
+        #
 
     def readTaxonomyNodeData(self, serialize=False):
         """Read the NCBI taxonomy data file 'nodes.dmp' and
@@ -106,21 +114,26 @@ class TaxonomyUtils(object):
         d = {}
         try:
             fn = os.path.join(self.__taxPath, "nodes.dmp")
-            ifh = open(fn, "r")
-            for line in ifh:
-                if not line:
-                    continue
+            if os.access(fn, os.F_OK):
+                ifh = open(fn, "r")
+                for line in ifh:
+                    if not line:
+                        continue
+                    #
+                    fields = line.split("\t|\t")
+                    d[str(fields[0]).strip()] = str(fields[1]).strip()
                 #
-                fields = line.split("\t|\t")
-                d[str(fields[0]).strip()] = str(fields[1]).strip()
-            ifh.close()
-            if serialize:
-                self.__serialize(d, self.__nodesPicPath)
+                ifh.close()
+                if serialize:
+                    self.__serialize(d, self.__nodesPicPath)
+                #
+            #
         except:  # noqa: E722 pylint: disable=bare-except
             if self.__verbose:
                 traceback.print_exc(file=self.__lfh)
+            #
             self.__lfh.write("+TaxonomyUtils.readTaxonomyNodeData() failed to read taxonomy data file %s\n" % fn)
-
+        #
         return d
 
     def readTaxonomyNameData(self, serialize=False):
@@ -134,32 +147,41 @@ class TaxonomyUtils(object):
         orgD = {}
         try:
             fn = os.path.join(self.__taxPath, "names.dmp")
-            ifh = open(fn, "r")
-            for line in ifh:
-                if line is None or len(line) < 1:
-                    continue
-                fields = line[:-1].split("\t|")
-                taxId = str(fields[0]).strip()
-                name = str(fields[1]).strip()
-                nType = str(fields[3]).strip()
+            if os.access(fn, os.F_OK):
+                ifh = open(fn, "r")
+                for line in ifh:
+                    if line is None or len(line) < 1:
+                        continue
+                    #
+                    fields = line[:-1].split("\t|")
+                    taxId = str(fields[0]).strip()
+                    name = str(fields[1]).strip()
+                    nType = str(fields[3]).strip()
+                    #
+                    if taxId not in d:
+                        d[taxId] = {}
+                        d[taxId]["name"] = []
+                        d[taxId]["synonym"] = []
+                    #
+                    if nType in ["scientific name"]:
+                        d[taxId]["name"].append(name)
+                        orgD[name] = name
+                    elif nType in ["synonym", "equivalent name"]:
+                        d[taxId]["synonym"].append(name)
+                    #
                 #
-                if taxId not in d:
-                    d[taxId] = {}
-                    d[taxId]["name"] = []
-                    d[taxId]["synonym"] = []
-                if nType in ["scientific name"]:
-                    d[taxId]["name"].append(name)
-                    orgD[name] = name
-                elif nType in ["synonym", "equivalent name"]:
-                    d[taxId]["synonym"].append(name)
-            ifh.close()
-            if serialize:
-                self.__serialize(d, self.__namesPicPath)
-                self.__serialize(sorted(orgD.keys()), self.__orgNameListPicPath)
+                ifh.close()
+                if serialize:
+                    self.__serialize(d, self.__namesPicPath)
+                    self.__serialize(sorted(orgD.keys()), self.__orgNameListPicPath)
+                #
+            #
         except:  # noqa: E722 pylint: disable=bare-except
             if self.__verbose:
                 traceback.print_exc(file=self.__lfh)
+            #
             self.__lfh.write("+TaxonomyUtils.readTaxonomyNameData() failed to read taxonomy data file %s\n" % fn)
+        #
         return d
 
     def getAncestors(self, taxId):
@@ -173,10 +195,11 @@ class TaxonomyUtils(object):
         """
         if not self.__nodes:
             self.__nodes = self.__deserialize(self.__nodesPicPath)
-
+        #
         anD = {}
         if taxId is None or len(taxId) < 1:
             return anD
+        #
         try:
             sTaxId = str(taxId).strip()
             anD["id"] = sTaxId
@@ -187,10 +210,13 @@ class TaxonomyUtils(object):
                     if parent_id in self.__nodes:
                         gparent_id = self.__nodes[parent_id]
                         anD["gp_id"] = gparent_id
+                    #
+                #
+            #
         except:  # noqa: E722 pylint: disable=bare-except
             if self.__verbose:
                 self.__lfh.write("+TaxonomyUtils.getAncestos() failed for input taxId %s\n" % taxId)
                 traceback.print_exc(file=self.__lfh)
-
+            #
         #
         return anD

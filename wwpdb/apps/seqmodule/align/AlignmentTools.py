@@ -2,6 +2,10 @@
 # File:  AlignmentTools.py
 # Date:  25-Oct-2018
 #
+# Updates:
+# 29-Sep-2022: zf added 'auth_numbering' as 4th value in seqTuple for coodinate sequence in __generateInputSeqInfoForPseudoMultiAlignFromSeqList() method.
+#              added self.__conflictMap dictionary and wtite out self.__conflictMap pickle file for new entity summary page.
+#
 """
 Methods to manage sequence alignments.
 """
@@ -10,6 +14,12 @@ __author__ = "Zukang Feng"
 __email__ = "zfeng@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.09"
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle as pickle
+#
 
 import copy
 import os
@@ -589,12 +599,13 @@ class AlignmentTools(AlignmentDataStore):
             #
         #
 
-    def _assignAllConflicts(self, authLabel, selectedIdList):
+    def _assignAllConflicts(self, authLabel, selectedIdList, writeConflictFlag=True):
         """Assign numeric conflicts and conflicting comments"""
         self._missingSeqMap = {}
         #
         authIdx = self._seqAlignLabelIndices[authLabel]
         #
+        self.__conflictMap = {}
         totalSeqCoodConflict = 0
         for otherIdx in sorted(self._reverseSeqAlignLabelIndices.keys()):
             otherLabel = self._reverseSeqAlignLabelIndices[otherIdx]
@@ -625,7 +636,16 @@ class AlignmentTools(AlignmentDataStore):
             #
             self.__getRefSeqVariants(otherLabel)
             numConflict, missingAuthSeqList = self.__assignNumericConflicts(authIdx, otherIdx, "ref", start_position, end_position)
-            self.__annotateConflictingComments(authIdx, otherIdx, start_position, end_position)
+            self.__annotateConflictingComments(authIdx, otherIdx, start_position, end_position, writeConflictFlag)
+        #
+        if writeConflictFlag:
+            if totalSeqCoodConflict > 0:
+                self.__conflictMap["mismatch"] = totalSeqCoodConflict
+            #
+            picklePath = os.path.join(self._sessionPath, "conflict-for-entity-" + self._entityId + ".pic")
+            fb = open(picklePath, "wb")
+            pickle.dump(self.__conflictMap, fb)
+            fb.close()
         #
         return totalSeqCoodConflict
 
@@ -1108,7 +1128,9 @@ class AlignmentTools(AlignmentDataStore):
                 continue
             #
             if seqType == "xyz":
-                returnSeqList.append((str(seqTup[0]).upper(), str(i), str(str(seqTup[6]))))
+                # added 'auth_numbering' as 4th value in seqTuple. See setCoordinateInstanceInfo() method in 
+                # util/UpdateSequenceDataStoreUtils.py for the definition of all values in coordinate seqTup
+                returnSeqList.append((str(seqTup[0]).upper(), str(i), str(seqTup[6]), str(seqTup[1])))
             else:
                 returnSeqList.append((str(seqTup[0]).upper(), str(i)))
             #
@@ -1168,7 +1190,7 @@ class AlignmentTools(AlignmentDataStore):
         #
         return numConflict, missingAuthSeqList
 
-    def __annotateConflictingComments(self, authIdx, refIdx, beg_pos, end_pos):
+    def __annotateConflictingComments(self, authIdx, refIdx, beg_pos, end_pos, writeConflictFlag):
         """Add default 'expression tag annotation comments' for leading or trailing gap residues, and
         comments for any conflicts which can be attributed to a residue modification.
         """
@@ -1226,6 +1248,14 @@ class AlignmentTools(AlignmentDataStore):
             #
             finalComment = self.__consolidateConflict(comment, self._seqAlignList[i][authIdx][5], self._seqAlignList[i][refIdx][5])
             self._seqAlignList[i][authIdx][5] = finalComment
+            if writeConflictFlag:
+                commentType, commentValue = self._decodeComment(finalComment)
+                if commentValue in self.__conflictMap:
+                    self.__conflictMap[commentValue] += 1
+                else:
+                    self.__conflictMap[commentValue] = 1
+                #
+            #
         #
 
     def __annotateRealConflict(self, authAlignTuple, refAlignTuple):

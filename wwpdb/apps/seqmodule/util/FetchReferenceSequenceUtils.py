@@ -2,6 +2,9 @@
 # File:  FetchReferenceSequenceUtils.py
 # Date:  21-Nov-2018
 #
+# Updates:
+#  3-Oct-2022  zf  update fetchReferenceSequenceWithSeqMatch() methods for better handling author provided reference sequence cases.
+#                  add runSeqAlignment() & __toList() methods
 ##
 """
 Methods to get reference sequence data from reference database based database name and identifier.
@@ -13,11 +16,11 @@ __email__ = "zfeng@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.09"
 
-import os
-import sys
+import os, string, sys
 
 from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import fetchUniProt, fetchNcbiGi
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
+from wwpdb.utils.align.alignlib import PseudoMultiAlign
 
 
 class FetchReferenceSequenceUtils(object):
@@ -111,7 +114,7 @@ class FetchReferenceSequenceUtils(object):
         #
         return "", self.__refInfoD, self.__getReferenceList(self.__refInfoD["sequence"], polyTypeCode, refSeqBeg, refSeqEnd, reverseOrder)
 
-    def fetchReferenceSequenceWithSeqMatch(self, dbName, dbAccession, authSeqs):
+    def fetchReferenceSequenceWithSeqMatch(self, dbName, dbAccession, dbCode, taxId, authSeq, seqNumBeg, mutationList):
         """ """
         self.__accCode = ""
         self.__refInfoD = {}
@@ -127,34 +130,169 @@ class FetchReferenceSequenceUtils(object):
         self.__accCode, self.__refInfoD = self.__getRefInfo(dbName, dbAccession, dbIsoform, 0, 0)
         #
         if (not self.__refInfoD) or ("sequence" not in self.__refInfoD):
-            return {}
+            if dbCode:
+                self.__accCode, self.__refInfoD = self.__getRefInfo(dbName, dbCode, "", 0, 0)
+                if (not self.__refInfoD) or ("sequence" not in self.__refInfoD):
+                    return False,{}
+                #
+            else:
+                return False,{}
+            #
         #
-        idx = self.__refInfoD["sequence"].find(authSeqs)
-        if idx == -1:
-            return {}
+        # Skip reference sequence with different Taxonomy ID
+        if ("taxonomy_id" in self.__refInfoD) and (self.__refInfoD["taxonomy_id"]) and taxId and (self.__refInfoD["taxonomy_id"] != taxId):
+            return False,{}
         #
-        refSeqBeg = idx + 1
-        refSeqEnd = refSeqBeg + len(authSeqs) - 1
-        if dbName in ["UNP", "SP", "TR"]:
-            self.__accCode, self.__refInfoD = self.__getRefInfo(dbName, dbAccession, dbIsoform, refSeqBeg, refSeqEnd)
+        mutationMap = {}
+        for val in mutationList:
+            mut = val[:1] + "_" + val[-1]
+            if mut in mutationMap:
+                mutationMap[mut] += 1
+            else:
+                mutationMap[mut] = 1
+            #
         #
-        self.__refInfoD["db_length"] = len(self.__refInfoD["sequence"])
-        self.__refInfoD["identity"] = len(authSeqs)
-        self.__refInfoD["positive"] = len(authSeqs)
-        self.__refInfoD["gaps"] = 0
-        self.__refInfoD["midline"] = authSeqs
-        self.__refInfoD["query"] = authSeqs
-        self.__refInfoD["queryFrom"] = 1
-        self.__refInfoD["queryTo"] = len(authSeqs)
-        self.__refInfoD["subject"] = authSeqs
-        self.__refInfoD["hitFrom"] = refSeqBeg
-        self.__refInfoD["hitTo"] = refSeqEnd
-        self.__refInfoD["alignLen"] = len(authSeqs)
-        self.__refInfoD["match_length"] = len(authSeqs)
-        self.__refInfoD["sort_metric"] = 404
-        self.__refInfoD["sort_order"] = 1
+        if ("variant" in self.__refInfoD) and self.__refInfoD["variant"]:
+            for var in self.__refInfoD["variant"].split(","):
+                if var not in mutationList:
+                    mutationList.append(var)
+                #
+            #
         #
-        return self.__refInfoD
+        autoMatchStatus,alignInfoD = self.runSeqAlignment(self.__refInfoD["sequence"], authSeq, seqNumBeg, mutationList, mutationMap)
+        if alignInfoD:
+            self.__refInfoD.update(alignInfoD)
+            return autoMatchStatus,self.__refInfoD
+        else:
+            return False,{}
+        #
+
+    def runSeqAlignment(self, refSeq, authSeq, seqNumBeg, mutationList, mutationMap):
+        """ Run Smith–Waterman sequence alignment algorithm with wwpdb.utils.align.alignlib.PseudoMultiAlign utility
+        """
+        refSeqList = self.__toList(refSeq)
+        authSeqList = self.__toList(authSeq)
+        #
+        pA = PseudoMultiAlign()
+        pA.setRefScore()
+        pA.setAuthSequence(refSeqList)
+        pA.addAlignSequence(authSeqList)
+        alignIndexList = pA.getAlignIndices()
+        #
+        blockList = []
+        start = -1
+        end = -1
+        for idx,alignIdx in enumerate(alignIndexList):
+            ref = "-"
+            if alignIdx[0] >= 0:
+                ref = refSeqList[alignIdx[0]][0]
+            #
+            auth = "-"
+            if alignIdx[1] >= 0:
+                auth = authSeqList[alignIdx[1]][0]
+            #
+            if (alignIdx[0] >= 0) and (alignIdx[1] >= 0):
+                if start < 0:
+                    start = idx
+                #
+                end = idx
+            else:
+                # Only insert aligned block with more than one residue
+                if (start >= 0) and (end > start):
+                    blockList.append( ( start, end ) )
+                #
+                start = -1
+                end = -1
+            #
+        #
+        if (start >= 0) and (end > start):
+            blockList.append( ( start, end ) )
+        #
+        if not blockList:
+            return False,{}
+        #
+        start = blockList[0][0]
+        end = blockList[-1][1]
+        if (start < 0) or ((2 * (end - start + 1)) < len(authSeqList)):
+            return False,{}
+        #
+        identity = 0
+        mutation = 0
+        gaps = 0
+        midline = ""
+        query = ""
+        subject = ""
+        for idx in range(start, end + 1):
+            if (alignIndexList[idx][0] >= 0) and (alignIndexList[idx][1] >= 0):
+                if authSeqList[alignIndexList[idx][1]][0] == refSeqList[alignIndexList[idx][0]][0]:
+                    identity += 1
+                    midline += authSeqList[alignIndexList[idx][1]][0]
+                else:
+                    isMutation = False
+                    mut = refSeqList[alignIndexList[idx][0]][0] + str(alignIndexList[idx][0] + 1) + authSeqList[alignIndexList[idx][1]][0]
+                    if mut in mutationList:
+                        isMutation = True
+                    #
+                    mut_ = refSeqList[alignIndexList[idx][0]][0] + "_" + authSeqList[alignIndexList[idx][1]][0]
+                    if mut_ in mutationMap:
+                        isMutation = True
+                        mutationMap[mut_] -= 1
+                        if mutationMap[mut_] == 0:
+                            del mutationMap[mut_]
+                        #
+                    #
+                    if isMutation:
+                        mutation += 1
+                    #
+                    midline += " "
+                #
+                query += authSeqList[alignIndexList[idx][1]][0]
+                subject += refSeqList[alignIndexList[idx][0]][0]
+            elif alignIndexList[idx][0] >= 0:
+                gaps += 1
+                midline += " "
+                query += "-"
+                subject += refSeqList[alignIndexList[idx][0]][0]
+            elif alignIndexList[idx][1] >= 0:
+                gaps += 1
+                midline += " "
+                query += authSeqList[alignIndexList[idx][1]][0]
+                subject += "-"
+            else:
+                gaps += 1
+                midline += " "
+                query += "-"
+                subject += "-"
+            #
+        #
+        seq_sim = float(identity) / float(end - start + 1)
+        if seq_sim < 0.7:
+            return False,{}
+        #
+        retD = {}
+        retD["db_length"] = str(len(refSeqList))
+        retD["query_length"] = str(len(authSeqList))
+        retD["identity"] = str(identity)
+        retD["positive"] = str(identity)
+        retD["gaps"] = str(gaps)
+        retD["midline"] = midline
+        retD["query"] = query
+        retD["queryFrom"] = str(alignIndexList[start][1] + int(seqNumBeg))
+        retD["queryTo"] = str(alignIndexList[end][1] + int(seqNumBeg))
+        retD["subject"] = subject
+        retD["hitFrom"] = str(alignIndexList[start][0] + 1)
+        retD["hitTo"] = str(alignIndexList[end][0] + 1)
+        retD["alignLen"] = str(end - start + 1)
+        retD["match_length"] = str(end - start + 1)
+        retD["seq_sim"] = seq_sim
+        retD["sort_metric"] = "404"
+        retD["sort_order"] = "1"
+        #
+        if (identity + mutation) == len(authSeqList):
+            return True,retD
+        else:
+            return False,retD
+        #
 
     def __getRefInfo(self, dbName, dbAccession, dbIsoform, start, end):
         """Fetch sequence data from Uniprot or GeneBank database"""
@@ -211,8 +349,23 @@ class FetchReferenceSequenceUtils(object):
             return self.__srd.cnv1To3ListIdx(sequence[refSeqBeg - 1 : refSeqEnd], refSeqBeg, polyTypeCode)
         #
 
+    def __toList(self, strIn):
+        """ Convert one letter sequence string into list
+        """
+        sL = []
+        count = 0
+        for ss in strIn:
+            if ss in string.whitespace:
+                continue
+            #
+            sL.append( (ss, str(count) ) )
+            count += 1
+        #
+        return sL
+
     def __addingMissingKey(self, myD):
-        """ """
+        """ Add missing key items
+        """
         defaultKeys = (
             "db_name",
             "db_accession",
@@ -238,7 +391,6 @@ class FetchReferenceSequenceUtils(object):
             #
         #
         return myD
-
 
 def testmain():
     fetchUtil = FetchReferenceSequenceUtils(siteId=os.getenv("WWPDB_SITE_ID"), verbose=True)

@@ -2,6 +2,9 @@
 # File:  GetSameSeqAnnotation.py
 # Date:  23-Mar-2018
 # Updates:
+#
+# 19-Oct-2022 zf add author provided reference sequence information
+#
 ##
 """
 
@@ -56,7 +59,7 @@ class GetSameSeqAnnotation(object):
         #
         (self.__oneLetterCodeSeqList, self.__threeLetterCodeSeqList) = self.__srd.cnv1ListPlus3List(seq, polyTypeCode)
 
-    def getSeqAnnotationFromAssignFile(self, retList=None, authPartsTaxIdInfoList=None, includeSelfRef=False):
+    def getSeqAnnotationFromAssignFile(self, retList=None, authPartsTaxIdInfoList=None, authRefList=None, includeSelfRef=False):
         """retList[][0]: depID, retList[][1]: entityID, retList[][2]: pdbID, retList[][3]: AnnInitial, retList[][4]: statusCode,
         retList[][5]: date_begin_processing
         """
@@ -87,13 +90,26 @@ class GetSameSeqAnnotation(object):
         if len(assignFileList) > 1:
             assignFileList.sort(key=itemgetter(7), reverse=True)
         #
+        autoMatchList = []
+        otherMatchList = []
         for entityTup in assignFileList:
-            annInfoMap = self.__getSeqAnnotationFromAssignFile(entityTup, authPartsTaxIdInfoList, includeSelfRef)
-            if annInfoMap:
-                return annInfoMap
+            annInfoMap = self.__getSeqAnnotationFromAssignFile(entityTup, authPartsTaxIdInfoList, authRefList, includeSelfRef)
+            if not annInfoMap:
+                continue
+            #
+            if ("auto_match_status" in annInfoMap) and annInfoMap["auto_match_status"]:
+                autoMatchList.append(annInfoMap)
+            else:
+                otherMatchList.append(annInfoMap)
             #
         #
-        return {}
+        if len(autoMatchList) > 0:
+            return autoMatchList[0]
+        elif len(otherMatchList) > 0:
+            return otherMatchList[0]
+        else:
+            return {}
+        #
 
     def testGetSeqAnnotationFromAssignFile(self, assignFile, entityId, authPartsTaxIdInfoList):
         """ """
@@ -130,7 +146,7 @@ class GetSameSeqAnnotation(object):
             #
         #
 
-    def __getSeqAnnotationFromAssignFile(self, entityInfo, authPartsTaxIdInfoList, includeSelfRef):
+    def __getSeqAnnotationFromAssignFile(self, entityInfo, authPartsTaxIdInfoList, authRefList, includeSelfRef):
         """ """
         try:
             cifObj = mmCIFUtil(filePath=entityInfo[6])
@@ -142,8 +158,9 @@ class GetSameSeqAnnotation(object):
             #           if not alignmentMap:
             #               return {}
             #           #
-            dbRefMap = self.__getDbRefMap(cifObj, entityInfo[1])
+            dbRefMap = self.__getDbRefMap(cifObj, entityInfo[1], authRefList)
             selfRefmap = self.__getSelfRefmap(cifObj, entityInfo[1], includeSelfRef)
+            auto_match_status = True
             for partId, infoD in seqAnntationInfoMap.items():
                 if partId in selfRefmap:
                     infoD["selfref"] = True
@@ -151,6 +168,9 @@ class GetSameSeqAnnotation(object):
                 #
                 if partId not in dbRefMap:
                     return {}
+                #
+                if "auto_match_status" not in dbRefMap[partId]:
+                    auto_match_status = False
                 #
                 for k, v in dbRefMap[partId].items():
                     infoD[k] = v
@@ -169,6 +189,9 @@ class GetSameSeqAnnotation(object):
                 infoD["REF_PDB_ID"] = entityInfo[2]
                 infoD["REF_ENTRY_STATUS"] = entityInfo[4]
                 infoD["REF_ENTRY_ANN"] = entityInfo[3]
+            #
+            if auto_match_status:
+                seqAnntationInfoMap["auto_match_status"] = True
             #
             return seqAnntationInfoMap
         except:  # noqa: E722 pylint: disable=bare-except
@@ -363,8 +386,9 @@ class GetSameSeqAnnotation(object):
         #
         return self.__getAuthRefAlignmentMap(alignList, partsTaxIdInfo)
 
-    def __getDbRefMap(self, cifObj, entityId):
-        """ """
+    def __getDbRefMap(self, cifObj, entityId, authRefList=None):
+        """
+        """
         itemList = (
             ("db_name", "db_name"),
             ("db_code", "db_code"),
@@ -373,6 +397,10 @@ class GetSameSeqAnnotation(object):
             ("match_begin", "hitFrom"),
             ("match_end", "hitTo"),
         )
+        #
+        __authRefList = []
+        if authRefList:
+            __authRefList = authRefList[0]
         #
         unpIdList = []
         gbIdList = []
@@ -390,6 +418,20 @@ class GetSameSeqAnnotation(object):
                     infoDic[itemTup[1]] = ""
                 #
             #
+            auto_match_status = False
+            if __authRefList:
+                if (("db_accession" in infoDic) and (infoDic["db_accession"] in __authRefList)) or \
+                   (("db_isoform" in infoDic) and (infoDic["db_isoform"] in __authRefList)):
+                    auto_match_status = True
+                    infoDic["author_provided_id"] = True
+                #
+            else:
+                auto_match_status = True
+            #
+            if auto_match_status:
+                infoDic["auto_match_status"] = True
+            #
+            
             if "db_name" in infoDic:
                 if infoDic["db_name"] == "UNP":
                     try:

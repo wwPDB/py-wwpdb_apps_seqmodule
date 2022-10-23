@@ -47,6 +47,7 @@
 #  8-Jul-2014  jdw export group id list in the summary view return object
 #  2-Dec-2014  jdw capture updates in selection and alignment id lists after alignment edits --
 # 24-Aug-2017  zf  add '/service/sequence_editor/rerun_blast/start' & _reRunBlastOp for rerun blast search
+# 19-Oct-2022  zf  add __getSummaryPageContent() method
 ##
 #    WF Testing entry points -
 #
@@ -950,6 +951,10 @@ class SeqModWebAppWorker(object):
                     rC.set("entrywarningmessage", warningMsg)
                 #
             #
+            # Set summary page content
+            #
+            rC.set("summaryinfo", self.__getSummaryPageContent(sV.getSummaryPageObj()))
+            #
             #  Reset --
             #
             self.__reqObj.setNewRefId("")
@@ -1005,6 +1010,53 @@ class SeqModWebAppWorker(object):
             outputText += inputText[rangeTup[0] : rangeTup[1]]
         #
         return outputText
+
+    def __getSummaryPageContent(self, spObj):
+        """ Generate summary page content
+        """
+        columnNameKeyList = ( ( "Entity", "entity_id" ), ( "Chain", "chain_ids" ), ( "Type", "entity_types" ), \
+                              ( "Molecule name<br/>(Depositor-provided name)", "mol_names" ), \
+                              ( "Source name/strain<br/>(Depositor-provided source name)", "source_names" ), \
+                              ( "Source TaxID<br/>(Depositor-provided TaxID)", "tax_ids" ), \
+                              ( "Scores", "identity_scores" ), \
+                              ( "Top hit ID<br/>(Depositor-provided ID)", "ref_db_ids" ), \
+                              ( "Mismatch and differences", "warn_err_msgs" ) )
+        #
+        oL = []
+        oL.append('<table class="summary_table">\n')
+        oL.append("<thead>\n")
+        oL.append("<tr>")
+        for columnNameKeTuple in columnNameKeyList:
+            oL.append("<th>%s</th>" % columnNameKeTuple[0])
+        #
+        oL.append("</tr>\n")
+        oL.append("</thead>\n")
+        oL.append("<tbody>\n")
+        #
+        gIdList = list(spObj.keys())
+        gIdList.sort(key=int)
+        oddEven = True
+        for gId in gIdList:
+            gObj = spObj[gId]
+            if oddEven:
+                oL.append('<tr class="odd">')
+                oddEven = False
+            else:
+                oL.append('<tr class="even">')
+                oddEven = True
+            #
+            for columnNameKeTuple in columnNameKeyList:
+                if columnNameKeTuple[1] in gObj:
+                    oL.append("<td>%s</td>" % gObj[columnNameKeTuple[1]])
+                else:
+                    oL.append("<td>-</td>")
+                #
+            #
+            oL.append("</tr>\n")
+        #
+        oL.append("</tbody>\n")
+        oL.append("</table>\n")
+        return "".join(oL)
 
     def __storeAlignmentStart(self):
         """Launch a subprocess to compute, store and render the aligned input sequence list."""
