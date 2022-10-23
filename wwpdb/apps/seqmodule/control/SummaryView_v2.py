@@ -359,12 +359,12 @@ class SummaryView(object):
         #
         partIdList = self.__sds.getPartIds(groupId, dataType="sequence", seqType="auth")
         if len(partIdList) == 0:
-            return {},0,{},"",""
+            return {},0,{},"","",[]
         #
         altId = 1
         verList = self.__sds.getVersionIds(groupId, partId=partIdList[0], altId=altId, dataType="sequence", seqType="auth")
         if len(verList) == 0:
-            return {},0,{},"",""
+            return {},0,{},"","",[]
         #
         if self.__verbose:
             self.__lfh.write("SummaryView.__buildAuthSection() groupId %r op %s \n" % (groupId, op))
