@@ -131,10 +131,10 @@ class FetchReferenceSequenceUtils(object):
         #
         self.__accCode, self.__refInfoD = self.__getRefInfo(dbName, dbAccession, dbIsoform, 0, 0)
         #
-        if (not self.__refInfoD) or ("sequence" not in self.__refInfoD):
+        if (not self.__refInfoD) or ("sequence" not in self.__refInfoD) or (not self.__refInfoD["sequence"]):
             if dbCode:
                 self.__accCode, self.__refInfoD = self.__getRefInfo(dbName, dbCode, "", 0, 0)
-                if (not self.__refInfoD) or ("sequence" not in self.__refInfoD):
+                if (not self.__refInfoD) or ("sequence" not in self.__refInfoD) or (not self.__refInfoD["sequence"]):
                     return False, {}
                 #
             else:
