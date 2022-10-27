@@ -36,16 +36,11 @@ __email__ = "jwest@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.08"
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle as pickle
-#
-
 import os
 import sys
 import traceback
 
+from wwpdb.apps.seqmodule.io.AlignmentDataStore import AlignmentDataStore
 from wwpdb.apps.seqmodule.io.SequenceDataStore import SequenceDataStore
 from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel, SequenceFeature
 from wwpdb.apps.seqmodule.util.SequenceFeatureDepict import SequenceFeatureDepict
@@ -272,12 +267,9 @@ class SummaryView(object):
             #
             displayMethod = method.upper()
             warningErrorMsgs = ""
-            picklePath = os.path.join(self.__sessionPath, "conflict-for-entity-" + gId + ".pic")
-            if os.access(picklePath, os.F_OK):
-                fb = open(picklePath, "rb")
-                warningErrorD = pickle.load(fb)
-                fb.close()
-                #
+            alignData = AlignmentDataStore(reqObj=self.__reqObj, entityId=gId, verbose=self.__verbose, log=self.__lfh)
+            warningErrorD = alignData.getSummaryPageInfo()
+            if warningErrorD:
                 for item in ("conflict", "engineered mutation", "expression tag", "initiating methionine", "mismatch", "variant"):
                     if item not in warningErrorD:
                         continue

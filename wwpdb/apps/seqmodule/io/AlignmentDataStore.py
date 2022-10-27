@@ -2,6 +2,9 @@
 # File:  AlignmentDataStore.py
 # Date:  25-Oct-2018
 #
+# Updates:
+#   27-Oct-2022 zf   add getSummaryPageInfo() method
+##
 """
 Provide a storage interface for recording sequence alignments.
 """
@@ -119,6 +122,13 @@ class AlignmentDataStore(UpdateSequenceDataStoreUtils):
     def getErrorMessage(self):
         """Return error message"""
         return self.__errorMsg
+
+    def getSummaryPageInfo(self):
+        """Return summary page info map"""
+        if ("summary_page" in self._missingSeqMap) and self._missingSeqMap["summary_page"]:
+            return self._missingSeqMap["summary_page"]
+        #
+        return {}
 
     def serialize(self):
         """Write alignment pickle file"""

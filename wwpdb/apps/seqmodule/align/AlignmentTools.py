@@ -4,7 +4,7 @@
 #
 # Updates:
 # 29-Sep-2022: zf added 'auth_numbering' as 4th value in seqTuple for coodinate sequence in __generateInputSeqInfoForPseudoMultiAlignFromSeqList() method.
-#              added self.__conflictMap dictionary and wtite out self.__conflictMap pickle file for new entity summary page.
+#              added self.__conflictMap for new entity summary page.
 #
 """
 Methods to manage sequence alignments.
@@ -14,12 +14,6 @@ __author__ = "Zukang Feng"
 __email__ = "zfeng@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.09"
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle as pickle
-#
 
 import copy
 import os
@@ -642,10 +636,7 @@ class AlignmentTools(AlignmentDataStore):
             if totalSeqCoodConflict > 0:
                 self.__conflictMap["mismatch"] = totalSeqCoodConflict
             #
-            picklePath = os.path.join(self._sessionPath, "conflict-for-entity-" + self._entityId + ".pic")
-            fb = open(picklePath, "wb")
-            pickle.dump(self.__conflictMap, fb)
-            fb.close()
+            self._missingSeqMap["summary_page"] = self.__conflictMap
         #
         return totalSeqCoodConflict
 
