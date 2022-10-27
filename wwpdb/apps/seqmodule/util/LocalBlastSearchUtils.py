@@ -566,6 +566,7 @@ class LocalBlastSearchUtils(object):
         bpr = BlastPlusReader(verbose=self.__verbose, log=self.__lfh)
         if self.__seqType == "polyribonucleotide":
             bpr.setSequenceType(self.__seqType)
+        #
         searchHitList = bpr.readFile(filePath=blastResultXmlPath)
         #
         if self.__seqType in ["polypeptide(L)", "polypeptide(D)", "polypeptide"]:
@@ -595,8 +596,14 @@ class LocalBlastSearchUtils(object):
             #
             if self.__verbose:
                 self.__lfh.write("+LocalBlastSearchUtils.__readBlastResultXmlFile() Fetch sequence database entries for %d filtered reference idcodes\n" % len(idCodeList))
+             #
             if len(idCodeList) > 0:
-                unpD = fetchUniProt(idTupleList=idCodeList, verbose=self.__verbose, log=self.__lfh)
+                try:
+                    unpD = fetchUniProt(idTupleList=idCodeList, verbose=self.__verbose, log=self.__lfh)
+                except:
+                    traceback.print_exc(file=self.__lfh)
+                    self.__lfh.flush()
+                #
                 for hit in searchHitList:
                     acId = None
                     isIso = False
@@ -624,9 +631,11 @@ class LocalBlastSearchUtils(object):
                         elif isIso and ((hit["db_accession"], start, end) in unpD):
                             dd = unpD[(hit["db_accession"], start, end)]
                         #
-                        for (k, v) in dd.items():
-                            if (k != "sequence") and (k not in hit):
-                                hit[k] = v
+                        if dd:
+                            for (k, v) in dd.items():
+                                if (k != "sequence") and ((k not in hit) or (v and (k in ( "name", "source_scientific", "strain", "taxonomy_id", "gene" )))):
+                                    hit[k] = v
+                                #
                             #
                         #
                         hitList.append(hit)
@@ -753,7 +762,7 @@ class LocalBlastSearchUtils(object):
             #
             targetAncestorD = {}
             taxonomy_id = ""
-            if "taxonomy_id" in hit:
+            if ("taxonomy_id" in hit) and hit["taxonomy_id"]:
                 taxonomy_id = hit["taxonomy_id"]
                 targetAncestorD = self.__taxUtils.getAncestors(hit["taxonomy_id"])
             #
@@ -798,12 +807,16 @@ class LocalBlastSearchUtils(object):
         start_index = 0
         cutoff_identity_score = 0
         if highest_identity_score_with_taxid_match > 0:
-            cutoff_identity_score = 0.85 * highest_identity_score_with_taxid_match
-            if lowest_identity_score_with_refid_match < cutoff_identity_score:
-                cutoff_identity_score = lowest_identity_score_with_refid_match
-            #
-            if lowest_identity_score_with_taxid_match < cutoff_identity_score:
-                cutoff_identity_score = lowest_identity_score_with_taxid_match
+            if lowest_identity_score_with_refid_match < 101:
+                cutoff_identity_score = lowest_identity_score_with_refid_match - 2
+            else:
+                cutoff_identity_score = 0.85 * highest_identity_score_with_taxid_match
+                if lowest_identity_score_with_refid_match < cutoff_identity_score:
+                    cutoff_identity_score = lowest_identity_score_with_refid_match
+                #
+                if lowest_identity_score_with_taxid_match < cutoff_identity_score:
+                    cutoff_identity_score = lowest_identity_score_with_taxid_match
+                #
             #
         #
         # The highest score hit is at the bottom of the list.

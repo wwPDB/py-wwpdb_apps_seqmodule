@@ -10,6 +10,7 @@
 #  18-Apr-2013  jdw  modify to handle current conventions in UNP fasta files comment lines
 #                    Extract isoform information from comment lines --
 #  19-Apr-2013  jdw  remove any identity-based filtering of output
+#  24-Oct-2022  zf   added _getUniprotInfo() method to parse Uniprot information from "Hit_def" tag.
 ##
 
 
@@ -111,11 +112,12 @@ class BlastPlusReader:
         for node in nodelist:
             if node.nodeType != node.ELEMENT_NODE:
                 continue
-
+            #
             if node.tagName == "Hit_id":
                 dbName, dbCode, accCode, isoForm = self._parseID(node.firstChild.data)
                 if not accCode:
                     return resultList
+                #
             elif node.tagName == "Hit_accession":
                 _code = node.firstChild.data  # noqa: F841
             elif node.tagName == "Hit_def":
@@ -127,12 +129,17 @@ class BlastPlusReader:
                 if plist:
                     for li in plist:
                         alignlist.append(li)
-
+                    #
+                #
+            #
+        #
         if not accCode or not alignlist:
             return resultList
-
-        # dict={}
-
+        #
+        desInfo = {}
+        if description and (dbName in ( "SP", "TR", "UNP" )):
+            desInfo = self._getUniprotInfo(description)
+        #
         for align in alignlist:
             align["db_name"] = dbName
             align["db_code"] = dbCode
@@ -140,8 +147,13 @@ class BlastPlusReader:
             align["db_isoform"] = isoForm
             align["db_description"] = description
             align["db_length"] = length
+            if desInfo:
+                for key,val in desInfo.items():
+                    align[key] = val
+                #
+            #
             resultList.append(align)
-
+        #
         return resultList
 
     def _parseID(self, data):
@@ -164,11 +176,14 @@ class BlastPlusReader:
                         # isoForm=tL[1]
                         isoForm = accCode
                         accCode = tL[0]
+                    #
+                #
             elif f0 in ["GI"]:
                 dbName = str(dlist[2]).upper()
                 accCode = str(dlist[1])
                 dbCode = str(dlist[3])
-
+            #
+        #
         return dbName, dbCode, accCode, isoForm
 
     def _ProcessHit_hspsTag(self, nodelist, length):
@@ -176,12 +191,15 @@ class BlastPlusReader:
         for node in nodelist:
             if node.nodeType != node.ELEMENT_NODE:
                 continue
+            #
             if node.tagName != "Hsp":
                 continue
-
+            #
             adict = self._GetMatchAlignment(node.childNodes, length)
             if adict:
                 resultList.append(adict)
+            #
+        #
         return resultList
 
     def _GetMatchAlignment(self, nodelist, length):  # pylint: disable=unused-argument
@@ -190,7 +208,7 @@ class BlastPlusReader:
         for node in nodelist:
             if node.nodeType != node.ELEMENT_NODE:
                 continue
-
+            #
             if node.tagName == "Hsp_identity":
                 rdict["identity"] = node.firstChild.data
             elif node.tagName == "Hsp_positive":
@@ -202,11 +220,13 @@ class BlastPlusReader:
                     rdict["midline"] = node.firstChild.data.replace("T", "U")
                 else:
                     rdict["midline"] = node.firstChild.data
+                #
             elif node.tagName == "Hsp_qseq":
                 if self.__sequenceType == "polyribonucleotide":
                     rdict["query"] = node.firstChild.data.replace("T", "U")
                 else:
                     rdict["query"] = node.firstChild.data
+                #
             elif node.tagName == "Hsp_query-from":
                 rdict["queryFrom"] = node.firstChild.data
             elif node.tagName == "Hsp_query-to":
@@ -216,6 +236,7 @@ class BlastPlusReader:
                     rdict["subject"] = node.firstChild.data.replace("T", "U")
                 else:
                     rdict["subject"] = node.firstChild.data
+                #
             elif node.tagName == "Hsp_hit-from":
                 rdict["hitFrom"] = node.firstChild.data
             elif node.tagName == "Hsp_hit-to":
@@ -225,9 +246,53 @@ class BlastPlusReader:
                 rdict["match_length"] = node.firstChild.data
             elif node.tagName == "Hsp_num":
                 hsp_num = node.firstChild.data
-
+            #
         # only take the first alignment within the hit
         if str(hsp_num) != "1":
             rdict.clear()
-
+        #
         return rdict
+
+    def _getUniprotInfo(self, description):
+        desInfo = {}
+        for tokenTupL in ( ( "SV", "" ),  ( "PE", "" ), ( "GN", "gene" ),  ( "OX", "taxonomy_id" ), ( "OS", "source_scientific" ) ):
+            idx = description.find(tokenTupL[0] + "=")
+            if idx < 0:
+                continue
+            #
+            val = description[idx + 3:].strip()
+            description = description[:idx].strip()
+            if tokenTupL[1] and val:
+               if tokenTupL[1] == "source_scientific":
+                   idx1 = val.find("(strain")
+                   if (val[-1] == ")") and idx1 >= 0:
+                       source_scientific = val[:idx1].strip()
+                       if source_scientific:
+                           desInfo[tokenTupL[1]] = source_scientific
+                       #
+                       strain = val[idx1 + 7:-1].strip()
+                       if strain:
+                           desInfo["strain"] = strain
+                       #
+                   else:
+                       desInfo[tokenTupL[1]] = val
+                   #
+               elif tokenTupL[1] == "taxonomy_id":
+                   if val.isnumeric():
+                       desInfo[tokenTupL[1]] = val
+                   #
+               else:
+                   desInfo[tokenTupL[1]] = val
+               #
+            #
+        #
+        if description:
+            wList = description.split(" ")
+            if (len(wList) > 3) and (wList[0] == "Isoform") and wList[1].isnumeric() and (wList[2] == "of"):
+                desInfo["name"] = " ".join(wList[3:])
+            else:
+                desInfo["name"] = description
+            #
+        #
+        return desInfo
+

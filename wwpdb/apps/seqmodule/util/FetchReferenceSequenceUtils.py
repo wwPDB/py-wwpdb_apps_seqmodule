@@ -317,6 +317,9 @@ class FetchReferenceSequenceUtils(object):
                     infoD = dt.values()[0]
                 #
             #
+            if not infoD:
+                return idCode, {}
+            #
             if infoD and ("db_name" not in infoD) and ("db_accession" in infoD):
                 # guess --
                 if infoD["db_accession"][0] in ["P", "Q", "O"]:
@@ -328,6 +331,9 @@ class FetchReferenceSequenceUtils(object):
             return idCode, self.__addingMissingKey(infoD)
         elif dbResource in ["GB", "DBJ", "EMB", "EMBL", "REF"]:
             infoD = fetchNcbiGi(dbAccession, xmlPath=None, siteId=self.__siteId)
+            if not infoD:
+                return dbAccession, {}
+            #
             if infoD:
                 infoD["db_accession"] = dbAccession
                 infoD["db_name"] = dbName
