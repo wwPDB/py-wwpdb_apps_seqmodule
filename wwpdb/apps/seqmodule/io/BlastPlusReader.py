@@ -137,7 +137,7 @@ class BlastPlusReader:
             return resultList
         #
         desInfo = {}
-        if description and (dbName in ( "SP", "TR", "UNP" )):
+        if description and (dbName in ("SP", "TR", "UNP")):
             desInfo = self._getUniprotInfo(description)
         #
         for align in alignlist:
@@ -148,7 +148,7 @@ class BlastPlusReader:
             align["db_description"] = description
             align["db_length"] = length
             if desInfo:
-                for key,val in desInfo.items():
+                for key, val in desInfo.items():
                     align[key] = val
                 #
             #
@@ -255,7 +255,7 @@ class BlastPlusReader:
 
     def _getUniprotInfo(self, description):
         desInfo = {}
-        for tokenTupL in ( ( "SV", "" ),  ( "PE", "" ), ( "GN", "gene" ),  ( "OX", "taxonomy_id" ), ( "OS", "source_scientific" ) ):
+        for tokenTupL in (("SV", ""), ("PE", ""), ("GN", "gene"), ("OX", "taxonomy_id"), ("OS", "source_scientific")):
             idx = description.find(tokenTupL[0] + "=")
             if idx < 0:
                 continue
@@ -263,27 +263,27 @@ class BlastPlusReader:
             val = description[idx + 3:].strip()
             description = description[:idx].strip()
             if tokenTupL[1] and val:
-               if tokenTupL[1] == "source_scientific":
-                   idx1 = val.find("(strain")
-                   if (val[-1] == ")") and idx1 >= 0:
-                       source_scientific = val[:idx1].strip()
-                       if source_scientific:
-                           desInfo[tokenTupL[1]] = source_scientific
-                       #
-                       strain = val[idx1 + 7:-1].strip()
-                       if strain:
-                           desInfo["strain"] = strain
-                       #
-                   else:
-                       desInfo[tokenTupL[1]] = val
-                   #
-               elif tokenTupL[1] == "taxonomy_id":
-                   if val.isnumeric():
-                       desInfo[tokenTupL[1]] = val
-                   #
-               else:
-                   desInfo[tokenTupL[1]] = val
-               #
+                if tokenTupL[1] == "source_scientific":
+                    idx1 = val.find("(strain")
+                    if (val[-1] == ")") and idx1 >= 0:
+                        source_scientific = val[:idx1].strip()
+                        if source_scientific:
+                            desInfo[tokenTupL[1]] = source_scientific
+                        #
+                        strain = val[idx1 + 7:-1].strip()
+                        if strain:
+                            desInfo["strain"] = strain
+                        #
+                    else:
+                        desInfo[tokenTupL[1]] = val
+                #
+                elif tokenTupL[1] == "taxonomy_id":
+                    if val.isnumeric():
+                        desInfo[tokenTupL[1]] = val
+                    #
+                else:
+                    desInfo[tokenTupL[1]] = val
+                #
             #
         #
         if description:
@@ -295,4 +295,3 @@ class BlastPlusReader:
             #
         #
         return desInfo
-
