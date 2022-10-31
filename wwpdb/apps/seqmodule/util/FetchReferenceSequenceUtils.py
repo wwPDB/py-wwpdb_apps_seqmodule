@@ -141,10 +141,11 @@ class FetchReferenceSequenceUtils(object):
                 return False, {}
             #
         #
-        # Skip reference sequence with different Taxonomy ID
-        if ("taxonomy_id" in self.__refInfoD) and (self.__refInfoD["taxonomy_id"]) and taxId and (self.__refInfoD["taxonomy_id"] != taxId):
-            return False, {}
-        #
+# Removed per ticket DAOTHER-7903
+#       # Skip reference sequence with different Taxonomy ID
+#       if ("taxonomy_id" in self.__refInfoD) and (self.__refInfoD["taxonomy_id"]) and taxId and (self.__refInfoD["taxonomy_id"] != taxId):
+#           return False, {}
+#       #
         mutationMap = {}
         for val in mutationList:
             mut = val[:1] + "_" + val[-1]
@@ -268,9 +269,10 @@ class FetchReferenceSequenceUtils(object):
             #
         #
         seq_sim = float(identity) / float(end - start + 1)
-        if seq_sim < 0.7:
-            return False, {}
-        #
+# Remove the similarity cutoff per ticket DAOTHER-7903
+#       if seq_sim < 0.7:
+#           return False, {}
+#       #
         retD = {}
         retD["db_length"] = str(len(refSeqList))
         retD["query_length"] = str(len(authSeqList))
