@@ -116,7 +116,7 @@ class FetchReferenceSequenceUtils(object):
         #
         return "", self.__refInfoD, self.__getReferenceList(self.__refInfoD["sequence"], polyTypeCode, refSeqBeg, refSeqEnd, reverseOrder)
 
-    def fetchReferenceSequenceWithSeqMatch(self, dbName, dbAccession, dbCode, taxId, authSeq, seqNumBeg, mutationList):
+    def fetchReferenceSequenceWithSeqMatch(self, dbName, dbAccession, dbCode, taxId, authSeq, seqNumBeg, mutationList):  # pylint: disable=unused-argument
         """ """
         self.__accCode = ""
         self.__refInfoD = {}

@@ -36,7 +36,6 @@ __email__ = "jwest@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.08"
 
-import os
 import sys
 import traceback
 
@@ -83,7 +82,7 @@ class SummaryView(object):
     def __setup(self):
         try:
             self.__sessionObj = self.__reqObj.getSessionObj()
-            self.__sessionPath = self.__sessionObj.getPath()
+            self.__sessionPath = self.__sessionObj.getPath()  # pylint: disable=unused-private-member
             self.__sds = SequenceDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
             self.__sdu = UpdatePolymerEntitySourceDetails(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
             #

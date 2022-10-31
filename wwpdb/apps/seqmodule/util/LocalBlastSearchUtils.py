@@ -596,11 +596,11 @@ class LocalBlastSearchUtils(object):
             #
             if self.__verbose:
                 self.__lfh.write("+LocalBlastSearchUtils.__readBlastResultXmlFile() Fetch sequence database entries for %d filtered reference idcodes\n" % len(idCodeList))
-             #
+            #
             if len(idCodeList) > 0:
                 try:
                     unpD = fetchUniProt(idTupleList=idCodeList, verbose=self.__verbose, log=self.__lfh)
-                except:
+                except:  # noqa: E722 pylint: disable=bare-except
                     traceback.print_exc(file=self.__lfh)
                     self.__lfh.flush()
                 #
@@ -633,7 +633,7 @@ class LocalBlastSearchUtils(object):
                         #
                         if dd:
                             for (k, v) in dd.items():
-                                if (k != "sequence") and ((k not in hit) or (v and (k in ( "name", "source_scientific", "strain", "taxonomy_id", "gene" )))):
+                                if (k != "sequence") and ((k not in hit) or (v and (k in ("name", "source_scientific", "strain", "taxonomy_id", "gene")))):
                                     hit[k] = v
                                 #
                             #
