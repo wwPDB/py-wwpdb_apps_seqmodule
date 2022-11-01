@@ -264,20 +264,22 @@ class LocalBlastSearchUtils(object):
                 #
                 continue
             #
-            # Skip blast search for UNK sequence DAOTHER-3639
+            # Skip blast search for poly-UNK/ALA sequence (DAOTHER-3639 & DAOTHER-8135)
             countUNK = 0
+            countALA = 0
             countTotal = 0
             for oneLetterCode in self.__fullOneLetterSeq[(int(seqNumBeg) - 1) : int(seqNumEnd)]:
                 if oneLetterCode == "X":
                     countUNK += 1
+                elif oneLetterCode == "A":
+                    countALA += 1
                 #
                 countTotal += 1
             #
-            if (10 * countUNK) > (9 * countTotal):
+            if ((10 * countUNK) > (9 * countTotal)) or (self.__seqType.startswith("polypeptide") and ((10 * countALA) > (9 * countTotal))):
                 if self.__verbose:
-                    self.__lfh.write(
-                        "+LocalBlastSearchUtils.__runBlastSearch() skipping unknown sequence part %r type %r BegNum %r EndNum %r\n" % (seqPartId, seqPartType, seqNumBeg, seqNumEnd)
-                    )
+                    self.__lfh.write("+LocalBlastSearchUtils.__runBlastSearch() skipping unknown/poly-ALA sequence part %r type %r BegNum %r EndNum %r\n" % \
+                                    (seqPartId, seqPartType, seqNumBeg, seqNumEnd))
                 #
                 continue
             #
@@ -731,6 +733,7 @@ class LocalBlastSearchUtils(object):
         highest_identity_score_with_taxid_match = 0
         lowest_identity_score_with_taxid_match = 101
         lowest_identity_score_with_refid_match = 101
+        has_author_provided_id = False
         for i, hit in enumerate(hitList):
             if "non_isoform_score" not in hit:
                 hit["non_isoform_score"] = 1
@@ -754,8 +757,8 @@ class LocalBlastSearchUtils(object):
                 if hit["identity_score"] < lowest_identity_score_with_refid_match:
                     lowest_identity_score_with_refid_match = hit["identity_score"]
                 #
-                hit["auto_match_status"] = True
                 hit["author_provided_id"] = True
+                has_author_provided_id = True
                 hit["code_score"] = 1
             else:
                 hit["code_score"] = 0
@@ -804,28 +807,40 @@ class LocalBlastSearchUtils(object):
                 #
             #
         #
-        start_index = 0
         cutoff_identity_score = 0
         if highest_identity_score_with_taxid_match > 0:
-            if lowest_identity_score_with_refid_match < 101:
-                cutoff_identity_score = lowest_identity_score_with_refid_match - 2
-            else:
-                cutoff_identity_score = 0.85 * highest_identity_score_with_taxid_match
-                if lowest_identity_score_with_refid_match < cutoff_identity_score:
-                    cutoff_identity_score = lowest_identity_score_with_refid_match
-                #
-                if lowest_identity_score_with_taxid_match < cutoff_identity_score:
-                    cutoff_identity_score = lowest_identity_score_with_taxid_match
-                #
+            cutoff_identity_score = 0.85 * highest_identity_score_with_taxid_match
+            if lowest_identity_score_with_refid_match < cutoff_identity_score:
+                cutoff_identity_score = lowest_identity_score_with_refid_match - 0.1
+            #
+            if lowest_identity_score_with_taxid_match < cutoff_identity_score:
+                cutoff_identity_score = lowest_identity_score_with_taxid_match - 0.1
             #
         #
         # The highest score hit is at the bottom of the list.
         #
         hitList.sort(key=itemgetter("identity_score", "taxid_match", "code_score", "db_score", "non_isoform_score"))
         #
+        # reorder list if found author provided reference id
+        #
+        if has_author_provided_id and (len(hitList) > 2):
+            idx = -1
+            for i, hit in enumerate(hitList):
+                if ("author_provided_id" in hit) and hit["author_provided_id"]:
+                    idx = i
+                #
+            #
+            if (idx >= 0) and (idx < (len(hitList) - 2)):
+                hitList.insert(-1, hitList.pop(idx))
+            #
+        #
+        start_index = 0
         first = True
         for i, hit in enumerate(hitList):
             hit["sort_order"] = str(i + 1)
+            if ("author_provided_id" in hit) and hit["author_provided_id"]:
+                continue
+            #
             if first and (hit["identity_score"] > cutoff_identity_score):
                 start_index = i
                 first = False
@@ -883,7 +898,9 @@ class LocalBlastSearchUtils(object):
             for blastD in blastHitList:
                 if ("db_accession" in authD) and ("db_isoform" in authD) and ("db_accession" in blastD) and ("db_isoform" in blastD) and \
                    (authD["db_accession"] == blastD["db_accession"]) and (authD["db_isoform"] == blastD["db_isoform"]):
-                    blastD["auto_match_status"] = True
+                    if ("auto_match_status" in authD) and authD["auto_match_status"]:
+                        blastD["auto_match_status"] = True
+                    #
                     found = True
                     break
                 #
@@ -892,24 +909,12 @@ class LocalBlastSearchUtils(object):
                 mergedHitList.append(authD)
             #
         #
+        if not mergedHitList:
+            return blastHitList
+        #
         mergedHitList.extend(blastHitList)
         _start_index, finalList = self.__sortHitList(mergedHitList, authTaxId, True)
-        if ("auto_match_status" in finalList[-1]) and finalList[-1]["auto_match_status"]:
-            return finalList[-1:]
-        else:
-            mergedHitList = []
-            autoIdx = 0
-            for (idx, hitD) in enumerate(finalList, start=1):
-                if ("auto_match_status" in hitD) and hitD["auto_match_status"]:
-                    mergedHitList.append(hitD)
-                    autoIdx = idx
-                #
-            #
-            if autoIdx < len(finalList):
-                mergedHitList.append(finalList[-1])
-            #
-            return mergedHitList
-        #
+        return finalList
 
     def getMultiSeqAlignmentProcess(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
         """Get Auth/Ref sequence alignments MultiProcUtil API"""
