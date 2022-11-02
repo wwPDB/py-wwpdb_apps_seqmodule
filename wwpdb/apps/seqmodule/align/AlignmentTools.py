@@ -1509,7 +1509,6 @@ class AlignmentTools(AlignmentDataStore):
         #
         editList = []
         for alignPos in gapList:
-            self._lfh.flush()
             xyzRecord = self._seqAlignList[alignPos][chainIdx]
             #
             currId = self._getResLabelId(
