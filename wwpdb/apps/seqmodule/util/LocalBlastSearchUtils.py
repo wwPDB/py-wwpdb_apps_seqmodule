@@ -278,8 +278,8 @@ class LocalBlastSearchUtils(object):
             #
             if ((10 * countUNK) > (9 * countTotal)) or (self.__seqType.startswith("polypeptide") and ((10 * countALA) > (9 * countTotal))):
                 if self.__verbose:
-                    self.__lfh.write("+LocalBlastSearchUtils.__runBlastSearch() skipping unknown/poly-ALA sequence part %r type %r BegNum %r EndNum %r\n" % \
-                                    (seqPartId, seqPartType, seqNumBeg, seqNumEnd))
+                    self.__lfh.write("+LocalBlastSearchUtils.__runBlastSearch() skipping unknown/poly-ALA sequence part %r type %r BegNum %r EndNum %r\n" %
+                                     (seqPartId, seqPartType, seqNumBeg, seqNumEnd))
                 #
                 continue
             #
