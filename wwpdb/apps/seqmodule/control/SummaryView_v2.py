@@ -269,8 +269,8 @@ class SummaryView(object):
             alignData = AlignmentDataStore(reqObj=self.__reqObj, entityId=gId, verbose=self.__verbose, log=self.__lfh)
             warningErrorD = alignData.getSummaryPageInfo()
             if warningErrorD:
-                for item in ("acetylation", "amidation", "cloning artifact", "conflict", "chromophore", "deletion", "engineered mutation", "expression tag", \
-                             "initiating methionine", "insertion", "linker", "microheterogeneity", "microheterogeneity/modified residue", "mismatch", \
+                for item in ("acetylation", "amidation", "cloning artifact", "conflict", "chromophore", "deletion", "engineered mutation", "expression tag",
+                             "initiating methionine", "insertion", "linker", "microheterogeneity", "microheterogeneity/modified residue", "mismatch",
                              "modified residue", "variant"):
                     if item not in warningErrorD:
                         continue
