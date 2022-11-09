@@ -73,7 +73,7 @@ class SequenceFeatureMap(object):
             ("SOURCE_GENE_NAME", "DB_GENE_NAME"),
             # ('SOURCE_TAXID', 'SOURCE_TAXID'),
             # ('SOURCE_ORGANISM', 'SOURCE_ORGANISM'),
-            ("SOURCE_STRAIN", "SOURCE_STRAIN"),
+            # ("SOURCE_STRAIN", "SOURCE_STRAIN"),
             # ('SOURCE_COMMON_NAME', 'SOURCE_COMMON_NAME'),
             ("ENTITY_ENZYME_CLASS", "DB_MOLECULE_EC"),
         ]
