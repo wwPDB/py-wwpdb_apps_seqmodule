@@ -280,6 +280,7 @@ class LocalBlastSearchUtils(object):
                 if self.__verbose:
                     self.__lfh.write("+LocalBlastSearchUtils.__runBlastSearch() skipping unknown/poly-ALA sequence part %r type %r BegNum %r EndNum %r\n" %
                                      (seqPartId, seqPartType, seqNumBeg, seqNumEnd))
+                    self.__lfh.flush()
                 #
                 continue
             #
