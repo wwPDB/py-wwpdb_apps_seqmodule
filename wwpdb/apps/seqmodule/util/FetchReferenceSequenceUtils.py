@@ -164,6 +164,10 @@ class FetchReferenceSequenceUtils(object):
         #
         autoMatchStatus, alignInfoD = self.runSeqAlignment(self.__refInfoD["sequence"], authSeq, seqNumBeg, mutationList, mutationMap)
         if alignInfoD:
+            # Check Taxonomy ID information
+            if ("taxonomy_id" in self.__refInfoD) and (self.__refInfoD["taxonomy_id"]) and taxId and (self.__refInfoD["taxonomy_id"] != taxId):             autoMatchStatus = False
+            #
+            self.__lfh.write("autoMatchStatus=%r alignInfoD=%d\n" % (autoMatchStatus, len(alignInfoD)))
             self.__refInfoD.update(alignInfoD)
             return autoMatchStatus, self.__refInfoD
         else:
