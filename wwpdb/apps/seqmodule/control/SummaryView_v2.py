@@ -42,7 +42,9 @@ except ImportError:
     import pickle as pickle
 #
 
-import os,sys,traceback
+import os
+import sys
+import traceback
 
 from wwpdb.apps.seqmodule.io.AlignmentDataStore import AlignmentDataStore
 from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import FetchSeqInfoUtils
@@ -896,11 +898,11 @@ class SummaryView(object):
             tmpList = []
             for dbAccession in dbAccessionList:
                 if dbAccession in dbAccTaxMap:
-                    tmpList.append( (dbAccession, dbAccTaxMap[dbAccession] ) )
+                    tmpList.append((dbAccession, dbAccTaxMap[dbAccession]))
                     continue
                 #
                 if dbAccession not in dbAccessionMap:
-                    tmpList.append( (dbAccession, "" ) )
+                    tmpList.append((dbAccession, ""))
                     continue
                 #
                 dbIsoform = ""
@@ -912,12 +914,12 @@ class SummaryView(object):
                         dbAccessionS = tL[0]
                     #
                 #
-                accCode,refInfoD = fetchSeqUtil.getRefInfo(dbAccessionMap[dbAccession], dbAccessionS, dbIsoform, 0, 0, addMissingKeyFlag=False)
+                _accCode, refInfoD = fetchSeqUtil.getRefInfo(dbAccessionMap[dbAccession], dbAccessionS, dbIsoform, 0, 0, addMissingKeyFlag=False)
                 if ("taxonomy_id" in refInfoD) and refInfoD["taxonomy_id"]:
-                    tmpList.append( (dbAccession, refInfoD["taxonomy_id"] ) )
+                    tmpList.append((dbAccession, refInfoD["taxonomy_id"]))
                     dbAccTaxMap[dbAccession] = refInfoD["taxonomy_id"]
                 else:
-                    tmpList.append( (dbAccession, "" ) )
+                    tmpList.append((dbAccession, ""))
                 #
             #
             dbAccessionList = tmpList

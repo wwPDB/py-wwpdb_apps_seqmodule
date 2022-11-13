@@ -38,6 +38,7 @@ from wwpdb.utils.config.ConfigInfo import ConfigInfo
 from wwpdb.utils.seqdb_v2.FetchNcbiXml import FetchFullNcbiXml, FetchNcbiXml
 from wwpdb.utils.seqdb_v2.FetchUnpXml import FetchUnpXml
 
+
 class FetchSeqInfoUtils(object):
     """Fetch reference sequence data.
     """
