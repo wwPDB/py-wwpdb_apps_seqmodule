@@ -469,7 +469,7 @@ class GetSameSeqAnnotation(object):
             gbIdList = list(set(gbIdList))
             for idCode in gbIdList:
                 # No need to rate limit here as this fetches the whole entry - is likely a genome and takes seconds.
-                gbD[idCode] = fetchSeqUtil.fetchNcbiGi(idCode, siteId=self.__siteId)
+                gbD[idCode] = fetchSeqUtil.fetchNcbiGi(idCode)
             #
         #
         for _partId, infoDic in dbRefMap.items():
