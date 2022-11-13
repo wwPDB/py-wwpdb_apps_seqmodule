@@ -31,7 +31,7 @@ from operator import itemgetter
 from wwpdb.io.locator.PathInfo import PathInfo
 from wwpdb.io.file.mmCIFUtil import mmCIFUtil
 from wwpdb.apps.seqmodule.align.AlignmentToolUtils import codeIndex
-from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import fetchNcbiGi, fetchUniProt
+from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import FetchSeqInfoUtils
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
 
 
@@ -460,15 +460,16 @@ class GetSameSeqAnnotation(object):
             #
             dbRefMap[retDic["entity_part_id"]] = infoDic
         #
+        fetchSeqUtil = FetchSeqInfoUtils(siteId=self.__siteId, seqReferenceData=self.__srd, verbose=self.__verbose, log=self.__lfh)
         unpD = {}
         gbD = {}
         if len(unpIdList) > 0:
-            unpD = fetchUniProt(idTupleList=unpIdList, verbose=self.__verbose, log=self.__lfh)
+            unpD = fetchSeqUtil.fetchUniProt(idTupleList=unpIdList)
         elif len(gbIdList) > 0:
             gbIdList = list(set(gbIdList))
             for idCode in gbIdList:
                 # No need to rate limit here as this fetches the whole entry - is likely a genome and takes seconds.
-                gbD[idCode] = fetchNcbiGi(idCode, siteId=self.__siteId)
+                gbD[idCode] = fetchSeqUtil.fetchNcbiGi(idCode, siteId=self.__siteId)
             #
         #
         for _partId, infoDic in dbRefMap.items():

@@ -36,10 +36,16 @@ __email__ = "jwest@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.08"
 
-import sys
-import traceback
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle as pickle
+#
+
+import os,sys,traceback
 
 from wwpdb.apps.seqmodule.io.AlignmentDataStore import AlignmentDataStore
+from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import FetchSeqInfoUtils
 from wwpdb.apps.seqmodule.io.SequenceDataStore import SequenceDataStore
 from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel, SequenceFeature
 from wwpdb.apps.seqmodule.util.SequenceFeatureDepict import SequenceFeatureDepict
@@ -218,7 +224,7 @@ class SummaryView(object):
             #
             summaryDataObj[gId]["auth"] = dT
             #
-            rL, withGapScoreList, withoutGapScoreList, hitDbInfoList, hitDbIdList = self.__buildReferenceSection(groupId=gId)
+            rL, withGapScoreList, withoutGapScoreList, hitDbInfoList, hitDbIdList, authTaxIdList = self.__buildReferenceSection(groupId=gId)
             summaryDataObj[gId]["ref"] = rL
             #
             summaryDataObj[gId]["xyz"] = self.__buildCoordinateSection(groupId=gId)
@@ -247,20 +253,30 @@ class SummaryView(object):
                     ",".join(withoutGapScoreList) + '</span>' + decoration_end
             #
             if len(hitDbInfoList) > 0:
-                self.__summaryPageInfoMap[gId]["ref_db_ids"] = decoration_start + ",".join(hitDbInfoList) + "<br/>"
+                self.__summaryPageInfoMap[gId]["ref_db_ids"] = decoration_start + "/".join(hitDbInfoList) + "<br/>"
             else:
                 self.__summaryPageInfoMap[gId]["ref_db_ids"] = decoration_start + "-<br/>"
             #
             if len(dbAccessionList) > 0:
                 displayList = []
-                for val in dbAccessionList:
-                    if hitDbIdList and (val not in hitDbIdList):
-                        displayList.append('<span style="color:red">' + val + '</span>')
-                    else:
-                        displayList.append(val)
+                for valTup in dbAccessionList:
+                    accCode = valTup[0]
+                    if hitDbIdList and (valTup[0] not in hitDbIdList):
+                        accCode = '<span style="color:red">' + valTup[0] + '</span>'
                     #
+                    taxId = ""
+                    if len(valTup[1]) > 0:
+                        taxId = "[" + valTup[1] + "]"
+                        if valTup[1] not in authTaxIdList:
+                            taxId = '[<span style="color:red">' + valTup[1] + '</span>]'
+                        #
+                    #
+                    if taxId:
+                        accCode += " " + taxId
+                    #
+                    displayList.append(accCode)
                 #
-                self.__summaryPageInfoMap[gId]["ref_db_ids"] += "(" + ",".join(displayList) + ")" + decoration_end
+                self.__summaryPageInfoMap[gId]["ref_db_ids"] += "(" + "/".join(displayList) + ")" + decoration_end
             else:
                 self.__summaryPageInfoMap[gId]["ref_db_ids"] += "(-)" + decoration_end
             #
@@ -463,6 +479,7 @@ class SummaryView(object):
         withoutGapScoreList = []
         hitDbInfoList = []
         hitDbIdList = []
+        authTaxIdList = []
         seqLabel = SequenceLabel()
         seqFeature = SequenceFeature()
         #
@@ -482,6 +499,9 @@ class SummaryView(object):
                 authFObj = self.__sds.getFeatureObj(seqIdRef, "auth", partId=partId, altId=1, version=authVerList[0])
                 sourceInfo = authFObj.getEntitySourceMethod().upper()
                 OrigTaxId = authFObj.getSourceTaxIdOrig()
+                if OrigTaxId and (OrigTaxId not in authTaxIdList):
+                    authTaxIdList.append(OrigTaxId)
+                #
                 TaxId = authFObj.getSourceTaxId()
                 if (sourceInfo == "NAT") and TaxId:
                     if TaxId in self.__natureSourceTaxIds:
@@ -547,10 +567,16 @@ class SummaryView(object):
                         if ("DB_ISOFORM" in seqRefFD) and seqRefFD["DB_ISOFORM"]:
                             dbAccession = seqRefFD["DB_ISOFORM"]
                         #
-                        # if dbName and dbAccession:
-                        #     hitDbInfoList.append(dbName + ":" + dbAccession)
                         if dbAccession:
-                            hitDbInfoList.append(dbAccession)
+                            refTaxId = RefTaxId
+                            if taxIdWarningFlag:
+                                refTaxId = '<span style="color:red">' + RefTaxId + "</span>"
+                            #
+                            if refTaxId:
+                                hitDbInfoList.append(dbAccession + " [" + refTaxId + "]")
+                            else:
+                                hitDbInfoList.append(dbAccession)
+                            #
                             if dbAccession not in hitDbIdList:
                                 hitDbIdList.append(dbAccession)
                             #
@@ -598,7 +624,7 @@ class SummaryView(object):
         #
         self.__checkPartRange(groupId, partInfoList)
         #
-        return rL, withGapScoreList, withoutGapScoreList, hitDbInfoList, hitDbIdList
+        return rL, withGapScoreList, withoutGapScoreList, hitDbInfoList, hitDbIdList, authTaxIdList
 
     def __buildNameSourceSummaryPage(self, key, summaryInfoD):
         """
@@ -819,6 +845,7 @@ class SummaryView(object):
         spStr = "<br />"
         authRefAssignText = ""
         dbAccessionList = []
+        dbAccessionMap = {}
         depSeqAssignD = self.__sds.getDepositorReferenceAssignments()
         sADep = SequenceAssignDepositor(verbose=self.__verbose, log=self.__lfh)
         sADep.set(depSeqAssignD)
@@ -837,6 +864,9 @@ class SummaryView(object):
             if (len(dbAccession) > 0) and (dbAccession not in [".", "?"]):
                 if dbAccession not in dbAccessionList:
                     dbAccessionList.append(dbAccession)
+                    if (dbAccession not in dbAccessionMap) and (len(dbName) > 0) and (dbName not in [".", "?"]):
+                        dbAccessionMap[dbAccession] = dbName.upper()
+                    #
                 #
             #
             if ((len(dbAccession) > 0) and (dbAccession not in [".", "?"])) or ((len(dbCode) > 0) and (dbCode not in [".", "?"])):
@@ -853,6 +883,48 @@ class SummaryView(object):
         #
         if self.__verbose:
             self.__lfh.write("+SummaryView.__markupAuthorAssignments() depositor reference assignments for entity %s : %s\n" % (entityId, authRefAssignText))
+        #
+        if len(dbAccessionList) > 0:
+            dbAccTaxMap = {}
+            picklePath = os.path.join(self.__sessionPath, "dbAccTaxMap.pic")
+            if os.access(picklePath, os.F_OK):
+                fb = open(picklePath, "rb")
+                dbAccTaxMap = pickle.load(fb)
+                fb.close()
+            #
+            fetchSeqUtil = FetchSeqInfoUtils(siteId=str(self.__reqObj.getValue("WWPDB_SITE_ID")), verbose=self.__verbose, log=self.__lfh)
+            tmpList = []
+            for dbAccession in dbAccessionList:
+                if dbAccession in dbAccTaxMap:
+                    tmpList.append( (dbAccession, dbAccTaxMap[dbAccession] ) )
+                    continue
+                #
+                if dbAccession not in dbAccessionMap:
+                    tmpList.append( (dbAccession, "" ) )
+                    continue
+                #
+                dbIsoform = ""
+                dbAccessionS = dbAccession
+                if dbAccessionMap[dbAccession] in ["UNP", "SP", "TR"]:
+                    tL = dbAccession.split("-")
+                    if len(tL) > 1:
+                        dbIsoform = dbAccession
+                        dbAccessionS = tL[0]
+                    #
+                #
+                accCode,refInfoD = fetchSeqUtil.getRefInfo(dbAccessionMap[dbAccession], dbAccessionS, dbIsoform, 0, 0, addMissingKeyFlag=False)
+                if ("taxonomy_id" in refInfoD) and refInfoD["taxonomy_id"]:
+                    tmpList.append( (dbAccession, refInfoD["taxonomy_id"] ) )
+                    dbAccTaxMap[dbAccession] = refInfoD["taxonomy_id"]
+                else:
+                    tmpList.append( (dbAccession, "" ) )
+                #
+            #
+            dbAccessionList = tmpList
+            #
+            fb = open(picklePath, "wb")
+            pickle.dump(dbAccTaxMap, fb)
+            fb.close()
         #
         return authRefAssignText, dbAccessionList
 

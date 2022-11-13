@@ -5,6 +5,7 @@
 # Updates:
 #  3-Oct-2022  zf  update fetchReferenceSequenceWithSeqMatch() methods for better handling author provided reference sequence cases.
 #                  add runSeqAlignment() & __toList() methods
+# 11-Nov-2022  zf  move __getRefInfo() method to FetchSeqInfoUtils class.
 ##
 """
 Methods to get reference sequence data from reference database based database name and identifier.
@@ -20,7 +21,7 @@ import os
 import string
 import sys
 
-from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import fetchUniProt, fetchNcbiGi
+from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import FetchSeqInfoUtils
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
 from wwpdb.utils.align.alignlib import PseudoMultiAlign  # pylint: disable=no-name-in-module
 
@@ -52,7 +53,8 @@ class FetchReferenceSequenceUtils(object):
             except:  # noqa: E722 pylint: disable=bare-except
                 end = 0
             #
-            self.__accCode, self.__refInfoD = self.__getRefInfo(dbName, dbAccession, dbIsoform, start, end)
+            fetchSeqUtil = FetchSeqInfoUtils(siteId=self.__siteId, seqReferenceData=self.__srd, verbose=self.__verbose, log=self.__lfh)
+            self.__accCode, self.__refInfoD = fetchSeqUtil.getRefInfo(dbName, dbAccession, dbIsoform, start, end)
         #
         if (not self.__refInfoD) or ("sequence" not in self.__refInfoD):
             error = "Fetch reference sequence [ dbName=" + dbName + ", Accession=" + self.__accCode + "] failed."
@@ -129,11 +131,12 @@ class FetchReferenceSequenceUtils(object):
                 dbAccession = tL[0]
             #
         #
-        self.__accCode, self.__refInfoD = self.__getRefInfo(dbName, dbAccession, dbIsoform, 0, 0)
+        fetchSeqUtil = FetchSeqInfoUtils(siteId=self.__siteId, seqReferenceData=self.__srd, verbose=self.__verbose, log=self.__lfh)
+        self.__accCode, self.__refInfoD = fetchSeqUtil.getRefInfo(dbName, dbAccession, dbIsoform, 0, 0)
         #
         if (not self.__refInfoD) or ("sequence" not in self.__refInfoD) or (not self.__refInfoD["sequence"]):
             if dbCode:
-                self.__accCode, self.__refInfoD = self.__getRefInfo(dbName, dbCode, "", 0, 0)
+                self.__accCode, self.__refInfoD = fetchSeqUtil.getRefInfo(dbName, dbCode, "", 0, 0)
                 if (not self.__refInfoD) or ("sequence" not in self.__refInfoD) or (not self.__refInfoD["sequence"]):
                     return False, {}
                 #
@@ -303,52 +306,6 @@ class FetchReferenceSequenceUtils(object):
             return False, retD
         #
 
-    def __getRefInfo(self, dbName, dbAccession, dbIsoform, start, end):
-        """Fetch sequence data from Uniprot or GeneBank database"""
-        dbResource = self.__srd.convertDbNameToResource(dbName)
-        #
-        if dbResource in ["UNP"]:
-            idCode = str(dbAccession)
-            if dbIsoform is not None and len(dbIsoform) > 0:
-                idCode = str(dbIsoform)
-            #
-            dt = fetchUniProt(idTupleList=[(idCode, start, end)], verbose=self.__verbose, log=self.__lfh)
-            #
-            infoD = {}
-            if (idCode, start, end) in dt:
-                infoD = dt[(idCode, start, end)]
-            elif (dbAccession, start, end) in dt:
-                infoD = dt[(dbAccession, start, end)]
-            elif len(dt.values()) == 1:
-                if ("db_code" in dt.values()[0]) and (dt.values()[0]["db_code"] == dbAccession):
-                    infoD = dt.values()[0]
-                #
-            #
-            if not infoD:
-                return idCode, {}
-            #
-            if infoD and ("db_name" not in infoD) and ("db_accession" in infoD):
-                # guess --
-                if infoD["db_accession"][0] in ["P", "Q", "O"]:
-                    infoD["db_name"] = "SP"
-                else:
-                    infoD["db_name"] = "TR"
-                #
-            #
-            return idCode, self.__addingMissingKey(infoD)
-        elif dbResource in ["GB", "DBJ", "EMB", "EMBL", "REF"]:
-            infoD = fetchNcbiGi(dbAccession, xmlPath=None, siteId=self.__siteId)
-            if not infoD:
-                return dbAccession, {}
-            #
-            if infoD:
-                infoD["db_accession"] = dbAccession
-                infoD["db_name"] = dbName
-            #
-            return dbAccession, self.__addingMissingKey(infoD)
-        #
-        return dbAccession, {}
-
     def __getReferenceList(self, sequence, polyTypeCode, refSeqBeg, refSeqEnd, reverseOrder):
         """Convert the one-letter code sequence from the reference resource to internal indexed list
         format seqIdx=[(3-letter-code, ref-db-index, comment, position in sequence (1-length), 1-letter code]
@@ -377,35 +334,6 @@ class FetchReferenceSequenceUtils(object):
             count += 1
         #
         return sL
-
-    def __addingMissingKey(self, myD):
-        """ Add missing key items
-        """
-        defaultKeys = (
-            "db_name",
-            "db_accession",
-            "db_code",
-            "db_isoform",
-            "db_description",
-            "db_isoform_description",
-            "name",
-            "keyword",
-            "sequence",
-            "comments",
-            "synonyms",
-            "source_scientific",
-            "source_strain",
-            "taxonomy_id",
-            "gene",
-            "source_common",
-            "ec",
-        )
-        for key in defaultKeys:
-            if key not in myD:
-                myD[key] = ""
-            #
-        #
-        return myD
 
 
 def testmain():

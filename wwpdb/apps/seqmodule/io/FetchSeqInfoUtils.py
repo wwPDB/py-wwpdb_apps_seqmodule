@@ -19,6 +19,8 @@
 #  8-Dec-2015  jdw change isoform annoation processing -
 # 30-Dec-2020   zf Use FetchUnpXml instead of FetchUniProtEntry class. Allow the location specific feature names if exist.
 # 29-Sep-2022   zf Added input 'begin' & 'end' values checking from idTupleList in fetchUniProt() method.
+# 11-Nov-2022   zf Create FetchSeqInfoUtils class with fetchUniProt(), fetchNcbiGi(), fetchNcbiSummary(), and getRefInfo() methods.
+#                  getRefInfo() method is moved from FetchReferenceSequenceUtils.__getRefInfo() method.
 ##
 """
 Utility methods to retrieve information from NCBI & Uniprot databases
@@ -30,127 +32,225 @@ __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.09"
 
 import sys
+
+from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
+from wwpdb.utils.config.ConfigInfo import ConfigInfo
 from wwpdb.utils.seqdb_v2.FetchNcbiXml import FetchFullNcbiXml, FetchNcbiXml
 from wwpdb.utils.seqdb_v2.FetchUnpXml import FetchUnpXml
-from wwpdb.utils.config.ConfigInfo import ConfigInfo
 
+class FetchSeqInfoUtils(object):
+    """Fetch reference sequence data.
+    """
+    def __init__(self, siteId="WWPDB_DEPLOY_TEST", seqReferenceData=None, verbose=False, log=sys.stderr):
+        """
+        """
+        self.__verbose = verbose
+        self.__lfh = log
+        self.__siteId = siteId
+        self.__cI = ConfigInfo(self.__siteId)
+        self.__apikey = self.__cI.get("NCBI_API_KEY", None)
+        self.__srd = seqReferenceData
+        if not self.__srd:
+            self.__srd = SequenceReferenceData(self.__verbose, self.__lfh)
+        #
 
-def fetchUniProt(idTupleList=None, filePath=None, verbose=False, log=sys.stderr):
-    """ """
-    if idTupleList is None:
-        idTupleList = []
-    d = {}
-    if not idTupleList:
-        return d
-    #
-    idCodeList = []
-    for idTuple in idTupleList:
-        if idTuple[0] not in idCodeList:
-            idCodeList.append(idTuple[0])
+    def getRefInfo(self, dbName, dbAccession, dbIsoform, start, end, addMissingKeyFlag=True):
+        """Fetch sequence data from Uniprot or GeneBank database.
+        """
+        dbResource = self.__srd.convertDbNameToResource(dbName)
         #
-    #
-    if not idCodeList:
-        return d
-    #
-    fobj = FetchUnpXml(verbose=verbose, log=log)
-    ok = fobj.fetchList(idCodeList)
-    if filePath is not None:
-        fobj.writeUnpXml(filePath)
-    #
-    if ok:
-        resultDicts = fobj.getResult()
-        multiResultDicts = fobj.getMultipleResultDict()
-        # filter any redundant annotations --
+        if dbResource in ["UNP"]:
+            idCode = str(dbAccession)
+            if dbIsoform is not None and len(dbIsoform) > 0:
+                idCode = str(dbIsoform)
+            #
+            dt = self.fetchUniProt(idTupleList=[(idCode, start, end)])
+            #
+            infoD = {}
+            if (idCode, start, end) in dt:
+                infoD = dt[(idCode, start, end)]
+            elif (dbAccession, start, end) in dt:
+                infoD = dt[(dbAccession, start, end)]
+            elif len(dt.values()) == 1:
+                if ("db_code" in dt.values()[0]) and (dt.values()[0]["db_code"] == dbAccession):
+                    infoD = dt.values()[0]
+                #
+            #
+            if not infoD:
+                return idCode, {}
+            #
+            if infoD and ("db_name" not in infoD) and ("db_accession" in infoD):
+                # guess --
+                if infoD["db_accession"][0] in ["P", "Q", "O"]:
+                    infoD["db_name"] = "SP"
+                else:
+                    infoD["db_name"] = "TR"
+                #
+            #
+            if addMissingKeyFlag:
+                return idCode, self.__addingMissingKey(infoD)
+            else:
+                return idCode, infoD
+            #
+        elif dbResource in ["GB", "DBJ", "EMB", "EMBL", "REF"]:
+            infoD = self.fetchNcbiGi(dbAccession)
+            if not infoD:
+                return dbAccession, {}
+            #
+            if infoD:
+                infoD["db_accession"] = dbAccession
+                infoD["db_name"] = dbName
+            #
+            if addMissingKeyFlag:
+                return dbAccession, self.__addingMissingKey(infoD)
+            else:
+                return dbAccession, infoD
+            #
         #
+        return dbAccession, {}
+
+    def fetchUniProt(self, idTupleList=None, filePath=None):
+        """ Fetch Uniprot reference sequence data.
+        """
+        if idTupleList is None:
+            idTupleList = []
+        d = {}
+        if not idTupleList:
+            return d
+        #
+        idCodeList = []
         for idTuple in idTupleList:
-            if idTuple[0] not in resultDicts:
-                continue
+            if idTuple[0] not in idCodeList:
+                idCodeList.append(idTuple[0])
             #
-            vd = resultDicts[idTuple[0]]
-            #
-            if (idTuple[0] in multiResultDicts) and multiResultDicts[idTuple[0]]:
-                found = False
-                diff = -1
-                for retD in multiResultDicts[idTuple[0]]:
-                    if ("begin" not in retD) or ("end" not in retD) or (idTuple[1] and (idTuple[1] < retD["begin"])) or \
-                       (idTuple[2] and (idTuple[2] > retD["end"])):
-                        continue
-                    #
-                    if diff == -1:
-                        found = True
-                        vd = retD
-                        try:
-                            diff = (int(idTuple[1]) - int(retD["begin"])) + (int(retD["end"]) - int(idTuple[2]))
-                        except:  # noqa: E722 pylint: disable=bare-except
-                            pass
-                        #
-                    else:
-                        try:
-                            diff1 = (int(idTuple[1]) - int(retD["begin"])) + (int(retD["end"]) - int(idTuple[2]))
-                            if diff1 < diff:
-                                diff = diff1
-                                vd = retD
-                            #
-                        except:  # noqa: E722 pylint: disable=bare-except
-                            pass
-                        #
-                    #
-                #
-                if (not found) and ("all" in multiResultDicts[idTuple[0]][-1]) and (multiResultDicts[idTuple[0]][-1]["all"] == "yes"):
-                    vd = multiResultDicts[idTuple[0]][-1]
-                #
-            #
-            for k in vd.keys():
-                if k in ["ec", "comments", "synonyms"]:
-                    v = vd[k]
-                    oL = []
-                    tL = v.split(",")
-                    for it in tL:
-                        sV = str(it).strip()
-                        if k == "ec":
-                            sVL = sV.split(".")
-                            oL1 = []
-                            for s1 in sVL:
-                                if str(s1).startswith("n"):
-                                    oL1.append("-")
-                                else:
-                                    oL1.append(s1)
-                                #
-                            #
-                            sV = ".".join(oL1)
-                        #
-                        if sV in oL:
-                            continue
-                        else:
-                            oL.append(sV)
-                        #
-                    #
-                    vd[k] = ",".join(oL)
-                #
-            #
-            d[idTuple] = vd
         #
-    #
-    return d
+        if not idCodeList:
+            return d
+        #
+        fobj = FetchUnpXml(verbose=self.__verbose, log=self.__lfh)
+        ok = fobj.fetchList(idCodeList)
+        if filePath is not None:
+            fobj.writeUnpXml(filePath)
+        #
+        if ok:
+            resultDicts = fobj.getResult()
+            multiResultDicts = fobj.getMultipleResultDict()
+            # filter any redundant annotations --
+            #
+            for idTuple in idTupleList:
+                if idTuple[0] not in resultDicts:
+                    continue
+                #
+                vd = resultDicts[idTuple[0]]
+                #
+                if (idTuple[0] in multiResultDicts) and multiResultDicts[idTuple[0]]:
+                    found = False
+                    diff = -1
+                    for retD in multiResultDicts[idTuple[0]]:
+                        if ("begin" not in retD) or ("end" not in retD) or (idTuple[1] and (idTuple[1] < retD["begin"])) or \
+                           (idTuple[2] and (idTuple[2] > retD["end"])):
+                            continue
+                        #
+                        if diff == -1:
+                            found = True
+                            vd = retD
+                            try:
+                                diff = (int(idTuple[1]) - int(retD["begin"])) + (int(retD["end"]) - int(idTuple[2]))
+                            except:  # noqa: E722 pylint: disable=bare-except
+                                pass
+                            #
+                        else:
+                            try:
+                                diff1 = (int(idTuple[1]) - int(retD["begin"])) + (int(retD["end"]) - int(idTuple[2]))
+                                if diff1 < diff:
+                                    diff = diff1
+                                    vd = retD
+                                #
+                            except:  # noqa: E722 pylint: disable=bare-except
+                                pass
+                            #
+                        #
+                    #
+                    if (not found) and ("all" in multiResultDicts[idTuple[0]][-1]) and (multiResultDicts[idTuple[0]][-1]["all"] == "yes"):
+                        vd = multiResultDicts[idTuple[0]][-1]
+                    #
+                #
+                for k in vd.keys():
+                    if k in ["ec", "comments", "synonyms"]:
+                        v = vd[k]
+                        oL = []
+                        tL = v.split(",")
+                        for it in tL:
+                            sV = str(it).strip()
+                            if k == "ec":
+                                sVL = sV.split(".")
+                                oL1 = []
+                                for s1 in sVL:
+                                    if str(s1).startswith("n"):
+                                        oL1.append("-")
+                                    else:
+                                        oL1.append(s1)
+                                    #
+                                #
+                                sV = ".".join(oL1)
+                            #
+                            if sV in oL:
+                                continue
+                            else:
+                                oL.append(sV)
+                            #
+                        #
+                        vd[k] = ",".join(oL)
+                    #
+                #
+                d[idTuple] = vd
+            #
+        #
+        return d
 
+    def fetchNcbiGi(self, giIdCode, xmlPath=None):
+        """ Fetch GeneBank reference data.
+        """
+        fetchobj = FetchFullNcbiXml(giIdCode, "Nucleotide", apikey=self.__apikey)
+        if xmlPath is not None:
+            fetchobj.WriteNcbiXml(filename=xmlPath)
+        #
+        return fetchobj.ParseNcbiXmlData()
 
-def fetchNcbiGi(giIdCode, xmlPath=None, siteId=None):
-    """ """
-    cI = ConfigInfo(siteId)
-    apikey = cI.get("NCBI_API_KEY", None)
-    fetchobj = FetchFullNcbiXml(giIdCode, "Nucleotide", apikey=apikey)
-    if xmlPath is not None:
-        fetchobj.WriteNcbiXml(filename=xmlPath)
-    #
-    return fetchobj.ParseNcbiXmlData()
+    def fetchNcbiSummary(self, giIdCode, xmlPath=None):
+        """ Fetch GeneBank reference summary.
+        """
+        fetchobj = FetchNcbiXml(giIdCode, "Nucleotide", apikey=self.__apikey)
+        if xmlPath is not None:
+            fetchobj.WriteNcbiXml(filename=xmlPath)
+        #
+        return fetchobj.ParseNcbiXmlData()
 
-
-def fetchNcbiSummary(giIdCode, xmlPath=None, siteId=None):
-    """ """
-    cI = ConfigInfo(siteId)
-    apikey = cI.get("NCBI_API_KEY", None)
-    fetchobj = FetchNcbiXml(giIdCode, "Nucleotide", apikey=apikey)
-    if xmlPath is not None:
-        fetchobj.WriteNcbiXml(filename=xmlPath)
-    #
-    return fetchobj.ParseNcbiXmlData()
+    def __addingMissingKey(self, myD):
+        """ Add missing key items
+        """
+        defaultKeys = (
+            "db_name",
+            "db_accession",
+            "db_code",
+            "db_isoform",
+            "db_description",
+            "db_isoform_description",
+            "name",
+            "keyword",
+            "sequence",
+            "comments",
+            "synonyms",
+            "source_scientific",
+            "source_strain",
+            "taxonomy_id",
+            "gene",
+            "source_common",
+            "ec",
+        )
+        for key in defaultKeys:
+            if key not in myD:
+                myD[key] = ""
+            #
+        #
+        return myD

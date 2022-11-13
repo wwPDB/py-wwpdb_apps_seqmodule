@@ -43,7 +43,7 @@ import traceback
 from operator import itemgetter
 
 from wwpdb.apps.seqmodule.io.BlastPlusReader import BlastPlusReader
-from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import fetchNcbiSummary, fetchUniProt
+from wwpdb.apps.seqmodule.io.FetchSeqInfoUtils import FetchSeqInfoUtils
 from wwpdb.apps.seqmodule.io.TaxonomyUtils import TaxonomyUtils
 from wwpdb.apps.seqmodule.util.FetchReferenceSequenceUtils import FetchReferenceSequenceUtils
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
@@ -572,6 +572,7 @@ class LocalBlastSearchUtils(object):
         #
         searchHitList = bpr.readFile(filePath=blastResultXmlPath)
         #
+        fetchSeqUtil = FetchSeqInfoUtils(siteId=self.__siteId, seqReferenceData=self.__srd, verbose=self.__verbose, log=self.__lfh)
         if self.__seqType in ["polypeptide(L)", "polypeptide(D)", "polypeptide"]:
             idCodeList = []
             for hit in searchHitList:
@@ -602,7 +603,7 @@ class LocalBlastSearchUtils(object):
             #
             if len(idCodeList) > 0:
                 try:
-                    unpD = fetchUniProt(idTupleList=idCodeList, verbose=self.__verbose, log=self.__lfh)
+                    unpD = fetchSeqUtil.fetchUniProt(idTupleList=idCodeList)
                 except:  # noqa: E722 pylint: disable=bare-except
                     traceback.print_exc(file=self.__lfh)
                     self.__lfh.flush()
@@ -666,8 +667,8 @@ class LocalBlastSearchUtils(object):
                     # Ensure do not max out request rate
                     if self.__ncbilock:
                         self.__ncbilock.waitnext()
-
-                    giD[idCode] = fetchNcbiSummary(idCode, siteId=self.__siteId)
+                    #
+                    giD[idCode] = fetchSeqUtil.fetchNcbiSummary(idCode)
                 #
                 for hit in hitList:
                     if "db_accession" in hit:
