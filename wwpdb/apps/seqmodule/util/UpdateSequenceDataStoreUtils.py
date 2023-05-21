@@ -24,7 +24,7 @@ import traceback
 from wwpdb.apps.seqmodule.io.SequenceDataStore import SequenceDataStore
 from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel, SequenceFeature
 from wwpdb.io.file.mmCIFUtil import mmCIFUtil
-from wwpdb.utils.config.ConfigInfoApp import ConfigInfoAppCommon
+from wwpdb.io.locator.ChemRefPathInfo import ChemRefPathInfo
 
 
 class UpdateSequenceDataStoreUtils(object):
@@ -187,8 +187,6 @@ class UpdateSequenceDataStoreUtils(object):
             return "", entityD
         #
         siteId = str(self._reqObj.getValue("WWPDB_SITE_ID"))
-        cICommon = ConfigInfoAppCommon(siteId)
-        ccPath = cICommon.get_site_cc_cvs_path()
         #
         sTupL = self.getSequence("auth", entityId, 1, 1, verList[0])
         r1L = []
@@ -201,8 +199,9 @@ class UpdateSequenceDataStoreUtils(object):
                 #
                 ccCode = ""
                 ccId = sTup[0].upper()
-                ccFilePath = os.path.join(ccPath, ccId[0], ccId, ccId + ".cif")
-                if os.access(ccFilePath, os.F_OK):
+                crpi = ChemRefPathInfo(siteId=siteId, verbose=self._verbose, log=self._lfh)
+                ccFilePath = crpi.getFilePath(ccId, "CC")
+                if ccFilePath and os.access(ccFilePath, os.F_OK):
                     cifObj = mmCIFUtil(filePath=ccFilePath)
                     ccCode = cifObj.GetSingleValue("chem_comp", "one_letter_code")
                 #

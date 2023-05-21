@@ -20,11 +20,11 @@ import os
 import sys
 import traceback
 
-from wwpdb.utils.config.ConfigInfoApp import ConfigInfoAppCommon
 from wwpdb.apps.seqmodule.align.AlignmentToolUtils import getSeqAlignment, mergeSeqAlignment, codeSeqIndex, decodeIndex, assignConflict
 from wwpdb.apps.seqmodule.io.AlignmentDataStore import AlignmentDataStore
 from wwpdb.utils.align.alignlib import PseudoMultiAlign  # pylint: disable=no-name-in-module
 from wwpdb.io.file.mmCIFUtil import mmCIFUtil
+from wwpdb.io.locator.ChemRefPathInfo import ChemRefPathInfo
 
 
 class AlignmentTools(AlignmentDataStore):
@@ -39,8 +39,6 @@ class AlignmentTools(AlignmentDataStore):
         self.__clearLocalVariables()
         self.__local_authLabel = self._authLabel
         #
-        self.__cICommon = ConfigInfoAppCommon(self._siteId)
-        self.__ccTopPath = self.__cICommon.get_site_cc_cvs_path()
         self.__standardList = (
             "ALA",
             "ARG",
@@ -1312,8 +1310,9 @@ class AlignmentTools(AlignmentDataStore):
         if aCompId in self.__standardList:
             return False
         #
-        ccPath = os.path.join(self.__ccTopPath, aCompId[0], aCompId, aCompId + ".cif")
-        if os.access(ccPath, os.F_OK):
+        crpi = ChemRefPathInfo(siteId=self._siteId, verbose=self._verbose, log=self._lfh)
+        ccPath = crpi.getFilePath(aCompId, "CC")
+        if ccPath and os.access(ccPath, os.F_OK):
             cifObj = mmCIFUtil(filePath=ccPath)
             parentCompId = cifObj.GetSingleValue("chem_comp", "mon_nstd_parent_comp_id")
             if parentCompId:
