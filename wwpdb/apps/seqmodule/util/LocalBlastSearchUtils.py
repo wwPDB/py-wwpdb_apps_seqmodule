@@ -282,6 +282,9 @@ class LocalBlastSearchUtils(object):
                                      (seqPartId, seqPartType, seqNumBeg, seqNumEnd))
                     self.__lfh.flush()
                 #
+                if self.__seqType.startswith("polypeptide") and ((10 * countALA) > (9 * countTotal)):
+                    foundPerfectMatch = False
+                #
                 continue
             #
             taxId = fD["SOURCE_TAXID"]
@@ -533,6 +536,9 @@ class LocalBlastSearchUtils(object):
             dp.addInput(name="db_name", value="my_uniprot_all")
             dp.addInput(name="num_threads", value="4")
             dp.addInput(name="max_hits", value=self.__maxHitsSearch)
+            if taxId:
+                dp.addInput(name="tax_id", value=taxId)
+            #
             dp.op("seq-blastp")
             dp.exp(resultPath)
             if self.__cleanUp and not self.__debug:
@@ -547,6 +553,9 @@ class LocalBlastSearchUtils(object):
                 dp.addInput(name="db_name", value="my_ncbi_nt")
                 dp.addInput(name="num_threads", value="4")
                 dp.addInput(name="max_hits", value=self.__maxHitsSearch)
+                if taxId:
+                    dp.addInput(name="tax_id", value=taxId)
+                #
                 dp.op("seq-blastn")
                 dp.exp(resultPath)
                 if self.__cleanUp and not self.__debug:

@@ -633,6 +633,19 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 if polyTypeCode == "DNA":
                     NA_flag = True
                 #
+                if skip and (polyTypeCode == "AA"):
+                    oneLetterCodeSeq = str(eD["SEQ_ENTITY_1_CAN"]).strip().upper()
+                    countALA = 0
+                    for oneLetterCode in oneLetterCodeSeq:   
+                        if oneLetterCode == "A":
+                            countALA += 1
+                        #
+                    #
+                    # Stop autoProcess for poly-ALA Seq per ticket# DAOTHER-8256
+                    if (10 * countALA) > (9 * seqLen):
+                        self.__autoProcessFlag = False
+                    #
+                #
                 if self._verbose:
                     self._lfh.write("+SequenceDataAssemble.__doReferenceSearch() search for entity id %s type %s length %d skip status %r\n" % (eId, polyTypeCode, seqLen, skip))
                     self._lfh.flush()

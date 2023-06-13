@@ -218,6 +218,9 @@ class UpdatePolymerEntityPartitions(object):
             # for partId in range(1, numParts + 8):
             for partId in range(1, totalNumParts + 1):
                 taxId = self.__reqObj.getValue("p_%d_taxid" % partId)
+                if (taxId is None) or (taxId == self.__placeHolderValue):
+                    taxId = ""
+                #
                 seqBegin = self.__reqObj.getValue("p_%d_seqbegin" % partId)
                 seqEnd = self.__reqObj.getValue("p_%d_seqend" % partId)
                 seqPartType = self.__reqObj.getValue("p_%d_seqtype" % partId)
