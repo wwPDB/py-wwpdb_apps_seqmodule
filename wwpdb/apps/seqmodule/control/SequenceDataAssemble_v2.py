@@ -636,7 +636,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 if skip and (polyTypeCode == "AA"):
                     oneLetterCodeSeq = str(eD["SEQ_ENTITY_1_CAN"]).strip().upper()
                     countALA = 0
-                    for oneLetterCode in oneLetterCodeSeq:   
+                    for oneLetterCode in oneLetterCodeSeq:
                         if oneLetterCode == "A":
                             countALA += 1
                         #
