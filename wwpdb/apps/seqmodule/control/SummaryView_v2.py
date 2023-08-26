@@ -733,7 +733,7 @@ class SummaryView(object):
         """
         authFObj = self.__sds.getFeatureObj(seqId, "auth", partId=partId, altId=altId, version=version)
         if authFObj.getPolymerType() != "AA":
-            return 0, authFObj.getEntitySourceMethod(), authFObj.getPolymerLinkingType()
+            return 0, authFObj.getEntitySourceMethod(), authFObj.getPolymerLinkingType(), 0
         #
         seqAuth = self.__sds.getSequence(seqId=seqId, seqType="auth", partId=partId, altId=altId, version=version)
         has_consecutive_ALA = False
@@ -752,9 +752,9 @@ class SummaryView(object):
             has_consecutive_ALA = True
         #
         if count == len(seqAuth):
-            return 1, authFObj.getEntitySourceMethod(), authFObj.getPolymerLinkingType()
+            return 1, authFObj.getEntitySourceMethod(), authFObj.getPolymerLinkingType(), len(seqAuth)
         elif has_consecutive_ALA:
-            return 2, authFObj.getEntitySourceMethod(), authFObj.getPolymerLinkingType()
+            return 2, authFObj.getEntitySourceMethod(), authFObj.getPolymerLinkingType(), len(seqAuth)
         #
         return 0, authFObj.getEntitySourceMethod(), authFObj.getPolymerLinkingType(), len(seqAuth)
 
