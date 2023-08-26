@@ -951,7 +951,7 @@ class SeqModWebAppWorker(object):
                     for textMsg in warningD["mix_mse_met"]:
                         if warningMsg:
                             warningMsg += "</br>\n"
-                        # 
+                        #
                         warningMsg += textMsg
                     #
                 #

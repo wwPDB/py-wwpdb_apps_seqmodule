@@ -229,7 +229,7 @@ class SummaryView(object):
             rL, withGapScoreList, withoutGapScoreList, hitDbInfoList, hitDbIdList, authTaxIdList = self.__buildReferenceSection(groupId=gId)
             summaryDataObj[gId]["ref"] = rL
             #
-            summaryDataObj[gId]["xyz"],missingResidueInfoList = self.__buildCoordinateSection(groupId=gId, authSeqLength=seqLength)
+            summaryDataObj[gId]["xyz"], missingResidueInfoList = self.__buildCoordinateSection(groupId=gId, authSeqLength=seqLength)
             if len(missingResidueInfoList) > 0:
                 for missingInfo in missingResidueInfoList:
                     warningMsg += missingInfo + "<br />\n"
@@ -459,8 +459,8 @@ class SummaryView(object):
                     rowStatusList.append((isSelected, isAligned, seqId, "maxver"))
                     if (authSeqLength > 0) and ((authSeqLength * 3) >= (10 * len(seqXyz))):
                         percent = float((authSeqLength - len(seqXyz)) * 100) / float(authSeqLength)
-                        missingResidueInfoList.append("%.1f" % percent + "% residues of chain '" + seqId + "' are missing in coordinates (%d/%d)." % \
-                                                     (len(seqXyz), authSeqLength))
+                        missingResidueInfoList.append("%.1f" % percent + "% residues of chain '" + seqId + "' are missing in coordinates (%d/%d)." % 
+                                                      (len(seqXyz), authSeqLength))
                     #
                 else:
                     rowStatusList.append((isSelected, isAligned, seqId, ""))
@@ -478,7 +478,7 @@ class SummaryView(object):
         dT["ROW_IDS"] = rowIdList
         dT["ROW_STATUS"] = rowStatusList
         dT["ROW_DATA_DICT"] = rowDataDictList
-        return dT,missingResidueInfoList
+        return dT, missingResidueInfoList
 
     def __buildReferenceSection(self, groupId=None):
         """Assemble the data content for the reference sequence summary view.
