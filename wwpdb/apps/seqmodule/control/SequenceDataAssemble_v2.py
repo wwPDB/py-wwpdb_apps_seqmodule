@@ -125,7 +125,9 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         if not os.access(polyLinkPath, os.R_OK):
             return False
         #
-        ok, no_coord_issue, seqSimilarityInfoList, polymerLinkDistList, entryD, entityD, instanceD, statisticsMap, depSeqAssign, seqAssign = self.__readJsonObject(polyLinkPath)
+        ok, no_coord_issue, seqSimilarityInfoList, polymerLinkDistList, mixMseMetResidueList, entryD, entityD, instanceD, statisticsMap, depSeqAssign, \
+               seqAssign = self.__readJsonObject(polyLinkPath)
+        #
         if not ok:
             return False
         #
@@ -178,9 +180,8 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         except:  # noqa: E722 pylint: disable=bare-except
             sortedEntityIdList = self.__entityIdList
         #
-        self.__createSeqMatchFileAndMisMatchPickleFile(
-            sortedEntityIdList, entityD, ownRefD, eSSRefD, list(newOldEntityIdMap.keys()), misMatchList, notFoundMatchList, seqSimilarityInfoList
-        )
+        self.__createSeqMatchFileAndMisMatchPickleFile(sortedEntityIdList, entityD, ownRefD, eSSRefD, list(newOldEntityIdMap.keys()), misMatchList, \
+                                                       notFoundMatchList, seqSimilarityInfoList, mixMseMetResidueList)
         #
         self.__updateUtilDataStore(pdbxFilePath)
         #
@@ -325,6 +326,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             no_coord_issue = True
             seqSimilarityInfoList = []
             polymerLinkDistList = []
+            mixMseMetResidueList = []
             entryD = {}
             entityD = {}
             instanceD = {}
@@ -362,13 +364,31 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                     seqAssign = jsonObj["annSeqAssign"]
                 #
             #
-            return True, no_coord_issue, seqSimilarityInfoList, polymerLinkDistList, entryD, entityD, instanceD, statisticsMap, depSeqAssign, seqAssign
+            for key,valD in entityD.items():
+                if ("SEQ_TUP_LIST" not in valD) or (not valD["SEQ_TUP_LIST"]):
+                    continue
+                #
+                hasMSE = False
+                hasMET = False
+                for seqTupl in valD["SEQ_TUP_LIST"]:
+                    if seqTupl[0] == "MSE":
+                        hasMSE = True
+                    elif seqTupl[0] == "MET":
+                        hasMET = True
+                    #
+                #
+                if hasMSE and hasMET:
+                    mixMseMetResidueList.append("Entity " + key + " contains both MET and MSE.")
+                #
+            #
+            return True, no_coord_issue, seqSimilarityInfoList, polymerLinkDistList, mixMseMetResidueList, entryD, entityD, instanceD, \
+                   statisticsMap, depSeqAssign, seqAssign
         except:  # noqa: E722 pylint: disable=bare-except
             if self._verbose:
                 traceback.print_exc(file=self._lfh)
             #
         #
-        return False, False, [], [], {}, {}, {}, {}, {}, {}
+        return False, False, [], [], [], {}, {}, {}, {}, {}, {}
 
     def __getAuthDefinedRefD(self, depSeqAssign):
         """Get author provided reference information from pdbx_struct_ref_seq_depositor_info category"""
@@ -485,9 +505,9 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         tmpPolyLinkPath = os.path.join(self.__sessionPath, self.__dataSetId + "-poly-link.json")
         self.__calcPolymerLinkages(pdbxFilePath=prevModelFilePath, polyLinkPath=tmpPolyLinkPath)
         #
-        ok, _no_coord_issue, _seqSimilarityInfoList, _polymerLinkDistList, _entryD, prevEntityD, prevInstanceD, _statisticsMap, _depSeqAssign, _seqAssign = self.__readJsonObject(
-            tmpPolyLinkPath
-        )
+        ok, _no_coord_issue, _seqSimilarityInfoList, _polymerLinkDistList, _mixMseMetResidueList, _entryD, prevEntityD, prevInstanceD, _statisticsMap, \
+              _depSeqAssign, _seqAssign = self.__readJsonObject(tmpPolyLinkPath)
+        #
         if not ok:
             return {}, [], []
         #
@@ -960,9 +980,8 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         return rList, rList, []
 
-    def __createSeqMatchFileAndMisMatchPickleFile(
-        self, sortedEntityIdList, entityD, ownRefD, eSSRefD, prevEntityIdList, prevMisMatchList, prevNotFoundMatchList, seqSimilarityInfoList
-    ):
+    def __createSeqMatchFileAndMisMatchPickleFile(self, sortedEntityIdList, entityD, ownRefD, eSSRefD, prevEntityIdList, prevMisMatchList, \
+                                                  prevNotFoundMatchList, seqSimilarityInfoList, mixMseMetResidueList):
         """Create D_xxxxxxxxxx_seqmatch_P1.cif.Vx file"""
         annList = []
         misMatchList = []
@@ -1035,6 +1054,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         warningMsgMap["mismatch"] = misMatchList
         warningMsgMap["not_found_existing_match"] = notFoundMatchList
+        warningMsgMap["mix_mse_met"] = mixMseMetResidueList
         #
         fb = open(self.__misMatchPath, "wb")
         pickle.dump(warningMsgMap, fb)

@@ -549,6 +549,7 @@ class GetSameSeqAnnotation(object):
             authIdx = -1
             refIdx = -1
             alignLength = 0
+            seqLength = 0
             numMatch = 0
             numMatchGaps = 0
             alignmentList = []
@@ -558,6 +559,7 @@ class GetSameSeqAnnotation(object):
                 if matchTup[0] != self.__gapSymbol:
                     authIdx += 1
                     currAuthIdx = authIdx
+                    seqLength += 1
                 #
                 alignTup = []
                 if matchTup[4] == partTup[0]:
@@ -580,7 +582,7 @@ class GetSameSeqAnnotation(object):
                 #
                 alignmentList.append(alignTup)
             #
-            alignmentMap[partTup[0]] = (alignmentList, (alignLength, float(numMatch) / float(alignLength), float(numMatchGaps) / float(alignLength)), sTup3L)
+            alignmentMap[partTup[0]] = (alignmentList, (alignLength, float(numMatch) / float(alignLength), float(numMatchGaps) / float(seqLength)), sTup3L)
         #
         return alignmentMap
 

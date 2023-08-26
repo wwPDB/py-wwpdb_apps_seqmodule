@@ -204,7 +204,6 @@ class SummaryView(object):
         #
         if self.__verbose:
             self.__lfh.write("+SummaryView.__loadSummary() with sessionId %s\n" % self.__sessionObj.getId())
-
         #
         summaryDataObj = {}
         #
@@ -216,11 +215,12 @@ class SummaryView(object):
             self.__lfh.write("+SummaryView.__loadSummary() starting alignment list %r\n" % self.__summarySeqAlignList)
         #
         polyAlaCaseList = []
+        warningMsg = ""
         for gId in gIdList:
             #
             summaryDataObj[gId] = {}
             #
-            dT, polyALA_assignment, authSummaryPageD, method, polyType, dbAccessionList = self.__buildAuthSection(groupId=gId, op=op)
+            dT, polyALA_assignment, authSummaryPageD, method, polyType, dbAccessionList, seqLength = self.__buildAuthSection(groupId=gId, op=op)
             if polyALA_assignment > 0:
                 polyAlaCaseList.append((gId, polyALA_assignment))
             #
@@ -229,7 +229,11 @@ class SummaryView(object):
             rL, withGapScoreList, withoutGapScoreList, hitDbInfoList, hitDbIdList, authTaxIdList = self.__buildReferenceSection(groupId=gId)
             summaryDataObj[gId]["ref"] = rL
             #
-            summaryDataObj[gId]["xyz"] = self.__buildCoordinateSection(groupId=gId)
+            summaryDataObj[gId]["xyz"],missingResidueInfoList = self.__buildCoordinateSection(groupId=gId, authSeqLength=seqLength)
+            if len(missingResidueInfoList) > 0:
+                for missingInfo in missingResidueInfoList:
+                    warningMsg += missingInfo + "<br />\n"
+                #
             #
             decoration_start = ""
             decoration_end = ""
@@ -323,8 +327,10 @@ class SummaryView(object):
         #
         self.__finish()
         #
-        warningMsg = ""
         if len(self.__natureSourceTaxIds) > 1:
+            if warningMsg:
+                warningMsg += "<br />\n"
+            #
             warningMsg += "Entry contains multiple natural sources:<br />\n"
             for k, v in self.__natureSourceTaxIds.items():
                 if len(v) > 1:
@@ -387,13 +393,13 @@ class SummaryView(object):
         #
         # Get polyALA_assignment
         #
-        polyALA_assignment, method, polyType = self.__checkPolyAlaAssignment(seqId=groupId, partId=partIdList[0], altId=altId, version=verList[0])
+        polyALA_assignment, method, polyType, seqLength = self.__checkPolyAlaAssignment(seqId=groupId, partId=partIdList[0], altId=altId, version=verList[0])
         #
         summaryPageD = self.__getSummaryPageInfo(seqId=groupId, partIdList=partIdList, altId=altId)
         #
-        return dT, polyALA_assignment, summaryPageD, method, polyType, dbAccessionList
+        return dT, polyALA_assignment, summaryPageD, method, polyType, dbAccessionList, seqLength
 
-    def __buildCoordinateSection(self, groupId=None):
+    def __buildCoordinateSection(self, groupId=None, authSeqLength=0):
         """Assemble the data content for the coordinate sequence summary view.
 
         Returns: summaryDataObject
@@ -401,15 +407,15 @@ class SummaryView(object):
         """
         seqLabel = SequenceLabel()
         seqFeature = SequenceFeature()
-
         #
         # For each coordinate sequence -
         #
         seqIdList = self.__sds.getGroup(groupId)
-
+        #
         rowIdList = []
         rowStatusList = []
         rowDataDictList = []
+        missingResidueInfoList = []
         #
         partId = 1
         altId = 1
@@ -417,15 +423,16 @@ class SummaryView(object):
             verList = self.__sds.getVersionIds(seqId=seqId, partId=partId, altId=altId, dataType="sequence", seqType="xyz")
             if len(verList) < 1:
                 continue
+            #
             maxVrsnNum = verList[0]
             seqLabel.set(seqType="xyz", seqInstId=seqId, seqPartId=partId, seqAltId=altId, seqVersion=maxVrsnNum)
             maxSeqXyzId = seqLabel.pack()
-
+            #
             # select the highest version sequence
             if not (maxSeqXyzId in self.__summarySeqSelectList):
                 self.__summarySeqSelectList.append(maxSeqXyzId)
                 self.__summarySeqAlignList.append(maxSeqXyzId)
-
+            #
             for ver in verList:
                 seqXyz = self.__sds.getSequence(seqId, "xyz", partId=partId, altId=altId, version=ver)
                 seqXyzFD = self.__sds.getFeature(seqId, "xyz", partId=partId, altId=altId, version=ver)
@@ -450,6 +457,11 @@ class SummaryView(object):
                 # JDW add instance here to provide a selection group
                 if ver == maxVrsnNum:
                     rowStatusList.append((isSelected, isAligned, seqId, "maxver"))
+                    if (authSeqLength > 0) and ((authSeqLength * 3) >= (10 * len(seqXyz))):
+                        percent = float((authSeqLength - len(seqXyz)) * 100) / float(authSeqLength)
+                        missingResidueInfoList.append("%.1f" % percent + "% residues of chain '" + seqId + "' are missing in coordinates (%d/%d)." % \
+                                                     (len(seqXyz), authSeqLength))
+                    #
                 else:
                     rowStatusList.append((isSelected, isAligned, seqId, ""))
                 #
@@ -460,12 +472,13 @@ class SummaryView(object):
                 rowDataDict["ROW_DETAIL_STRING"] = detailString
                 rowDataDict.update(seqXyzFD)
                 rowDataDictList.append(rowDataDict)
+            #
         #
         dT = {}
         dT["ROW_IDS"] = rowIdList
         dT["ROW_STATUS"] = rowStatusList
         dT["ROW_DATA_DICT"] = rowDataDictList
-        return dT
+        return dT,missingResidueInfoList
 
     def __buildReferenceSection(self, groupId=None):
         """Assemble the data content for the reference sequence summary view.
@@ -743,7 +756,7 @@ class SummaryView(object):
         elif has_consecutive_ALA:
             return 2, authFObj.getEntitySourceMethod(), authFObj.getPolymerLinkingType()
         #
-        return 0, authFObj.getEntitySourceMethod(), authFObj.getPolymerLinkingType()
+        return 0, authFObj.getEntitySourceMethod(), authFObj.getPolymerLinkingType(), len(seqAuth)
 
     def __getSummaryPageInfo(self, seqId="1", partIdList=None, altId=1):
         """

@@ -415,7 +415,7 @@ class UpdateSequenceDataStoreUtils(object):
                 rList.extend(autoList)
             #
             if (len(rList) > 0) and (not selfRefFlag):
-                if ("statistics" in rList[-1]) and (rList[-1]["statistics"][2] > 0.899999):
+                if (("statistics" in rList[-1]) and (rList[-1]["statistics"][2] > 0.899999)) or (len(autoList) > 0):
                     self.__seqLabel.set(seqType="ref", seqInstId=sId, seqPartId=partNo, seqAltId=len(rList), seqVersion=1)
                     self.__defSelList.append(self.__seqLabel.pack())
                     ref_label[partNo] = [self.__seqLabel.pack()]
