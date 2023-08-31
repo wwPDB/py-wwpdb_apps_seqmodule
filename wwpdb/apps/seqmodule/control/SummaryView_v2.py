@@ -457,11 +457,11 @@ class SummaryView(object):
                 # JDW add instance here to provide a selection group
                 if ver == maxVrsnNum:
                     rowStatusList.append((isSelected, isAligned, seqId, "maxver"))
-                    if (authSeqLength > 0) and ((authSeqLength * 3) >= (10 * len(seqXyz))):
-                        percent = float((authSeqLength - len(seqXyz)) * 100) / float(authSeqLength)
-                        missingResidueInfoList.append("%.1f" % percent + "% residues of chain '" + seqId + "' are missing in coordinates (%d/%d)." % 
-                                                      (len(seqXyz), authSeqLength))
-                    #
+#                   if (authSeqLength > 0) and ((authSeqLength * 3) >= (10 * len(seqXyz))):
+#                       percent = float((authSeqLength - len(seqXyz)) * 100) / float(authSeqLength)
+#                       missingResidueInfoList.append("%.1f" % percent + "% residues of chain '" + seqId + "' (%d/%d residues) are missing in coordinates." % 
+#                                                     (authSeqLength - len(seqXyz), authSeqLength))
+#                   #
                 else:
                     rowStatusList.append((isSelected, isAligned, seqId, ""))
                 #

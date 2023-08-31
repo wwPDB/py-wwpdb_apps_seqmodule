@@ -19,7 +19,7 @@ import sys
 import traceback
 
 
-class BlastPlusReader:
+class BlastPlusReader(object):
     """Read Blast+ result file (xml format)  and return the list of dictionaries containing the following --
 
     dict['db_name']

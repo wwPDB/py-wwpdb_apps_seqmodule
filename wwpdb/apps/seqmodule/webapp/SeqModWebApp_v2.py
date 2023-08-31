@@ -947,12 +947,14 @@ class SeqModWebAppWorker(object):
                         warningMsg += "Sequences not matched to existing entries in entity: " + warningD["not_found_existing_match"][0]
                     #
                 #
-                if ("mix_mse_met" in warningD) and len(warningD["mix_mse_met"]) > 0:
-                    for textMsg in warningD["mix_mse_met"]:
-                        if warningMsg:
-                            warningMsg += "</br>\n"
+                for warningType in ( "missing_residue", "mix_mse_met" ):
+                    if (warningType in warningD) and len(warningD[warningType]) > 0:
+                        for textMsg in warningD[warningType]:
+                            if warningMsg:
+                                warningMsg += "</br>\n"
+                            #
+                            warningMsg += textMsg
                         #
-                        warningMsg += textMsg
                     #
                 #
                 if warningMsg:
