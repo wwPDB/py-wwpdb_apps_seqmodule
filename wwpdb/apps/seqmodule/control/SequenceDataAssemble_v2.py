@@ -392,7 +392,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                         continue
                     #
                     percent = float((len(valD["SEQ_TUP_LIST"]) - len(instanceD[instId])) * 100) / float(len(valD["SEQ_TUP_LIST"]))
-                    missingResidueInfoList.append("%.1f" % percent + "% residues of chain '" + instId + "' (%d/%d residues) are missing in coordinates." \
+                    missingResidueInfoList.append("%.1f" % percent + "% residues of chain '" + instId + "' (%d/%d residues) are missing in coordinates."
                                                   % (len(valD["SEQ_TUP_LIST"]) - len(instanceD[instId]), len(valD["SEQ_TUP_LIST"])))
                 #
             #

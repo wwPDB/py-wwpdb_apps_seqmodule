@@ -399,7 +399,7 @@ class SummaryView(object):
         #
         return dT, polyALA_assignment, summaryPageD, method, polyType, dbAccessionList, seqLength
 
-    def __buildCoordinateSection(self, groupId=None, authSeqLength=0):
+    def __buildCoordinateSection(self, groupId=None, authSeqLength=0):  # pylint: disable=unused-argument
         """Assemble the data content for the coordinate sequence summary view.
 
         Returns: summaryDataObject
@@ -459,7 +459,7 @@ class SummaryView(object):
                     rowStatusList.append((isSelected, isAligned, seqId, "maxver"))
 #                   if (authSeqLength > 0) and ((authSeqLength * 3) >= (10 * len(seqXyz))):
 #                       percent = float((authSeqLength - len(seqXyz)) * 100) / float(authSeqLength)
-#                       missingResidueInfoList.append("%.1f" % percent + "% residues of chain '" + seqId + "' (%d/%d residues) are missing in coordinates." % 
+#                       missingResidueInfoList.append("%.1f" % percent + "% residues of chain '" + seqId + "' (%d/%d residues) are missing in coordinates." %
 #                                                     (authSeqLength - len(seqXyz), authSeqLength))
 #                   #
                 else:
