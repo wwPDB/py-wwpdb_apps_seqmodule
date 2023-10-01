@@ -315,6 +315,27 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
         if alignLength < 1:
             return
         #
+        found_non_ala_residue = False
+        found_ala_residue = False
+        for alignTupList in self._seqAlignList:
+            for alignTup in alignTupList:
+                if (alignTup[1] == self._gapSymbol) or (alignTup[1].upper() == "ALA"):
+                    if alignTup[1].upper() == "ALA":
+                        found_ala_residue = True
+                    #
+                    continue
+                #
+                found_non_ala_residue = True
+                break
+            #
+            if found_non_ala_residue:
+                break
+            #
+        #
+        all_ala_flag = False
+        if (not found_non_ala_residue) and found_ala_residue:
+            all_ala_flag = True
+        #
         fp = open(htmlFilePath, "w")
         #
         alignmentLine = 0
@@ -431,6 +452,9 @@ class AlignmentDepictionTools(AlignmentBackEndEditingTools):
                         cssPosClassBg += " bgxyzhetero  "
                         ii = self._seqAlignList[sPos][alignIdx][5].find("hetero")
                         idS += "_" + self._seqAlignList[sPos][alignIdx][5][ii + 7 :]
+                    #
+                    if all_ala_flag and (seqType == "auth"):
+                        cssPosClassBg += " cf-ala-unk "
                     #
                     # Add highlighting for linker regions in the sample sequence --
                     #
