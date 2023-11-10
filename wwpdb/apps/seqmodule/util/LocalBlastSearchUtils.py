@@ -36,6 +36,7 @@ except ImportError:
     import pickle as pickle
 #
 import multiprocessing
+import copy
 import os
 import sys
 import time
@@ -49,6 +50,7 @@ from wwpdb.apps.seqmodule.util.FetchReferenceSequenceUtils import FetchReference
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
 from rcsb.utils.multiproc.MultiProcUtil import MultiProcUtil
 from wwpdb.io.locator.PathInfo import PathInfo
+from wwpdb.utils.config.ConfigInfoApp import ConfigInfoAppCommon
 from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
 
 
@@ -65,7 +67,7 @@ class LocalBlastSearchUtils(object):
         self.__ncbilock = ncbilock
         #
         self.__minRnaSequenceSearchLength = 50
-        self.__maxHitsSearch = 100
+        self.__maxHitsSearch = 250
         self.__maxHitsSave = 50
         self.__shortSequenceLengthLimit = 20
         self.__cleanUp = True
@@ -86,6 +88,9 @@ class LocalBlastSearchUtils(object):
         #
         self.__taxUtils = TaxonomyUtils(siteId=self.__siteId, verbose=self.__verbose, log=self.__lfh)
         self.__srd = SequenceReferenceData(self.__verbose, self.__lfh)
+        #
+        self.__cICommon = ConfigInfoAppCommon(self.__siteId)
+        self.__seqDbPath = self.__cICommon.get_site_refdata_sequence_db_path()
         #
         self.__matchEntityAttribNameList = [
             "id",
@@ -290,11 +295,21 @@ class LocalBlastSearchUtils(object):
             taxId = fD["SOURCE_TAXID"]
             searchSequence = oneLetterSearchSeq[(int(seqNumBeg) - 1) : int(seqNumEnd)]
             #
+            searchResultFileList = []
             xmlFilePath = os.path.join(self.__sessionPath, self.__dataSetId + "_blast-match_E" + self.__entityId + "_P" + str(partNum) + ".xml")
             if os.access(xmlFilePath, os.F_OK):
                 os.remove(xmlFilePath)
             #
-            partDataList.append((str(partNum), searchSequence, seqNumBeg, seqNumEnd, taxId, xmlFilePath))
+            searchResultFileList.append(xmlFilePath)
+            if self.__seqType in ["polypeptide(L)", "polypeptide(D)", "polypeptide"]:
+                xmlFilePath = os.path.join(self.__sessionPath, self.__dataSetId + "_blast-match_E" + self.__entityId + "_P" + str(partNum) + ".1.xml")
+                #
+                if os.access(xmlFilePath, os.F_OK):
+                    os.remove(xmlFilePath)
+                #
+                searchResultFileList.append(xmlFilePath)
+            #
+            partDataList.append((str(partNum), searchSequence, seqNumBeg, seqNumEnd, taxId, searchResultFileList))
             #
             mutationList = []
             if ("MUTATION_DETAILS" in self.__entityD) and self.__entityD["MUTATION_DETAILS"]:
@@ -328,13 +343,13 @@ class LocalBlastSearchUtils(object):
                     continue
                 #
                 # Skip blast search for short sequence
-                if len(searchSequence) <= self.__shortSequenceLengthLimit:
-                    continue
-                #
+#               if len(searchSequence) <= self.__shortSequenceLengthLimit:
+#                   continue
+#               #
             else:
                 foundPerfectMatch = False
             #
-            blastDataList.append((str(partNum), searchSequence, seqNumBeg, seqNumEnd, taxId, xmlFilePath))
+            blastDataList.append((str(partNum), searchSequence, seqNumBeg, seqNumEnd, taxId, searchResultFileList))
         #
         if not partDataList:
             return foundPerfectMatch, authRefD
@@ -351,11 +366,32 @@ class LocalBlastSearchUtils(object):
             #
             id_count = 1
             for partTup in partDataList:
-                hitList = []
-                if os.access(partTup[5], os.F_OK):
-                    hitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0], authTaxId=partTup[4],
-                                                            blastResultXmlPath=partTup[5])
+                mergedhitList = []
+                uniqueIdList = []
+                for resultFile in partTup[5]:
+                    if not os.access(resultFile, os.F_OK):
+                        continue
+                    #
+                    returnHitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0], \
+                                                                  authTaxId=partTup[4], blastResultXmlPath=resultFile)
+                    if len(returnHitList) == 0:
+                        continue
+                    #
+                    for hitD in returnHitList:
+                        refID = ""
+                        if ("db_isoform" in hitD) and hitD["db_isoform"]:
+                            refID = hitD["db_isoform"]
+                        elif ("db_accession" in hitD) and hitD["db_accession"]:
+                            refID = hitD["db_accession"]
+                        #
+                        if (refID == "") or (refID in uniqueIdList):
+                            continue
+                        #
+                        uniqueIdList.append(refID)
+                        mergedhitList.append(hitD)
+                    #
                 #
+                hitList = self.__getHitList(mergedhitList, partTup[4])
                 if hitList:
                     SeqAlignmentMap = self.__getRefSeqAlignments(hitList)
                     for hit in hitList:
@@ -515,27 +551,42 @@ class LocalBlastSearchUtils(object):
                 )
                 self.__lfh.write("+LocalBlastSearchUtils.runMultiLocalBlasts() ncbilock %s\n" % ncbilock)
             #
-            self.__runSingleLocalBlast(oneLetterCodeSeq=tupL[1], blastResultXmlPath=tupL[5], partNum=tupL[0], taxId=tupL[4])
+            if self.__seqType in ["polypeptide(L)", "polypeptide(D)", "polypeptide"]:
+                swissprotDBPath = os.path.join(self.__seqDbPath, "my_swissprot_all.pjs")
+                if os.access(swissprotDBPath, os.F_OK):
+                    self.__runSingleLocalBlast(oneLetterCodeSeq=tupL[1], searchResultFile=tupL[5][0], partNum=tupL[0], taxId=tupL[4], dbName="my_swissprot_all")
+                    if not self.__findPerfectMath(begSeqNum=tupL[2], endSeqNum=tupL[3], partId=tupL[0], taxId=tupL[4], searchResultFile=tupL[5][0]):
+                        self.__runSingleLocalBlast(oneLetterCodeSeq=tupL[1], searchResultFile=tupL[5][1], partNum=tupL[0], taxId=tupL[4], dbName="my_uniprot_all")
+                    #
+                else:
+                    self.__runSingleLocalBlast(oneLetterCodeSeq=tupL[1], searchResultFile=tupL[5][0], partNum=tupL[0], taxId=tupL[4], dbName="my_uniprot_all")
+                #
+            else:
+                self.__runSingleLocalBlast(oneLetterCodeSeq=tupL[1], searchResultFile=tupL[5][0], partNum=tupL[0], taxId=tupL[4], dbName="my_ncbi_nt")
+            #
             rList.append(tupL[0])
         #
         return rList, rList, []
 
-    def __runSingleLocalBlast(self, oneLetterCodeSeq, blastResultXmlPath, partNum, taxId):
+    def __runSingleLocalBlast(self, oneLetterCodeSeq, searchResultFile, partNum, taxId, dbName):
         """Internal method to execute the sequence search according to input polymer type."""
         if self.__verbose:
             self.__lfh.write("+LocalBlastSearchUtils.__runSingleLocalBlast() STARTING %s Launch search for %s sequence = %s\n" % (self.__siteId, self.__seqType, oneLetterCodeSeq))
             self.__lfh.flush()
         #
         timeBegin = time.time()
-        resultPath = os.path.abspath(blastResultXmlPath)
+        resultPath = os.path.abspath(searchResultFile)
         tmpPathAbs = os.path.abspath(self.__sessionPath)
         #
         if self.__seqType in ["polypeptide(L)", "polypeptide(D)", "polypeptide"]:
             dp = RcsbDpUtility(tmpPath=tmpPathAbs, siteId=self.__siteId, verbose=True)
             dp.addInput(name="one_letter_code_sequence", value=oneLetterCodeSeq)
-            dp.addInput(name="db_name", value="my_uniprot_all")
+            dp.addInput(name="db_name", value=dbName)
             dp.addInput(name="num_threads", value="4")
             dp.addInput(name="max_hits", value=self.__maxHitsSearch)
+            if len(oneLetterCodeSeq) <= self.__shortSequenceLengthLimit:
+                dp.addInput(name="short_seq", value=True)
+            #
             if taxId:
                 dp.addInput(name="tax_id", value=taxId)
             #
@@ -571,6 +622,25 @@ class LocalBlastSearchUtils(object):
             self.__lfh.write("+LocalBlastSearchUtils.__runSingleLocalBlast() Search processing completed after %.2f seconds\n" % (timeEnd - timeBegin))
             self.__lfh.flush()
         #
+
+    def __findPerfectMath(self, begSeqNum="", endSeqNum="", partId="", taxId="", searchResultFile=None):
+        """ Check if there is a perfect match
+        """
+        if (not begSeqNum) or (not endSeqNum) or (not partId) or (not taxId) or (not searchResultFile) or (not os.access(searchResultFile, os.F_OK)):
+            return False
+        #
+        hitList = self.__readBlastResultXmlFile(seqNumBeg=begSeqNum, seqNumEnd=endSeqNum, seqPartId=partId, authTaxId=taxId, \
+                                                blastResultXmlPath=searchResultFile)
+        for hitD in hitList:
+            if ("query_length" not in hitD) or (not hitD["query_length"]) or ("identity" not in hitD) or (not hitD["identity"]) or \
+               ("taxonomy_id" not in hitD) or (not hitD["taxonomy_id"]):
+                continue
+            #
+            if (hitD["query_length"] == hitD["identity"]) and (hitD["taxonomy_id"] == taxId):
+                return True
+            #
+        #
+        return False
 
     def __readBlastResultXmlFile(self, seqNumBeg, seqNumEnd, seqPartId, authTaxId, blastResultXmlPath):
         """Read blast result"""
@@ -710,7 +780,7 @@ class LocalBlastSearchUtils(object):
             hit["end_seq_num"] = seqNumEnd
             hit["fragment_id"] = seqPartId
         #
-        return self.__getHitList(hitList, authTaxId)
+        return hitList
 
     def __getHitList(self, hitList, authTaxId):
         """ """

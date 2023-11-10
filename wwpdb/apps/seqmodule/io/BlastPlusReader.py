@@ -38,6 +38,8 @@ class BlastPlusReader(object):
     dict['hitTo']
     dict['alignLen']
     dict['match_length']
+    dict['query_length']
+    dict['db_length']
 
     """
 

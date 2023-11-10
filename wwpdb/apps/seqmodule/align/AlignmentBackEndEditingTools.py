@@ -178,13 +178,21 @@ class AlignmentBackEndEditingTools(AlignmentTools):
         authIdx = self._seqAlignLabelIndices[self.__local_authLabel]
         self._checkPartStartEndPosMap(authIdx, self.__local_authLabel)
         #
+        updatedSeqLabelIdList = []
         for seqType in ("auth", "xyz", "ref"):
             if seqType not in self.__editedSeqLabelMap:
                 continue
             #
             for seqLabelId, editTypeList in self.__editedSeqLabelMap[seqType].items():
-                self.__updateSequenceInfo(authIdx, seqLabelId, editTypeList)
+                self.__updateSequenceInfo(authIdx, seqLabelId, editTypeList, nextVersionFlag=True)
+                updatedSeqLabelIdList.append(seqLabelId)
             #
+        #
+        for seqLabelId in inputAlignIdList:
+            if seqLabelId in updatedSeqLabelIdList:
+                continue
+            #
+            self.__updateSequenceInfo(authIdx, seqLabelId, "")
         #
         if ("details" in self.__editedType) or ("replace" in self.__editedType) or ("delete" in self.__editedType) or ("insert" in self.__editedType):
             self.saveSequenceDataStore()
@@ -260,9 +268,9 @@ class AlignmentBackEndEditingTools(AlignmentTools):
             #
         #
 
-    def __updateSequenceInfo(self, authIdx, seqLabelId, editTypeList):
+    def __updateSequenceInfo(self, authIdx, seqLabelId, editTypeList, nextVersionFlag=False):
         """Propogate the alignment edits to new versions of the sequences in the sequence data store."""
-        if (len(editTypeList) < 1) or ((len(editTypeList) == 1) and (editTypeList[0] == "replaceid")):
+        if nextVersionFlag and ((len(editTypeList) < 1) or ((len(editTypeList) == 1) and (editTypeList[0] == "replaceid"))):
             return
         #
         (seqType, seqInstId, seqPartId, seqAltId, seqVersion) = self._getUnpackSeqLabel(seqLabelId)
@@ -338,7 +346,8 @@ class AlignmentBackEndEditingTools(AlignmentTools):
             #
             alignTup[alignIdx][3] = codeIndex(seqIdx, comment)
         #
-        self.setSequence(newSeqList, seqType, seqInstId, seqPartId, seqAltId, nextVersion)
+        if nextVersionFlag:
+            self.setSequence(newSeqList, seqType, seqInstId, seqPartId, seqAltId, nextVersion)
         #
         if seqType == "auth":
             if alignIdx == authIdx:
@@ -372,9 +381,15 @@ class AlignmentBackEndEditingTools(AlignmentTools):
                     seqLen=len(newSeqList), alignLen=int(alignLength), seqSim=float(numMatch) / float(alignLength), seqSimWithGaps=float(numMatchGaps) / float(alignLength)
                 )
             #
-            self.setFeature(sFeature.get(), seqType, seqInstId, seqPartId, seqAltId, nextVersion)
+            if nextVersionFlag:
+                self.setFeature(sFeature.get(), seqType, seqInstId, seqPartId, seqAltId, nextVersion)
+            else:
+                self.setFeature(sFeature.get(), seqType, seqInstId, seqPartId, seqAltId, seqVersion)
+            #
         #
-        self.__newSeqLabelIdMap[seqLabelId] = self._getSeqLabelId((seqType, seqInstId, seqPartId, seqAltId, nextVersion))
+        if nextVersionFlag:
+            self.__newSeqLabelIdMap[seqLabelId] = self._getSeqLabelId((seqType, seqInstId, seqPartId, seqAltId, nextVersion))
+        #
 
     def __updateXyzAlignList(self):
         """Re-create self._xyzAlignLabelIndices, self._reverseXyzAlignLabelIndices & self._xyzAlignList from
