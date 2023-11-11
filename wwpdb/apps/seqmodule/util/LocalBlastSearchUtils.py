@@ -36,7 +36,6 @@ except ImportError:
     import pickle as pickle
 #
 import multiprocessing
-import copy
 import os
 import sys
 import time
@@ -372,7 +371,7 @@ class LocalBlastSearchUtils(object):
                     if not os.access(resultFile, os.F_OK):
                         continue
                     #
-                    returnHitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0], \
+                    returnHitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0],
                                                                   authTaxId=partTup[4], blastResultXmlPath=resultFile)
                     if len(returnHitList) == 0:
                         continue
@@ -629,7 +628,7 @@ class LocalBlastSearchUtils(object):
         if (not begSeqNum) or (not endSeqNum) or (not partId) or (not taxId) or (not searchResultFile) or (not os.access(searchResultFile, os.F_OK)):
             return False
         #
-        hitList = self.__readBlastResultXmlFile(seqNumBeg=begSeqNum, seqNumEnd=endSeqNum, seqPartId=partId, authTaxId=taxId, \
+        hitList = self.__readBlastResultXmlFile(seqNumBeg=begSeqNum, seqNumEnd=endSeqNum, seqPartId=partId, authTaxId=taxId,
                                                 blastResultXmlPath=searchResultFile)
         for hitD in hitList:
             if ("query_length" not in hitD) or (not hitD["query_length"]) or ("identity" not in hitD) or (not hitD["identity"]) or \
@@ -642,7 +641,7 @@ class LocalBlastSearchUtils(object):
         #
         return False
 
-    def __readBlastResultXmlFile(self, seqNumBeg, seqNumEnd, seqPartId, authTaxId, blastResultXmlPath):
+    def __readBlastResultXmlFile(self, seqNumBeg, seqNumEnd, seqPartId, authTaxId, blastResultXmlPath):  # pylint: disable=unused-argument
         """Read blast result"""
         hitList = []
         bpr = BlastPlusReader(verbose=self.__verbose, log=self.__lfh)

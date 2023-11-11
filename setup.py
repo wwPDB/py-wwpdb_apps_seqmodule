@@ -49,7 +49,7 @@ setup(
         "wwpdb.utils.seqdb_v2 ~= 0.11",
         "wwpdb.utils.align >= 0.11",
         "wwpdb.utils.detach >= 0.4.2",
-        "wwpdb.utils.dp >= 0.42",
+        "wwpdb.utils.dp ~= 0.48",
         "wwpdb.utils.db >= 0.28",
         "rcsb.utils.multiproc",
     ],
