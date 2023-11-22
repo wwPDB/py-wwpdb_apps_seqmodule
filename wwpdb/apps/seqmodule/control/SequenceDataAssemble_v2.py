@@ -97,7 +97,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         # minimum sequence length to search in reference databases -
         #
-        self.__minSearchSequenceLengthAA = 12
+        self.__minSearchSequenceLengthAA = 9
         self.__minSearchSequenceLengthNA = 50
         self.__entityIdList = []
         #
@@ -388,7 +388,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                     if instId not in instanceD:
                         continue
                     #
-                    if (10 * len(instanceD[instId])) > (3 * len(valD["SEQ_TUP_LIST"])):
+                    if (10 * len(instanceD[instId])) > (7 * len(valD["SEQ_TUP_LIST"])):
                         continue
                     #
                     percent = float((len(valD["SEQ_TUP_LIST"]) - len(instanceD[instId])) * 100) / float(len(valD["SEQ_TUP_LIST"]))

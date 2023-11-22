@@ -371,8 +371,8 @@ class LocalBlastSearchUtils(object):
                     if not os.access(resultFile, os.F_OK):
                         continue
                     #
-                    returnHitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0],
-                                                                  authTaxId=partTup[4], blastResultXmlPath=resultFile)
+                    returnHitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0], \
+                                                                  blastResultXmlPath=resultFile)
                     if len(returnHitList) == 0:
                         continue
                     #
@@ -554,7 +554,9 @@ class LocalBlastSearchUtils(object):
                 swissprotDBPath = os.path.join(self.__seqDbPath, "my_swissprot_all.pjs")
                 if os.access(swissprotDBPath, os.F_OK):
                     self.__runSingleLocalBlast(oneLetterCodeSeq=tupL[1], searchResultFile=tupL[5][0], partNum=tupL[0], taxId=tupL[4], dbName="my_swissprot_all")
-                    if not self.__findPerfectMath(begSeqNum=tupL[2], endSeqNum=tupL[3], partId=tupL[0], taxId=tupL[4], searchResultFile=tupL[5][0]):
+                    if (not self.__findPerfectMath(begSeqNum=tupL[2], endSeqNum=tupL[3], partId=tupL[0], taxId=tupL[4], searchResultFile=tupL[5][0])) and \
+                       (len(tupL[1]) > self.__shortSequenceLengthLimit):
+                        # only search whole uniprot for long sequence based on DAOTHER-7190
                         self.__runSingleLocalBlast(oneLetterCodeSeq=tupL[1], searchResultFile=tupL[5][1], partNum=tupL[0], taxId=tupL[4], dbName="my_uniprot_all")
                     #
                 else:
@@ -628,8 +630,7 @@ class LocalBlastSearchUtils(object):
         if (not begSeqNum) or (not endSeqNum) or (not partId) or (not taxId) or (not searchResultFile) or (not os.access(searchResultFile, os.F_OK)):
             return False
         #
-        hitList = self.__readBlastResultXmlFile(seqNumBeg=begSeqNum, seqNumEnd=endSeqNum, seqPartId=partId, authTaxId=taxId,
-                                                blastResultXmlPath=searchResultFile)
+        hitList = self.__readBlastResultXmlFile(seqNumBeg=begSeqNum, seqNumEnd=endSeqNum, seqPartId=partId, blastResultXmlPath=searchResultFile)
         for hitD in hitList:
             if ("query_length" not in hitD) or (not hitD["query_length"]) or ("identity" not in hitD) or (not hitD["identity"]) or \
                ("taxonomy_id" not in hitD) or (not hitD["taxonomy_id"]):
@@ -641,7 +642,7 @@ class LocalBlastSearchUtils(object):
         #
         return False
 
-    def __readBlastResultXmlFile(self, seqNumBeg, seqNumEnd, seqPartId, authTaxId, blastResultXmlPath):  # pylint: disable=unused-argument
+    def __readBlastResultXmlFile(self, seqNumBeg, seqNumEnd, seqPartId, blastResultXmlPath):
         """Read blast result"""
         hitList = []
         bpr = BlastPlusReader(verbose=self.__verbose, log=self.__lfh)
@@ -810,6 +811,9 @@ class LocalBlastSearchUtils(object):
         if self.__debug:
             self.__lfh.write("+LocalBlastSearchUtils.__sortHitList() length %d authTaxId %s authAncestorD %r\n" % (len(hitList), authTaxId, authAncestorD.items()))
         #
+        highest_identity_score_value = 0.0
+        highest_identity_score_index = 0
+        same_taxid_indice_list = []
         highest_identity_score_with_taxid_match = 0
         lowest_identity_score_with_taxid_match = 101
         lowest_identity_score_with_refid_match = 101
@@ -820,6 +824,11 @@ class LocalBlastSearchUtils(object):
             #
             if fullScoreFlag or ("identity_score" not in hit):
                 hit["identity_score"] = (float(hit["identity"]) - float(hit["gaps"])) * 100.0 / float(hit["query_length"])
+                hit["sorting_score"] = hit["identity_score"]
+                if hit["identity_score"] > highest_identity_score_value:
+                    highest_identity_score_value = hit["identity_score"]
+                    highest_identity_score_index = i
+                #
                 if self.__debug:
                     self.__lfh.write(
                         "+ReferencSequenceUtils.__sortHitList() i %r  identity %r gaps %r query_length %r  score %r\n"
@@ -853,6 +862,7 @@ class LocalBlastSearchUtils(object):
             if authAncestorD and targetAncestorD and "id" in authAncestorD and "id" in targetAncestorD:
                 if authAncestorD["id"] == targetAncestorD["id"]:
                     taxidMatch = 3
+                    same_taxid_indice_list.append(i)
                 elif "p_id" in authAncestorD and authAncestorD["p_id"] == targetAncestorD["id"]:
                     taxidMatch = 2
                 elif "p_id" in targetAncestorD and targetAncestorD["p_id"] == authAncestorD["id"]:
@@ -897,9 +907,20 @@ class LocalBlastSearchUtils(object):
                 cutoff_identity_score = lowest_identity_score_with_taxid_match - 0.1
             #
         #
+        # Improvement based on entry D_1000236156/6EEB with highest hit has conflicts
+        if (len(same_taxid_indice_list) > 0) and (highest_identity_score_index not in same_taxid_indice_list) and \
+           ("match_length" in hitList[highest_identity_score_index]) and (int(hitList[highest_identity_score_index]["identity"]) < \
+            int(hitList[highest_identity_score_index]["match_length"])):
+            for idx in same_taxid_indice_list:
+                if ("match_length" in hitList[idx]) and (hitList[idx]["match_length"] == hitList[idx]["identity"]) and \
+                   ((highest_identity_score_value - hitList[idx]["identity_score"]) < 1.0):
+                    hitList[idx]["sorting_score"] = highest_identity_score_value
+                #
+            #
+        #
         # The highest score hit is at the bottom of the list.
         #
-        hitList.sort(key=itemgetter("identity_score", "taxid_match", "code_score", "db_score", "non_isoform_score"))
+        hitList.sort(key=itemgetter("sorting_score", "taxid_match", "code_score", "db_score", "non_isoform_score"))
         #
         # reorder list if found author provided reference id
         #
