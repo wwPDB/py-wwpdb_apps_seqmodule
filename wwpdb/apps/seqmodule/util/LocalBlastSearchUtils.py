@@ -912,7 +912,11 @@ class LocalBlastSearchUtils(object):
            ("match_length" in hitList[highest_identity_score_index]) and (int(hitList[highest_identity_score_index]["identity"]) < \
             int(hitList[highest_identity_score_index]["match_length"])):
             for idx in same_taxid_indice_list:
-                if ("match_length" in hitList[idx]) and (hitList[idx]["match_length"] == hitList[idx]["identity"]) and \
+                if "match_length" not in hitList[idx]:
+                    continue
+                #
+                allowed_diffs = int(int(hitList[idx]["match_length"])/100) + 1
+                if ((int(hitList[idx]["match_length"]) - int(hitList[idx]["identity"])) < allowed_diffs) and \
                    ((highest_identity_score_value - hitList[idx]["identity_score"]) < 1.0):
                     hitList[idx]["sorting_score"] = highest_identity_score_value
                 #
