@@ -371,7 +371,7 @@ class LocalBlastSearchUtils(object):
                     if not os.access(resultFile, os.F_OK):
                         continue
                     #
-                    returnHitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0], \
+                    returnHitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0],
                                                                   blastResultXmlPath=resultFile)
                     if len(returnHitList) == 0:
                         continue
@@ -909,13 +909,13 @@ class LocalBlastSearchUtils(object):
         #
         # Improvement based on entry D_1000236156/6EEB with highest hit has conflicts
         if (len(same_taxid_indice_list) > 0) and (highest_identity_score_index not in same_taxid_indice_list) and \
-           ("match_length" in hitList[highest_identity_score_index]) and (int(hitList[highest_identity_score_index]["identity"]) < \
-            int(hitList[highest_identity_score_index]["match_length"])):
+           ("match_length" in hitList[highest_identity_score_index]) and \
+           (int(hitList[highest_identity_score_index]["identity"]) < int(hitList[highest_identity_score_index]["match_length"])):
             for idx in same_taxid_indice_list:
                 if "match_length" not in hitList[idx]:
                     continue
                 #
-                allowed_diffs = int(int(hitList[idx]["match_length"])/100) + 1
+                allowed_diffs = int(int(hitList[idx]["match_length"]) / 100) + 1
                 if ((int(hitList[idx]["match_length"]) - int(hitList[idx]["identity"])) < allowed_diffs) and \
                    ((highest_identity_score_value - hitList[idx]["identity_score"]) < 1.0):
                     hitList[idx]["sorting_score"] = highest_identity_score_value
