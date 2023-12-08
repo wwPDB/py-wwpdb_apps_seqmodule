@@ -371,7 +371,7 @@ class LocalBlastSearchUtils(object):
                     if not os.access(resultFile, os.F_OK):
                         continue
                     #
-                    returnHitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0],
+                    returnHitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0], \
                                                                   blastResultXmlPath=resultFile)
                     if len(returnHitList) == 0:
                         continue
@@ -554,11 +554,11 @@ class LocalBlastSearchUtils(object):
                 swissprotDBPath = os.path.join(self.__seqDbPath, "my_swissprot_all.pjs")
                 if os.access(swissprotDBPath, os.F_OK):
                     self.__runSingleLocalBlast(oneLetterCodeSeq=tupL[1], searchResultFile=tupL[5][0], partNum=tupL[0], taxId=tupL[4], dbName="my_swissprot_all")
-                    if (not self.__findPerfectMath(begSeqNum=tupL[2], endSeqNum=tupL[3], partId=tupL[0], taxId=tupL[4], searchResultFile=tupL[5][0])) and \
-                       (len(tupL[1]) > self.__shortSequenceLengthLimit):
-                        # only search whole uniprot for long sequence based on DAOTHER-7190
-                        self.__runSingleLocalBlast(oneLetterCodeSeq=tupL[1], searchResultFile=tupL[5][1], partNum=tupL[0], taxId=tupL[4], dbName="my_uniprot_all")
-                    #
+#                   if (not self.__findPerfectMath(begSeqNum=tupL[2], endSeqNum=tupL[3], partId=tupL[0], taxId=tupL[4], searchResultFile=tupL[5][0])) and \
+#                      (len(tupL[1]) > self.__shortSequenceLengthLimit):
+#                       # only search whole uniprot for long sequence based on DAOTHER-7190
+#                       self.__runSingleLocalBlast(oneLetterCodeSeq=tupL[1], searchResultFile=tupL[5][1], partNum=tupL[0], taxId=tupL[4], dbName="my_uniprot_all")
+#                   #
                 else:
                     self.__runSingleLocalBlast(oneLetterCodeSeq=tupL[1], searchResultFile=tupL[5][0], partNum=tupL[0], taxId=tupL[4], dbName="my_uniprot_all")
                 #
@@ -587,6 +587,7 @@ class LocalBlastSearchUtils(object):
             dp.addInput(name="max_hits", value=self.__maxHitsSearch)
             if len(oneLetterCodeSeq) <= self.__shortSequenceLengthLimit:
                 dp.addInput(name="short_seq", value=True)
+                dp.addInput(name="evalue", value="0.02")
             #
             if taxId:
                 dp.addInput(name="tax_id", value=taxId)
@@ -909,8 +910,8 @@ class LocalBlastSearchUtils(object):
         #
         # Improvement based on entry D_1000236156/6EEB with highest hit has conflicts
         if (len(same_taxid_indice_list) > 0) and (highest_identity_score_index not in same_taxid_indice_list) and \
-           ("match_length" in hitList[highest_identity_score_index]) and \
-           (int(hitList[highest_identity_score_index]["identity"]) < int(hitList[highest_identity_score_index]["match_length"])):
+           ("match_length" in hitList[highest_identity_score_index]) and (int(hitList[highest_identity_score_index]["identity"]) < \
+            int(hitList[highest_identity_score_index]["match_length"])):
             for idx in same_taxid_indice_list:
                 if "match_length" not in hitList[idx]:
                     continue
