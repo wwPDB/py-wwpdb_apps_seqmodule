@@ -371,7 +371,7 @@ class LocalBlastSearchUtils(object):
                     if not os.access(resultFile, os.F_OK):
                         continue
                     #
-                    returnHitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0], \
+                    returnHitList = self.__readBlastResultXmlFile(seqNumBeg=partTup[2], seqNumEnd=partTup[3], seqPartId=partTup[0],
                                                                   blastResultXmlPath=resultFile)
                     if len(returnHitList) == 0:
                         continue
@@ -625,23 +625,23 @@ class LocalBlastSearchUtils(object):
             self.__lfh.flush()
         #
 
-    def __findPerfectMath(self, begSeqNum="", endSeqNum="", partId="", taxId="", searchResultFile=None):
-        """ Check if there is a perfect match
-        """
-        if (not begSeqNum) or (not endSeqNum) or (not partId) or (not taxId) or (not searchResultFile) or (not os.access(searchResultFile, os.F_OK)):
-            return False
-        #
-        hitList = self.__readBlastResultXmlFile(seqNumBeg=begSeqNum, seqNumEnd=endSeqNum, seqPartId=partId, blastResultXmlPath=searchResultFile)
-        for hitD in hitList:
-            if ("query_length" not in hitD) or (not hitD["query_length"]) or ("identity" not in hitD) or (not hitD["identity"]) or \
-               ("taxonomy_id" not in hitD) or (not hitD["taxonomy_id"]):
-                continue
-            #
-            if (hitD["query_length"] == hitD["identity"]) and (hitD["taxonomy_id"] == taxId):
-                return True
-            #
-        #
-        return False
+    # def __findPerfectMath(self, begSeqNum="", endSeqNum="", partId="", taxId="", searchResultFile=None):
+    #     """ Check if there is a perfect match
+    #     """
+    #     if (not begSeqNum) or (not endSeqNum) or (not partId) or (not taxId) or (not searchResultFile) or (not os.access(searchResultFile, os.F_OK)):
+    #         return False
+    #     #
+    #     hitList = self.__readBlastResultXmlFile(seqNumBeg=begSeqNum, seqNumEnd=endSeqNum, seqPartId=partId, blastResultXmlPath=searchResultFile)
+    #     for hitD in hitList:
+    #         if ("query_length" not in hitD) or (not hitD["query_length"]) or ("identity" not in hitD) or (not hitD["identity"]) or \
+    #            ("taxonomy_id" not in hitD) or (not hitD["taxonomy_id"]):
+    #             continue
+    #         #
+    #         if (hitD["query_length"] == hitD["identity"]) and (hitD["taxonomy_id"] == taxId):
+    #             return True
+    #         #
+    #     #
+    #     return False
 
     def __readBlastResultXmlFile(self, seqNumBeg, seqNumEnd, seqPartId, blastResultXmlPath):
         """Read blast result"""
@@ -910,8 +910,8 @@ class LocalBlastSearchUtils(object):
         #
         # Improvement based on entry D_1000236156/6EEB with highest hit has conflicts
         if (len(same_taxid_indice_list) > 0) and (highest_identity_score_index not in same_taxid_indice_list) and \
-           ("match_length" in hitList[highest_identity_score_index]) and (int(hitList[highest_identity_score_index]["identity"]) < \
-            int(hitList[highest_identity_score_index]["match_length"])):
+           ("match_length" in hitList[highest_identity_score_index]) and (int(hitList[highest_identity_score_index]["identity"])
+                                                                          < int(hitList[highest_identity_score_index]["match_length"])):
             for idx in same_taxid_indice_list:
                 if "match_length" not in hitList[idx]:
                     continue
