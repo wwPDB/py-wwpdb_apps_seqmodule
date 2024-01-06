@@ -2,6 +2,9 @@
 # File:  AlignmentBackEndEditingTools.py
 # Date:  10-Nov-2018
 #
+# Updates:
+#  06-Jan-2023  zf  keep the reference sequence range information
+#
 """
 Methods to manage sequence alignment editing operations.
 """
@@ -371,6 +374,8 @@ class AlignmentBackEndEditingTools(AlignmentTools):
             #
         else:
             sFeature = self._getFeatureObjByUnpackLabelFromDataStore(seqType, seqInstId, seqPartId, seqAltId, seqVersion)
+            matchBeg = sFeature.getItem("REF_MATCH_BEGIN")
+            matchEnd = sFeature.getItem("REF_MATCH_END")
             sFeature.clearAlignDetails()
             if seqType == "xyz":
                 sFeature.setAuthXyzAlignDetails(
@@ -380,6 +385,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
                 sFeature.setAuthRefAlignDetails(
                     seqLen=len(newSeqList), alignLen=int(alignLength), seqSim=float(numMatch) / float(alignLength), seqSimWithGaps=float(numMatchGaps) / float(alignLength)
                 )
+                sFeature.setAuthRefAlignRange(refMatchBegin=matchBeg, refMatchEnd=matchEnd) 
             #
             if nextVersionFlag:
                 self.setFeature(sFeature.get(), seqType, seqInstId, seqPartId, seqAltId, nextVersion)

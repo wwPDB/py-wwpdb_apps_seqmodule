@@ -7,6 +7,7 @@
 #    7-Aug-2015  jdw   upper case input one-letter-code sequence -
 #    7-Sep-2017  zf    modified __updatePolymerEntityPartitions() to remove extra incorrect fragment assignment(s)
 #    7-Aug-2021  zf    add option for changing _entity_poly.type
+#    6-Jan-2024  zf    add Sequence Builder Form, modify Sequence Parition and Taxonomy Data Form 
 #
 ##
 """
@@ -19,12 +20,18 @@ __email__ = "jwest@rcsb.rutgers.edu"
 __license__ = "Creative Commons Attribution 3.0 Unported"
 __version__ = "V0.08"
 
-import sys
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle as pickle
+#
+import os,string,sys
 import traceback
 import copy
 
 from wwpdb.apps.seqmodule.io.SequenceDataStore import SequenceDataStore
 from wwpdb.apps.seqmodule.io.TaxonomyUtils import TaxonomyUtils
+from wwpdb.apps.seqmodule.util.FetchReferenceSequenceUtils import FetchReferenceSequenceUtils
 from wwpdb.apps.seqmodule.util.SequenceLabel import SequenceLabel, SequenceFeature
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
 
@@ -44,10 +51,10 @@ class UpdatePolymerEntityPartitions(object):
 
     def __setup(self):
         try:
-            self.__placeHolderValue = "click-to-edit"
             self.__siteId = self.__reqObj.getValue("WWPDB_SITE_ID")
             self.__sessionId = self.__reqObj.getSessionId()
             self.__sessionObj = self.__reqObj.getSessionObj()
+            self.__sessionPath = self.__sessionObj.getPath()
             #
             self.__selectIdList = self.__reqObj.getSummarySelectList()
             self.__sds = SequenceDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
@@ -70,19 +77,51 @@ class UpdatePolymerEntityPartitions(object):
          -->
 
         """
+#       <h3>Sequence Builder</h3>
+        seq_build_top_template = """
+        <div class="head ui-corner-all">
+        <div><a href="#" class="toggle"><span class="fltlft width20px"><span class="ui-icon ui-icon-circle-arrow-e"></span></span><span style="color:#696">Sequence Builder based on the relevant UniProt sequence(s) (Click to open the input form)</span></a></div>
+        </div>
+        <div style="display: none;">
+        <form name="formseqbuilder" id="formseqbuilder" action="/service/sequence_editor/respond_form/seqbuilder" method="post" class="seqbuilder_ajaxform">
+            <input type="hidden" name="sessionid" value="%s" />
+            <input type="hidden" name="entityid" value="%s" />
+            <input type="hidden" id="num_seq_fragments" name="num_seq_fragments" value="%d" />
+
+            <table>
+            <tbody id="seq_build_table">
+            <tr>
+               <th>Row #</th>
+               <th>Uniprot Id</th>
+               <th>Ref Seq Begin</th>
+               <th>Ref Seq End</th>
+               <th>Expression Tag/linker Input Box</th>
+            </tr>
+        """
+        seq_build_bottom_template = """
+            </tbody>
+            </table>
+        <br class="clearfloat" />
+        <div class="width50 fltlft"><input type="submit" name="submit_seq" value="Update Sequence" class="disableonclick submitparentform"  /></div>
+        <div class="fltrgt"><input type="button" id="add_row_button_seq" name="add_row_button_seq" value="Add rows"/></div>
+        </form>
+            <br />
+            <br />
+        </div>
+        """
         top_form_template = """
-        <div id="sectaxonomy">
         <h3>Sequence Parition and Taxonomy Data Form for Entry %s Entity %s</h3>
         <form name="formtaxonomy" id="formtaxonomy" action="/service/sequence_editor/respond_form/taxonomy" method="post" class="taxonomy_ajaxform">
             <input type="hidden" name="sessionid" value="%s" />
             <input type="hidden" name="entityid" value="%s" />
             <input type="hidden" name="numparts" value="%d" />
+            <input type="hidden" id="withref_info" name="withref_info" value="" />
 
             <table>
             <tr><th>Entity Sequence</th><th>Entity Type</th></tr>
             <tr>
-            <td style="text-align: left; font-family: monospace; white-space: pre;"><span id="entity_seq_1"  data-ief-edittype="textarea-mono" class="ief">%s</span></td>
-            <td><span id="entity_type_1" class="%s" data-ief-edittype="select" data-ief-selectvalues='%s'>%s</span></td>
+            <td style="text-align: left; font-family: monospace; white-space: pre;"><textarea id="entity_seq_1" name="entity_seq_1" cols="90" rows="4" wrap>%s</textarea></td>
+            <td>%s</td>
             </tr>
             </table>
             <br />
@@ -95,7 +134,7 @@ class UpdatePolymerEntityPartitions(object):
                <th>Seq Begin</th>
                <th>Seq End</th>
                <th>Part Type</th>
-             </tr>
+            </tr>
         """
         #
         bottom_form_template = """
@@ -103,8 +142,7 @@ class UpdatePolymerEntityPartitions(object):
             </table>
         <br class="clearfloat" />
         <div class="width50 fltlft">Search Sequence Database: &nbsp;&nbsp; <input type="checkbox" name="seq_search_op" id="seq_search_op" /></div>
-        <div class="width50 fltrgt"> Add instances from entity:&nbsp;&nbsp;
-             <span id="merge_instance_1"  class="ief greyedout" data-ief-edittype="select" data-ief-selectvalues='%s'>%s</span></div>
+        <div class="width50 fltrgt">%s</div>
         <br />
         <br />
 
@@ -112,15 +150,13 @@ class UpdatePolymerEntityPartitions(object):
         <div class="fltrgt"><input type="button" id="add_row_button" name="add_row_button" value="Add rows"/></div>
         <br class="clearfloat" />
             <!-- <input type="reset" name="reset" value="Reset" /> -->
-            <input type="hidden" name="total_numparts" id="total_numparts" value="%s" />
+            <input type="hidden" name="total_numparts" id="total_numparts" value="%d" />
             <input type="hidden" id="seq_length" value="%d" />
         </form>
         </div>
         """
         #
-        # optList=['Biological sequence','Linker','N-terminal tag','C-terminal tag']
-        optList = ["", "Biological sequence"]
-        # optSel = ['false' for opt in optList]
+        optList = ["Biological sequence"]
         #
         entityTypeList = [
             "polypeptide(L)",
@@ -144,57 +180,60 @@ class UpdatePolymerEntityPartitions(object):
         partIdList = list(partD.keys())
         partIdList.sort(key=int)
         #
-        entityDisplayClass = "ief"
-        if entityType == self.__placeHolderValue:
-            entityDisplayClass = "ief greyedout"
-        #
-        entityTypeTxt = self.__formatSelectList(entityTypeList, entityType)
+        entityTypeTxt = self.__formatSelectList("entity_type_1", entityType, entityTypeList)
         oL = []
-        oL.append(top_form_template % (entryId, entityId, self.__sessionId, entityId, len(partIdList), seq1, entityDisplayClass, entityTypeTxt, entityType))
+        oL.append('<div id="sectaxonomy">')
+        if entityType == "polypeptide(L)":
+            oL.append(seq_build_top_template % (self.__sessionId, entityId, 3))
+            for i in range(0, 3):
+                oL.append("<tr>")
+                oL.append('<td>%d</td>' % (i+1))
+                oL.append('<td><input type="text" id="uniprot_id_%d" name="uniprot_id_%d" value="" size="20" /></td>' % (i + 1, i + 1))
+                oL.append('<td><input type="text" id="beg_uniprot_num_%d" name="beg_uniprot_num_%d" value="" size="10" /></td>' % (i + 1, i + 1))
+                oL.append('<td><input type="text" id="end_uniprot_num_%d" name="end_uniprot_num_%d" value="" size="10" /></td>' % (i + 1, i + 1))
+                oL.append('<td><input type="text" id="term_link_seq_%d" name="term_link_seq_%d" value="" size="50" /></td>' % (i + 1, i + 1))
+                oL.append("</tr>")
+            #
+            oL.append(seq_build_bottom_template)
+        #
+        oL.append(top_form_template % (entryId, entityId, self.__sessionId, entityId, len(partIdList), seq1, entityTypeTxt))
         #
         for partId in partIdList:
             _pIdT, seqBeg, seqEnd, pType, taxIdT = partD[partId]
             oL.append("<tr>")
-            oL.append('<td><span id="p_%d_partid">%d</span><input type="hidden" name="p_%d_partid" value="%d" /></td>' % (partId, partId, partId, partId))
+            oL.append('<td>%d<input type="hidden" name="p_%d_partid" value="%d" /></td>' % (partId, partId, partId))
+            taxId = ""
             if (taxIdT is not None) and (len(taxIdT) > 0):
                 taxId = taxIdT
-                oL.append('<td><span id="p_%d_taxid"    class="ief">%s</span></td>' % (partId, taxId))
-            else:
-                taxId = self.__placeHolderValue
-                oL.append('<td><span id="p_%d_taxid"    class="ief greyedout">%s</span></td>' % (partId, taxId))
-            oL.append('<td><span id="p_%d_seqbegin" class="ief">%s</span></td>' % (partId, seqBeg))
-            oL.append('<td><span id="p_%d_seqend"   class="ief">%s</span></td>' % (partId, seqEnd))
-            jTxt = self.__formatSelectList(optList, pType)
-            oL.append('<td><span id="p_%d_seqtype"  class="ief" data-ief-edittype="select" data-ief-selectvalues=\'%s\'>%s</span></td>' % (partId, jTxt, pType))
+            #
+            oL.append('<td><input type="text" id="p_%d_taxid" name="p_%d_taxid" value="%s" size="10" /></td>' % (partId, partId, taxId))
+            oL.append('<td><input type="text" id="p_%d_seqbegin" name="p_%d_seqbegin" value="%s" size="10" /></td>' % (partId, partId, seqBeg))
+            oL.append('<td><input type="text" id="p_%d_seqend" name="p_%d_seqend" value="%s" size="10" /></td>' % (partId, partId, seqEnd))
+            name = "p_%d_seqtype" % partId
+            oL.append('<td>%s</td>' % self.__formatSelectList(name, pType, optList))
             oL.append("</tr>")
-
+        #
         partId = int(partIdList[-1])
-        taxId = self.__placeHolderValue
-        seqBeg = self.__placeHolderValue
-        seqEnd = self.__placeHolderValue
-        pType = self.__placeHolderValue
-
         for _i in range(1, 8):
             partId += 1
             oL.append("<tr>")
-            oL.append('<td><span id="p_%d_partid">%d</span><input type="hidden" name="p_%d_partid" value="%d" /></td>' % (partId, partId, partId, partId))
-            oL.append('<td><span id="p_%d_taxid"    class="ief greyedout">%s</span></td>' % (partId, taxId))
-            oL.append('<td><span id="p_%d_seqbegin" class="ief greyedout">%s</span></td>' % (partId, seqBeg))
-            oL.append('<td><span id="p_%d_seqend"   class="ief greyedout">%s</span></td>' % (partId, seqEnd))
-            jTxt = self.__formatSelectList(optList, pType)
-            oL.append('<td><span id="p_%d_seqtype"  class="ief greyedout" data-ief-edittype="select" data-ief-selectvalues=\'%s\'>%s</span></td>' % (partId, jTxt, pType))
+            oL.append('<td>%d<input type="hidden" name="p_%d_partid" value="%d" /></td>' % (partId, partId, partId))
+            oL.append('<td><input type="text" id="p_%d_taxid" name="p_%d_taxid" value="" size="10" /></td>' % (partId, partId))
+            oL.append('<td><input type="text" id="p_%d_seqbegin" name="p_%d_seqbegin" value="" size="10" /></td>' % (partId, partId))
+            oL.append('<td><input type="text" id="p_%d_seqend" name="p_%d_seqend" value="" size="10" /></td>' % (partId, partId))
+            name = "p_%d_seqtype" % partId
+            oL.append('<td>%s</td>' % self.__formatSelectList(name, "", optList))
             oL.append("</tr>")
         #
-
         eIdList = self.__sds.getGroupIds()
-        myList = []
-        myList.append(self.__placeHolderValue)
-        myList.extend([eId for eId in sorted(eIdList) if eId != entityId])
-        jTxt = self.__formatSelectList(myList, "None")
-        oL.append(bottom_form_template % (jTxt, self.__placeHolderValue, partId, seq_length))
-
-        return "\n".join(oL)
+        myList = [eId for eId in sorted(eIdList) if eId != entityId]
+        merge_instance_1_txt = ""
+        if len(myList) > 0:
+            merge_instance_1_txt = "Add instances from entity:&nbsp;&nbsp; " + self.__formatSelectList("merge_instance_1", "", myList)
         #
+        oL.append(bottom_form_template % (merge_instance_1_txt, partId, seq_length))
+        #
+        return "\n".join(oL)
 
     def polymerEntityPartEditFormResponder(self):
         """Update the polymer entity data store using user provided entity part, source and taxonomy content.
@@ -209,7 +248,7 @@ class UpdatePolymerEntityPartitions(object):
             entity_type_1 = str(self.__reqObj.getValue("entity_type_1")).strip()
             #
             mergeEntityId = self.__reqObj.getValue("merge_instance_1")
-            if mergeEntityId != self.__placeHolderValue:
+            if mergeEntityId:
                 self.__lfh.write("+UpdatePolymerEntityPartitions.polymerEntityPartEditFormResponder() merging entity id %r\n" % mergeEntityId)
                 self.__updateGroupInstances(entityId, mergeEntityId)
 
@@ -218,20 +257,13 @@ class UpdatePolymerEntityPartitions(object):
             # for partId in range(1, numParts + 8):
             for partId in range(1, totalNumParts + 1):
                 taxId = self.__reqObj.getValue("p_%d_taxid" % partId)
-                if (taxId is None) or (taxId == self.__placeHolderValue):
+                if taxId is None:
                     taxId = ""
                 #
                 seqBegin = self.__reqObj.getValue("p_%d_seqbegin" % partId)
                 seqEnd = self.__reqObj.getValue("p_%d_seqend" % partId)
                 seqPartType = self.__reqObj.getValue("p_%d_seqtype" % partId)
-                if (
-                    (not seqPartType)
-                    or (seqPartType == self.__placeHolderValue)
-                    or (not seqBegin)
-                    or (seqBegin == self.__placeHolderValue)
-                    or (not seqEnd)
-                    or (seqEnd == self.__placeHolderValue)
-                ):
+                if (not seqPartType) or (not seqBegin) or (not seqEnd):
                     continue
                 #
                 if partId > numParts:
@@ -240,7 +272,6 @@ class UpdatePolymerEntityPartitions(object):
                     pD[partId] = (partId, int(seqBegin), int(seqEnd), str(seqPartType), str(taxId))
                 #
             #
-            self.__lfh.write("+UpdatePolymerEntityPartitions.polymerEntityPartEditFormResponder() pD=%d\n" % len(pD))
             _seq_length, seq1Org, pOrgD, entityType = self.__getEntityPartDetails(entityId=entityId, numExtra=(totalNumParts - numParts))
             #
             if seq1 != seq1Org:
@@ -266,7 +297,6 @@ class UpdatePolymerEntityPartitions(object):
                     )
                     updatePartitionFlag = True
                     break
-                # elif pD[partId][1] != self.__placeHolderValue and partId > numParts:
                 elif ((partId in pD) and (partId not in pOrgD)) or ((partId not in pD) and (partId in pOrgD)):
                     updatePartitionFlag = True
                     break
@@ -289,6 +319,184 @@ class UpdatePolymerEntityPartitions(object):
             return False
 
         return True
+
+    def seqBuilderResponder(self):
+        """ Build the sequence from the annotator's input in Sequence Builder Form and
+            return the sequence and related information
+        """
+        try:
+            refSeqD = {}
+            refSeqPickleFile = os.path.join(self.__sessionPath, "fetchedRefSeqs.pic")
+            if os.access(refSeqPickleFile, os.F_OK):
+                try:
+                    fb = open(refSeqPickleFile, "rb")
+                    refSeqD = pickle.load(fb)
+                    fb.close()
+                except:  # noqa: E722 pylint: disable=bare-except
+                    refSeqD = {}
+                #
+            #
+            fetchUtil = FetchReferenceSequenceUtils(siteId=self.__siteId, seqReferenceData=self.__srd, verbose=self.__verbose, log=self.__lfh)
+            #
+            numSeqParts = int(str(self.__reqObj.getValue("num_seq_fragments")))
+            entityId = self.__reqObj.getValue("entityid")
+            seqPartList = []
+            errMsg = ""
+            for partId in range(1, numSeqParts + 1):
+                dbAccession = self.__reqObj.getValue("uniprot_id_%d" % partId)
+                dbSeqBegin = self.__reqObj.getValue("beg_uniprot_num_%d" % partId)
+                dbSeqEnd = self.__reqObj.getValue("end_uniprot_num_%d" % partId)
+                linkSeq = self.__reqObj.getValue("term_link_seq_%d" % partId)
+                if linkSeq:
+                    seqPartD = {}
+                    seqPartD["sequence"] = linkSeq
+                    seqPartList.append(seqPartD)
+                elif dbAccession and dbSeqBegin and dbSeqEnd:
+                    refFeatureDict = {}
+                    if (dbAccession in refSeqD) and refSeqD[dbAccession]:
+                        refFeatureDict = refSeqD[dbAccession]
+                        if int(dbSeqEnd) > refFeatureDict["db_length"]:
+                            if errMsg:
+                                errMsg += "\n"
+                            #
+                            errMsg += "Invalid SEQ END number: %s > %d ( sequence length of %s)." % (dbSeqEnd, refFeatureDict["db_length"], dbAccession)
+                            continue
+                        #
+                    #
+                    if not refFeatureDict:
+                        dbIsoform = ""
+                        dbAcc = dbAccession
+                        tL = dbAccession.split("-")
+                        if len(tL) > 1:
+                            dbIsoform = dbAccession
+                            dbAcc = tL[0]
+                        #
+                        fetchUtil.reset()
+                        fetchErr, refFeatureDict, refSeqList = fetchUtil.fetchReferenceSequence("UNP", dbAcc, dbIsoform, polyTypeCode="AA", \
+                                                                                                  refSeqBeg=dbSeqBegin, refSeqEnd=dbSeqEnd)
+                        #
+                        if fetchErr:
+                            if errMsg:
+                                errMsg += "\n"
+                            #
+                            errMsg += fetchErr
+                            continue
+                        #
+                        if refFeatureDict:
+                            refSeqD[dbAccession] = refFeatureDict
+                        #
+                    #
+                    if not refFeatureDict:
+                        if errMsg:
+                            errMsg += "\n"
+                        #
+                        errMsg += "Can't find reference sequence for UniprotID = '" + dbAccession + "'"
+                        continue
+                    #
+                    seqPartD = {}
+                    seqPartD["db_accession"] = dbAccession
+                    seqPartD["hitFrom"] = int(dbSeqBegin)
+                    seqPartD["hitTo"] = int(dbSeqEnd)
+                    seqPartD["sequence"] = refFeatureDict["sequence"][seqPartD["hitFrom"] - 1: seqPartD["hitTo"]]
+                    seqPartList.append(seqPartD)
+                #
+            #
+            if errMsg:
+                return errMsg, False, "", []
+            #
+            if refSeqD:
+                fb = open(refSeqPickleFile, "wb")
+                pickle.dump(refSeqD, fb)
+                fb.close()
+            #
+            return self.__processBuiltSequence(entityId, seqPartList)
+        except:  # noqa: E722 pylint: disable=bare-except
+            self.__lfh.write("+UpdatePolymerEntityPartitions.seqBuilderResponder() failing\n")
+            traceback.print_exc(file=self._lfh)
+            return "Fetch reference sequence failed: got exception.", False, "", []
+        #
+
+    def __processBuiltSequence(self, entityId, seqPartList):
+        """
+        """
+        seqlist = []
+        reflist = []
+        for seqPartD in seqPartList:
+            inP = False
+            r3 = ""
+            seqPartD["queryFrom"] = len(seqlist) + 1
+            for s in seqPartD["sequence"]:
+                if s in string.whitespace:
+                    continue
+                #
+                if s == "(":
+                    inP = True
+                    r3 = ""
+                    continue
+                if s == ")":
+                    inP = False
+                    seqlist.append( [ "(" + r3 + ")", 0 ] )
+                    continue
+                #
+                if inP:
+                    r3 += s
+                else:
+                    seqlist.append( [ s, 0 ] )
+                #
+            #
+            seqPartD["queryTo"] = len(seqlist)
+            #
+            if ("db_accession" in seqPartD) and seqPartD["db_accession"] and ("hitFrom" in seqPartD) and seqPartD["hitFrom"] and \
+               ("hitTo" in seqPartD) and seqPartD["hitTo"] and (seqPartD["queryTo"] > seqPartD["queryFrom"]):
+                seqlist[-1][1] = 1
+                myD = {}
+                for key in ( "db_accession", "hitFrom", "hitTo", "queryFrom", "queryTo" ):
+                    myD[key] = seqPartD[key]
+                #
+                reflist.append(myD)
+            #
+        #
+        formatedSeq = ""
+        formatedLen = 0
+        seqInfoList = []
+        for idx, seqTup in enumerate(seqlist, start=1):
+            if formatedLen > 75:
+                formatedSeq += "\n"
+                formatedLen = 0
+            #
+            formatedSeq += seqTup[0]
+            formatedLen += len(seqTup[0])
+            if seqTup[1] == 1:
+                if len(seqInfoList) > 0:
+                    seqInfoD = { "beg_num": seqInfoList[-1]["end_num"] + 1, "end_num": idx }
+                    seqInfoList.append(seqInfoD)
+                else:
+                    seqInfoList.append( { "beg_num": 1, "end_num": idx } )
+                #
+            #
+        #
+        if len(seqInfoList) > 0:
+            seqInfoList[-1]["end_num"] = len(seqlist)
+            for seqInfoD in seqInfoList:
+                seqInfoD["beg_num"] = str(seqInfoD["beg_num"])
+                seqInfoD["end_num"] = str(seqInfoD["end_num"])
+            #
+        else:
+            seqInfoList.append( { "beg_num": "1", "end_num": str(len(seqlist)) } )
+        #
+        matchRefSeqPickleFile = os.path.join(self.__sessionPath, "Entity-" + entityId + "-MatchedRefSeqs.pic")
+        if os.access(matchRefSeqPickleFile, os.F_OK):
+            os.remove(matchRefSeqPickleFile)
+        #
+        hasRefSeq = False
+        if len(reflist) > 0:
+            hasRefSeq = True
+            #
+            fb = open(matchRefSeqPickleFile, "wb")
+            pickle.dump(reflist, fb)
+            fb.close()
+        #
+        return "", hasRefSeq, formatedSeq, seqInfoList
 
     def __getCurrentAuthSelection(self, entityId, partId=1):
         """Search selections for author sequence part 1. in order to establish the
@@ -319,34 +527,20 @@ class UpdatePolymerEntityPartitions(object):
         self.__lfh.write("+UpdatePolymerEntityPartitions._getCurrentAuthSelection() no return for entityId %r partId %r\n" % (entityId, partId))
         return None, None, None
 
-    # def __assignPart(self, partD, seqBegin, seqEnd):
-    #     """Assign the entity partId to the"""
-    #     pMatch = -1
-    #     for partId, pTup in partD.items():
-    #         if (seqBegin == pTup[1]) and (seqEnd == pTup[2]):
-    #             pMatch = partId
 
-    #     return pMatch
-
-    def __formatSelectList(self, pList, pType):
-        oL = []
-        pSelectList = ["false" for p in pList]
-        if pType is not None and len(pType) > 1:
-            pListU = [p.upper() for p in pList]
-            pTypeU = pType.upper()
-            try:
-                idx = pListU.index(pTypeU)
-                pSelectList[idx] = "true"
-            except ValueError:
-                idx = -1
-        tL = []
-        for pt, psel in zip(pList, pSelectList):
-            tL.append('{"value":"%s","label":"%s","selected":%s}' % (pt, pt, psel))
-        oL.append("[")
-        oL.append(",".join(tL))
-        oL.append("]")
-
-        return "".join(oL)
+    def __formatSelectList(self, name, value, valList):
+        displayList = [ "" ]
+        displayList.extend(valList)
+        text = '<select name="' + name + '" id="' + name + '">\n'
+        for disVal in displayList:
+            text += '<option value="' + disVal + '" '
+            if value == disVal:
+                text += 'selected'
+            #
+            text += '>' + disVal + '</option>\n'
+        #
+        text += '</select>\n'
+        return text
 
     def __getAuthSeqComment(self, idx, partD, seqBegMin, seqEndMax):
         """Set default annotation between part -- and clean up any other comments --
@@ -371,151 +565,6 @@ class UpdatePolymerEntityPartitions(object):
         else:
             return "linker"
 
-    # def __updateAuthPartDetails(self, entityId, partD):
-    #     #
-    #     # create new version of all parts --
-    #     #
-    #     if self.__verbose:
-    #         self.__lfh.write("\n\n+UpdatePolymerEntityPartitions.__updateAuthPartDetails() Starting for entity %s and part dictionary %r\n" % (entityId, partD))
-    #     #
-    #     seqBegMin = 100
-    #     seqEndMax = 0
-    #     pD = {}
-    #     for tId, pTup in partD.items():
-    #         pId, seqBeg, seqEnd, seqPartType, taxId = pTup
-    #         if self.__verbose:
-    #             self.__lfh.write("+UpdatePolymerEntityPartitions.__updateAuthPartDetails() Entity %s part %d new assignment form values %s\n" % (entityId, pId, pTup))
-    #         #
-    #         if (seqPartType == self.__placeHolderValue) or (seqBeg == self.__placeHolderValue) or (seqEnd == self.__placeHolderValue):
-    #             continue
-    #         seqNumBeg = int(seqBeg)
-    #         seqNumEnd = int(seqEnd)
-    #         seqBegMin = min(seqBegMin, seqNumBeg)
-    #         seqEndMax = max(seqEndMax, seqNumEnd)
-    #         spt = ""
-    #         if seqPartType in ["biological sequence"]:
-    #             spt = ""
-    #         elif seqPartType in ["n-terminal tag", "c-terminal tag"]:
-    #             spt = "expression tag"
-    #         elif seqPartType in ["linker"]:
-    #             spt = "linker"
-    #         pD[pId] = (pId, seqNumBeg, seqNumEnd, spt)
-
-    #     #
-    #     if self.__verbose:
-    #         self.__lfh.write("\n\n+UpdatePolymerEntityPartitions.__updateAuthPartDetails() entity %s seqBegMin %d   seqEndMax %d\n" % (entityId, seqBegMin, seqEndMax))
-
-    #     tU = TaxonomyUtils(siteId=self.__siteId, verbose=self.__verbose, log=self.__lfh)
-
-    #     # seqIds = self.__sds.getGroup(groupId=entityId)
-
-    #     # if len(seqIds)==0:
-    #     #    return False
-
-    #     # seqFeature = SequenceFeature()
-    #     # JDW CHANGE
-    #     # seqId0=seqIds[0]
-    #     seqId0 = entityId
-    #     curPartIdList = self.__sds.getPartIds(seqId0, dataType="sequence", seqType="auth")
-
-    #     # base versioning on the base partId = 1
-    #     #
-    #     vL = self.__sds.getVersionIds(seqId0, partId=1, altId=1, dataType="sequence", seqType="auth")
-    #     if len(vL) < 1:
-    #         return False
-    #     # target version for update.
-    #     # lastVer=int(str(vL[0]))
-    #     curVer = int(str(vL[0]))
-    #     nextVer = curVer + 1
-    #     # JDW      authSelectId,authSL,authFdObj=self.__getCurrentAuthSelection(entityId,partId=partId)
-    #     #          curSeqType,curInstId,curPartId,curAltId,curVer=authSL.get()
-    #     #
-    #     for partId, pTup in partD.items():
-    #         authSelectId, authSL, authFdObj = self.__getCurrentAuthSelection(entityId, partId=partId)
-    #         curSeqType, curInstId, curPartId, curAltId, curVer = authSL.get()
-    #         if partId in curPartIdList:
-    #             # Existing part ---
-    #             # fObj=self.__sds.getFeatureObj(seqId0,seqType="auth",partId=partId,altId=1,version=curVer)
-    #             taxIdOrg = authFdObj.getSourceTaxId()
-    #             # values -
-    #             pId, seqBeg, seqEnd, seqPartType, taxId = pTup
-    #             if self.__verbose:
-    #                 self.__lfh.write(
-    #                     "+UpdatePolymerEntityPartitions.__updateAuthPartDetails() Taxonomy assignments for part %d org taxid %s new taxid %s\n" % (partId, taxIdOrg, taxId)
-    #                 )
-    #             if taxIdOrg != taxId:
-    #                 nL = tU.lookUpSource(taxId=taxId)
-    #                 if len(nL) > 0:
-    #                     authFdObj.setSource(organism=nL[0], taxid=taxId)
-    #                 else:
-    #                     authFdObj.setTaxId(taxid=taxId)
-    #             authFdObj.setAuthPartDetails(partId, seqBeg, seqEnd, seqPartType)
-    #             self.__sds.setFeatureObj(authFdObj, seqId0, seqType="auth", partId=partId, altId=1, version=nextVer)
-    #             # Update the sequence...
-    #             seqIdx = self.__sds.getSequence(seqId0, seqType="auth", partId=partId, altId=1, version=curVer)
-    #             ####
-    #             # JDW reset default comment state ---
-    #             sTupL = []
-    #             for sT in seqIdx:
-    #                 comment = self.__getAuthSeqComment(sT[3], pD, seqBegMin, seqEndMax)
-    #                 sTupL.append((sT[0], sT[1], comment, sT[3], sT[4], sT[5]))
-    #             ####
-    #             # self.__sds.setSequence(seqIdx,seqId0,seqType='auth',partId=partId,altId=1,version=nextVer)
-    #             self.__sds.setSequence(sTupL, seqId0, seqType="auth", partId=partId, altId=1, version=nextVer)
-    #             if self.__verbose:
-    #                 self.__lfh.write("+UpdatePolymerEntityPartitions.__updateAuthPartDetails() updating part %d from version %d to %d\n" % (partId, curVer, nextVer))
-    #         else:
-    #             # New part ---
-    #             pId, seqBeg, seqEnd, seqPartType, taxId = pTup
-    #             if self.__verbose:
-    #                 self.__lfh.write("+UpdatePolymerEntityPartitions.__updateAuthPartDetails() Entity %s part %d new assignment form values %s\n" % (entityId, partId, pTup))
-    #             #
-    #             if (seqPartType == self.__placeHolderValue) or (seqBeg == self.__placeHolderValue) or (seqEnd == self.__placeHolderValue):
-    #                 continue
-
-    #             #
-    #             if (taxId is None) or (taxId == self.__placeHolderValue):
-    #                 taxId = ""
-    #                 if self.__verbose:
-    #                     self.__lfh.write("+UpdatePolymerEntityPartitions.__updateAuthPartDetails() Handle missing taxid for entity %s part %s\n" % (entityId, pId))
-    #             #
-    #             # Update the sequence ...
-    #             #
-    #             seqIdx = self.__sds.getSequence(seqId0, seqType="auth", partId=1, altId=1, version=curVer)
-
-    #             # JDW reset default comment state ---
-    #             sTupL = []
-    #             for sT in seqIdx:
-    #                 comment = self.__getAuthSeqComment(sT[3], pD, seqBegMin, seqEndMax)
-    #                 sTupL.append((sT[0], sT[1], comment, sT[3], sT[4], sT[5]))
-
-    #             # self.__sds.setSequence(seqIdx,seqId0,seqType='auth',partId=partId,altId=1,version=nextVer)
-    #             # JDW
-    #             self.__sds.setSequence(sTupL, seqId0, seqType="auth", partId=partId, altId=1, version=nextVer)
-    #             #
-    #             # Update features ... Using data from the principal part.
-    #             #
-    #             # fObj=SequenceFeature()
-    #             authSelectId1, authSL1, fObj = self.__getCurrentAuthSelection(entityId, partId=1)
-    #             #
-    #             nL = tU.lookUpSource(taxId=taxId)
-    #             if len(nL) > 0:
-    #                 fObj.setSource(organism=nL[0], taxid=taxId)
-    #             else:
-    #                 fObj.setTaxId(taxid=taxId)
-    #             fObj.setAuthPartDetails(partId, seqBeg, seqEnd, seqPartType)
-    #             #
-    #             #  JDW also need to update any other entity-level details ---
-    #             #
-    #             self.__sds.setFeatureObj(fObj, seqId0, seqType="auth", partId=partId, altId=1, version=nextVer)
-    #             if self.__verbose:
-    #                 self.__lfh.write("+UpdatePolymerEntityPartitions.polymerEntityPartEditFormResponder() entity %s new part %d with version %d\n" % (entityId, partId, nextVer))
-    #             #
-    #         #
-    #     #
-    #     self.__sds.serialize()
-    #     return True
-
     def __getEntityPartDetails(self, entityId, numExtra=0):
         """Return the entity sequence and a dictionary of part boundaries and types ---   pD[pId]=(pId,pSeqBegin,pSeqEnd,pType,taxId)"""
 
@@ -533,7 +582,7 @@ class UpdatePolymerEntityPartitions(object):
         seqId0 = entityId
 
         # polymerTypeCode = "AA"
-        entityType = self.__placeHolderValue
+        entityType = ""
         #
         partIdList = self.__sds.getPartIds(seqId0, dataType="sequence", seqType="auth")
 
@@ -544,7 +593,7 @@ class UpdatePolymerEntityPartitions(object):
                 seqFeature.set(pfD)
                 pId, pSeqBegin, pSeqEnd, pType = seqFeature.getAuthPartDetails()
                 # polymerTypeCode = seqFeature.getPolymerType()
-                if entityType == self.__placeHolderValue:
+                if entityType == "":
                     polymerType = seqFeature.getPolymerLinkingType()
                     if polymerType:
                         entityType = polymerType
@@ -555,11 +604,12 @@ class UpdatePolymerEntityPartitions(object):
                 lastPart = pId
 
         if numExtra > 0:
-            pv = self.__placeHolderValue
+            pv = ""
             pId = lastPart
             for _ii in range(0, numExtra):
                 pId += 1
                 pD[pId] = (pId, pv, pv, pv, pv)
+            #
         #
         seqAuthIdx = self.__sds.getSequence(seqId=seqId0, seqType="auth", partId=1, altId=1, version=vL[0])
         r3List = []
@@ -591,7 +641,7 @@ class UpdatePolymerEntityPartitions(object):
             if self.__verbose:
                 self.__lfh.write("+UpdatePolymerEntityPartitions.__updatePolymerEntityPartitions() Entity %s part %d new assignment form values %s\n" % (entityId, pId, pTup))
             #
-            if (seqPartType == self.__placeHolderValue) or (seqBeg == self.__placeHolderValue) or (seqEnd == self.__placeHolderValue):
+            if (not seqPartType) or (not seqBeg) or (not seqEnd):
                 continue
             #
             seqNumBeg = int(seqBeg)
@@ -634,7 +684,6 @@ class UpdatePolymerEntityPartitions(object):
         #
         curVer = int(str(vL[0]))
         nextVer = curVer + 1
-        self.__lfh.write("+UpdatePolymerEntityPartitions.__updatePolymerEntityPartitions() nextVer=%d\n" % nextVer)
         #
         seqIdxNext = []
         if updateSequenceFlag:
@@ -710,10 +759,10 @@ class UpdatePolymerEntityPartitions(object):
                         "+UpdatePolymerEntityPartitions.__updatePolymerEntityPartitions() Entity %s part %d new assignment form values %s\n" % (entityId, partId, pTup)
                     )
                 #
-                if (seqPartType == self.__placeHolderValue) or (seqBeg == self.__placeHolderValue) or (seqEnd == self.__placeHolderValue):
+                if (not seqPartType) or (not seqBeg) or (not seqEnd):
                     continue
                 #
-                if (taxId is None) or (taxId == self.__placeHolderValue):
+                if taxId is None:
                     taxId = ""
                     if self.__verbose:
                         self.__lfh.write("+UpdatePolymerEntityPartitions.__updatePolymerEntityPartitions() Handle missing taxid for entity %s part %s\n" % (entityId, pId))
@@ -770,8 +819,6 @@ class UpdatePolymerEntityPartitions(object):
             currentIds = self.__sds.getGroup(groupId=entityId)
             mergeIds = self.__sds.getGroup(groupId=mergeEntityId)
             tMergeIds = copy.deepcopy(mergeIds)
-            self.__lfh.write("+UpdatePolymerEntityPartitions.__updateGroupInstances() entity %r instance list:  %r\n" % (entityId, currentIds))
-            self.__lfh.write("+UpdatePolymerEntityPartitions.__updateGroupInstances() merge entity %r instance list:  %r\n" % (mergeEntityId, tMergeIds))
             for mId in tMergeIds:
                 if mId not in currentIds:
                     currentIds.append(mId)
@@ -779,7 +826,6 @@ class UpdatePolymerEntityPartitions(object):
             self.__sds.setGroup(entityId, currentIds)
             self.__sds.setGroup(mergeEntityId, mergeIds)
             self.__sds.serialize()
-            self.__lfh.write("+UpdatePolymerEntityPartitions.__updateGroupInstances() entity %r instance list updated:  %r\n" % (entityId, currentIds))
             return True
         except:  # noqa: E722 pylint: disable=bare-except
             self.__lfh.write("+UpdatePolymerEntityPartitions.__updateGroupInstances() failed for entity %r merge entity %r\n" % (entityId, mergeEntityId))

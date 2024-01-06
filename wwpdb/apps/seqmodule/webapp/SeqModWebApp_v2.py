@@ -48,6 +48,7 @@
 #  2-Dec-2014  jdw capture updates in selection and alignment id lists after alignment edits --
 # 24-Aug-2017  zf  add '/service/sequence_editor/rerun_blast/start' & _reRunBlastOp for rerun blast search
 # 19-Oct-2022  zf  add __getSummaryPageContent() method
+#  6-Jan 2024  zf  add /service/sequence_editor/respond_form/seqbuilder and _respondSeqBuilderOp() method
 ##
 #    WF Testing entry points -
 #
@@ -279,6 +280,7 @@ class SeqModWebAppWorker(object):
             "/service/sequence_editor/load_form/seqdbref": "_loadSeqDbRefFormOp",
             "/service/sequence_editor/load_form/entityreview": "_loadEntitySourceDetailsFormOp",
             "/service/sequence_editor/respond_form/taxonomy": "_respondTaxonomyFormOp",
+            "/service/sequence_editor/respond_form/seqbuilder": "_respondSeqBuilderOp",
             "/service/sequence_editor/respond_form/seqdbref": "_respondSeqDbRefFormOp",
             "/service/sequence_editor/respond_form/entityreview": "_respondEntitySourceDetailsFormOp",
             "/service/sequence_editor/download": "_respondDownloadOp",
@@ -484,9 +486,12 @@ class SeqModWebAppWorker(object):
         uds = UtilDataStore(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
         seq_search_op = self.__reqObj.getValue("seq_search_op")
         uds.set("seq_search_op", seq_search_op)
+        withref_info = self.__reqObj.getValue("withref_info")
+        uds.set("withref_info", withref_info)
         uds.serialize()
         if self.__verbose:
             self.__lfh.write("+SeqModWebApp._respondTaxonomyFormOp() - starting with seq_search_op %s\n" % seq_search_op)
+            self.__lfh.write("+SeqModWebApp._respondTaxonomyFormOp() - starting with withref_info %s\n" % withref_info)
         #
         self.__getSession()
         #
@@ -518,6 +523,29 @@ class SeqModWebAppWorker(object):
         sdU = UpdatePolymerEntityPartitions(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
         rD["htmlcontent"] = sdU.makePolymerEntityPartEditForm(entityId=entityId, entryId=entryId)
         return rD
+
+    def _respondSeqBuilderOp(self):
+        self.__getSession()
+        sdU = UpdatePolymerEntityPartitions(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
+        seqFetchError, hasRefSeq, returnSeq, returnSeqInfoList = sdU.seqBuilderResponder()
+        #
+        self.__reqObj.setReturnFormat(return_format="json")
+        rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
+        if seqFetchError:
+            rC.setError(errMsg=seqFetchError)
+        elif (returnSeq is not None) and len(returnSeq) > 0:
+            rC.setStatusCode("ok")
+            rC.setText(text=returnSeq)
+            rC.set("seqpartinfolist", returnSeqInfoList)
+            if hasRefSeq:
+                rC.set("withref", "yes")
+            else:
+                rC.set("withref", "no")
+            #
+        else:
+            rC.setError(errMsg="Building sequence processing failure")
+        #
+        return rC
 
     def _respondSeqDbRefFormOp(self):
         self.__getSession()

@@ -18,6 +18,7 @@
 #  01-Oct-2022  zf  modified __getAuthDefinedRefD() method to include author provided "seq_align_begin", "seq_align_end", "db_align_end",
 #                   "db_align_beg", & "db_seq_one_letter_code" information
 #                   improved process to handle the author-provided reference IDs and new entity summary page
+#  06-Jan-2024  zf  using relevant UniProt sequence from Sequence Builder to build the reference sequence information instead of BLAST searching
 ##
 """
 Assemble sequence and other required data to start/restart the sequence editor tool.
@@ -280,9 +281,14 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         seqSearchOp = str(self._reqObj.getValue("seq_search_op"))
         if seqSearchOp == "on":
+            flag = False
+            withRefInfo = str(self._reqObj.getValue("withref_info"))
+            if withRefInfo == "yes":
+                flag = True
+            #
             self.__minSearchSequenceLengthAA = 5
             self.__minSearchSequenceLengthNA = 15
-            self.__reRunSearch([entityId])
+            self.__reRunSearch([entityId], withRefFlag=flag)
         #
         self.__updateSelections([entityId])
         self.saveSequenceDataStore()
@@ -360,6 +366,19 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 #
                 if ("depSeqAssign" in jsonObj) and jsonObj["depSeqAssign"]:
                     depSeqAssign = jsonObj["depSeqAssign"]
+                    for key, valD in depSeqAssign.items():
+                        if ("ref_list" not in valD) or (not valD["ref_list"]):
+                            continue
+                        #
+                        for refD in valD["ref_list"]:
+                            for item in ("db_name", "db_accession", "db_code", "seq_align_begin", "seq_align_end", "db_align_end",
+                                         "db_align_beg", "db_seq_one_letter_code"):
+                                if (item in refD) and refD[item]:
+                                    refD[item] = refD[item].strip().upper()
+                                #
+                            #
+                        #
+                    #
                 #
                 if ("annSeqAssign" in jsonObj) and jsonObj["annSeqAssign"]:
                     seqAssign = jsonObj["annSeqAssign"]
@@ -641,7 +660,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         return True
 
-    def __doReferenceSearch(self, entityD, entityIdList):
+    def __doReferenceSearch(self, entityD, entityIdList, withRefFlag=False):
         """Perform the reference sequence database search using the input entity dictionary.
         Store matching results in the local session directory.
         """
@@ -702,6 +721,14 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 return {}, {}, {}
             #
             # refD,ownRefD,otherRefD = self.__runSeqAllSearches(entityTupList)
+            #
+            if withRefFlag and (len(entityTupList) == 1):
+                seqSearchUtil = LocalBlastSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, \
+                                                      doRefSearchFlag=self.__doRefSearchFlag, verbose=self._verbose, log=self._lfh)
+                predefinedRefD = seqSearchUtil.getPredefinedRefSequence(dataSetId=self.__dataSetId, entityD=entityTupList[0][1])
+                if predefinedRefD:
+                    return predefinedRefD, {}, {}
+                #
             #
             ownRefD, otherRefD = self.__runSameSeqAnnotationSearch(entityTupList)
             #
@@ -1188,7 +1215,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             alignUtil.setInputAlignData(alignD=dataD)
         #
 
-    def __reRunSearch(self, selectedEntityIdList):
+    def __reRunSearch(self, selectedEntityIdList, withRefFlag=False):
         """ """
         self.__doRefSearchFlag = True
         self.__forceBlastSearchFlag = True
@@ -1209,7 +1236,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 self.__setEntityAlignInfoMap(authLabel, eD)
             #
         #
-        eRefD, ownRefD, eSSRefD = self.__doReferenceSearch(entityD, list(entityD.keys()))
+        eRefD, ownRefD, eSSRefD = self.__doReferenceSearch(entityD, list(entityD.keys()), withRefFlag=withRefFlag)
         self.setMultipleEntitiesRefSequenceInfo(entityD, eRefD, ownRefD, eSSRefD)
         #
         self.__resetAlignmentFlag = True

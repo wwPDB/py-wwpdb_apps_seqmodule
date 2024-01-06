@@ -19,6 +19,7 @@
 #  8-Dec-2015  jdw change isoform annoation processing -
 #  3-Oct-2022  zf  update __runBlastSearch() & __fetchAuthProvidedRefSequence() methods for better handling author provided
 #                  reference sequence cases.
+#  6-Jan-2024  zf  add getPredefinedRefSequence(), __readPredefinedRefSequenceInfo() and __processPredefinedRefSequence() methods
 ##
 """
 Methods to manage local and sequence search services and package matching reference sequence data.
@@ -36,6 +37,7 @@ except ImportError:
     import pickle as pickle
 #
 import multiprocessing
+import copy
 import os
 import sys
 import time
@@ -153,6 +155,25 @@ class LocalBlastSearchUtils(object):
             # self.__writeBlastSearchResultCifFile(rD)
         #
         return autoMatchStatus, rD
+
+    def getPredefinedRefSequence(self, dataSetId=None, entityD=None):
+        """ Get reference sequence information for the sequence builder application
+        """
+        self.__dataSetId = dataSetId
+        self.__entityD = entityD
+        if not self.__entityD:
+            return {}
+        #
+        oneLetterCodeSeq = str(self.__entityD["SEQ_ENTITY_1_CAN"]).strip().upper()
+        self.__fullOneLetterSeq = self.__srd.toList(oneLetterCodeSeq)
+        if not self.__checkPartRange(len(self.__fullOneLetterSeq), self.__entityD["PART_LIST"]):
+            return {}
+        #
+        refSeqInfoD,matchedRefList = self.__readPredefinedRefSequenceInfo()
+        if (not refSeqInfoD) or (not matchedRefList):
+            return {}
+        #
+        return self.__processPredefinedRefSequence(oneLetterCodeSeq, refSeqInfoD, matchedRefList)
 
     def __getExistingSearchResult(self):
         """Get prvious blast search result"""
@@ -500,6 +521,123 @@ class LocalBlastSearchUtils(object):
         fb = open(self.__blastResultFile, "wb")
         pickle.dump(pickleObj, fb)
         fb.close()
+
+    def __readPredefinedRefSequenceInfo(self):
+        """ Read reference sequence information generated in UpdatePolymerEntityPartitions.seqBuilderResponder()
+        """
+        #
+        # Read reference sequence information generated in UpdatePolymerEntityPartitions.seqBuilderResponder()
+        #
+        refSeqInfoD = {}
+        refSeqPickleFile = os.path.join(self.__sessionPath, "fetchedRefSeqs.pic")
+        if os.access(refSeqPickleFile, os.F_OK):
+            try:
+                fb = open(refSeqPickleFile, "rb")
+                refSeqInfoD = pickle.load(fb)
+                fb.close()
+            except:  # noqa: E722 pylint: disable=bare-except
+                refSeqInfoD = {}
+            #
+        #
+        if not refSeqInfoD:
+            return {},[]
+        #
+        # Read matched sequence information generated in UpdatePolymerEntityPartitions.seqBuilderResponder()
+        #
+        matchedRefList = []
+        self.__entityId = self.__entityD["ENTITY_ID"]
+        matchRefSeqPickleFile = os.path.join(self.__sessionPath, "Entity-" + self.__entityId + "-MatchedRefSeqs.pic")
+        if os.access(matchRefSeqPickleFile, os.F_OK):
+            try:
+                fb = open(matchRefSeqPickleFile, "rb")
+                matchedRefList = pickle.load(fb)
+                fb.close()
+            except:  # noqa: E722 pylint: disable=bare-except
+                matchedRefList = []
+            #
+        #
+        return refSeqInfoD,matchedRefList
+
+    def __processPredefinedRefSequence(self, oneLetterCodeSeq, refSeqInfoD, matchedRefList):
+        """ Create Auth/Seq sequences alignment
+        """
+        predefinedRefD = {}
+        for partNum, fD in enumerate(self.__entityD["PART_LIST"], start=1):
+            try:
+                seqNumBeg = int(fD["SEQ_NUM_BEG"])
+                seqNumEnd = int(fD["SEQ_NUM_END"])
+                foundRefFlag = False
+                for matchedRefD in matchedRefList:
+                    if (matchedRefD["queryFrom"] < seqNumBeg) or (matchedRefD["queryTo"] > seqNumEnd):
+                        continue
+                    #
+                    if matchedRefD["db_accession"] not in refSeqInfoD:
+                        continue
+                    #
+                    authSeq = oneLetterCodeSeq[(seqNumBeg - 1) : seqNumEnd]
+                    matchedAuthSeq = authSeq[(matchedRefD["queryFrom"] - seqNumBeg) : (matchedRefD["queryTo"] - seqNumBeg + 1)]
+                    #matchedAuthSeq = oneLetterCodeSeq[(queryFrom - 1) : queryTo]
+                    matchedRefSeq = refSeqInfoD[matchedRefD["db_accession"]]["sequence"][(matchedRefD["hitFrom"] - 1) : matchedRefD["hitTo"]]
+                    if matchedAuthSeq != matchedRefSeq:
+                        return {}
+                    #
+                    hitD = copy.deepcopy(refSeqInfoD[matchedRefD["db_accession"]])
+                    hitD["query_length"] = str(len(authSeq))
+                    hitD["identity"] = str(len(matchedAuthSeq))
+                    hitD["positive"] = str(len(matchedAuthSeq))
+                    hitD["gaps"] = "0"
+                    hitD["query"] = matchedAuthSeq
+                    hitD["queryFrom"] = str(matchedRefD["queryFrom"] - seqNumBeg + 1)
+                    hitD["queryTo"] = str(matchedRefD["queryTo"] - seqNumBeg + 1)
+                    hitD["subject"] = matchedRefSeq
+                    hitD["hitFrom"] = str(matchedRefD["hitFrom"])
+                    hitD["hitTo"] = str(matchedRefD["hitTo"])
+                    hitD["alignLen"] = str(len(matchedAuthSeq))
+                    hitD["match_length"] = str(len(matchedAuthSeq))
+                    hitD["seq_sim"] = 1.0
+                    hitD["sort_metric"] = "404"
+                    hitD["sort_order"] = "1"
+                    hitD["beg_seq_num"] = fD["SEQ_NUM_BEG"]
+                    hitD["end_seq_num"] = fD["SEQ_NUM_END"]
+                    hitD["fragment_id"] = str(partNum)
+                    #
+                    alignIndex, sTup3L, alignLength, seqSim, seqSimWithGaps, error = self.__getSeqAlignIndex(hitD)
+                    if not error:
+                        hitD["alignment"] = alignIndex
+                        hitD["seq_tup_list"] = sTup3L
+                        hitD["statistics"] = (alignLength, seqSim, seqSimWithGaps)
+                        predefinedRefD[str(partNum)] = [ hitD ]
+                    else:
+                        self.__lfh.write("+LocalBlastSearchUtils.__processPredefinedRefSequence() get sequence alignment index error: %s\n" % error)
+                        return {}
+                    #
+                    foundRefFlag = True
+                    break
+                #
+                if not foundRefFlag:
+                    return {}
+                #
+            except:
+                if self.__verbose:
+                    traceback.print_exc(file=self.__lfh)
+                    self.__lfh.write("+LocalBlastSearchUtils.__processPredefinedRefSequence() for entity %r failed\n" % self.__entityId)
+                #
+                return {}
+            #
+        #
+        if predefinedRefD:
+            retD = {}
+            retD[self.__entityId] = predefinedRefD
+            #
+            currSeq = self.__entityD["SEQ_ENTITY_1"]
+            self.__entitySeq = currSeq.replace(" ", "").replace("\n", "").replace("\t", "")
+            self.__blastResultFile = self.__pI.getFilePath(self.__dataSetId, contentType="seqdb-match", formatType="pic", \
+                                                           fileSource="session", partNumber=self.__entityId)
+            self.__writeSearchResult(retD)
+            #
+            return retD
+        #
+        return {}
 
     # def __writeBlastSearchResultCifFile(self, rD):
     #     """Write out the current search result mmcif file for debuging purpose"""
@@ -912,7 +1050,7 @@ class LocalBlastSearchUtils(object):
                 cutoff_identity_score = lowest_identity_score_with_taxid_match - 0.1
             #
         #
-        # Improvement based on entry D_1000236156/6EEB with highest hit has conflicts
+        # Improvement based on entries D_1000212253/5CVM, D_1000236156/6EEB with highest hit has conflicts
         if (len(same_taxid_indice_list) > 0) and (highest_identity_score_index not in same_taxid_indice_list) and \
            ("match_length" in hitList[highest_identity_score_index]) and (int(hitList[highest_identity_score_index]["identity"])
                                                                           < int(hitList[highest_identity_score_index]["match_length"])):

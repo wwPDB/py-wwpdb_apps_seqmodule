@@ -6,6 +6,7 @@
 #  3-Oct-2022  zf  update fetchReferenceSequenceWithSeqMatch() methods for better handling author provided reference sequence cases.
 #                  add runSeqAlignment() & __toList() methods
 # 11-Nov-2022  zf  move __getRefInfo() method to FetchSeqInfoUtils class.
+#  6-Jan-2024  zf  add reset() method
 ##
 """
 Methods to get reference sequence data from reference database based database name and identifier.
@@ -37,6 +38,9 @@ class FetchReferenceSequenceUtils(object):
         if not self.__srd:
             self.__srd = SequenceReferenceData(self.__verbose, self.__lfh)
         #
+        self.reset()
+
+    def reset(self):
         self.__accCode = ""
         self.__refInfoD = {}
 
