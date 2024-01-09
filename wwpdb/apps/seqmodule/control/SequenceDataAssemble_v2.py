@@ -723,7 +723,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             # refD,ownRefD,otherRefD = self.__runSeqAllSearches(entityTupList)
             #
             if withRefFlag and (len(entityTupList) == 1):
-                seqSearchUtil = LocalBlastSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, \
+                seqSearchUtil = LocalBlastSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI,
                                                       doRefSearchFlag=self.__doRefSearchFlag, verbose=self._verbose, log=self._lfh)
                 predefinedRefD = seqSearchUtil.getPredefinedRefSequence(dataSetId=self.__dataSetId, entityD=entityTupList[0][1])
                 if predefinedRefD:

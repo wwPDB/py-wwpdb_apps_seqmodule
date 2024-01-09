@@ -169,7 +169,7 @@ class LocalBlastSearchUtils(object):
         if not self.__checkPartRange(len(self.__fullOneLetterSeq), self.__entityD["PART_LIST"]):
             return {}
         #
-        refSeqInfoD,matchedRefList = self.__readPredefinedRefSequenceInfo()
+        refSeqInfoD, matchedRefList = self.__readPredefinedRefSequenceInfo()
         if (not refSeqInfoD) or (not matchedRefList):
             return {}
         #
@@ -540,7 +540,7 @@ class LocalBlastSearchUtils(object):
             #
         #
         if not refSeqInfoD:
-            return {},[]
+            return {}, []
         #
         # Read matched sequence information generated in UpdatePolymerEntityPartitions.seqBuilderResponder()
         #
@@ -556,7 +556,7 @@ class LocalBlastSearchUtils(object):
                 matchedRefList = []
             #
         #
-        return refSeqInfoD,matchedRefList
+        return refSeqInfoD, matchedRefList
 
     def __processPredefinedRefSequence(self, oneLetterCodeSeq, refSeqInfoD, matchedRefList):
         """ Create Auth/Seq sequences alignment
@@ -576,7 +576,7 @@ class LocalBlastSearchUtils(object):
                     #
                     authSeq = oneLetterCodeSeq[(seqNumBeg - 1) : seqNumEnd]
                     matchedAuthSeq = authSeq[(matchedRefD["queryFrom"] - seqNumBeg) : (matchedRefD["queryTo"] - seqNumBeg + 1)]
-                    #matchedAuthSeq = oneLetterCodeSeq[(queryFrom - 1) : queryTo]
+                    # matchedAuthSeq = oneLetterCodeSeq[(queryFrom - 1) : queryTo]
                     matchedRefSeq = refSeqInfoD[matchedRefD["db_accession"]]["sequence"][(matchedRefD["hitFrom"] - 1) : matchedRefD["hitTo"]]
                     if matchedAuthSeq != matchedRefSeq:
                         return {}
@@ -606,7 +606,7 @@ class LocalBlastSearchUtils(object):
                         hitD["alignment"] = alignIndex
                         hitD["seq_tup_list"] = sTup3L
                         hitD["statistics"] = (alignLength, seqSim, seqSimWithGaps)
-                        predefinedRefD[str(partNum)] = [ hitD ]
+                        predefinedRefD[str(partNum)] = [hitD]
                     else:
                         self.__lfh.write("+LocalBlastSearchUtils.__processPredefinedRefSequence() get sequence alignment index error: %s\n" % error)
                         return {}
@@ -617,7 +617,7 @@ class LocalBlastSearchUtils(object):
                 if not foundRefFlag:
                     return {}
                 #
-            except:
+            except:  # noqa: E722 pylint: disable=bare-except
                 if self.__verbose:
                     traceback.print_exc(file=self.__lfh)
                     self.__lfh.write("+LocalBlastSearchUtils.__processPredefinedRefSequence() for entity %r failed\n" % self.__entityId)
@@ -631,7 +631,7 @@ class LocalBlastSearchUtils(object):
             #
             currSeq = self.__entityD["SEQ_ENTITY_1"]
             self.__entitySeq = currSeq.replace(" ", "").replace("\n", "").replace("\t", "")
-            self.__blastResultFile = self.__pI.getFilePath(self.__dataSetId, contentType="seqdb-match", formatType="pic", \
+            self.__blastResultFile = self.__pI.getFilePath(self.__dataSetId, contentType="seqdb-match", formatType="pic",
                                                            fileSource="session", partNumber=self.__entityId)
             self.__writeSearchResult(retD)
             #

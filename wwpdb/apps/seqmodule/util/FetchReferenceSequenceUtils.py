@@ -37,6 +37,8 @@ class FetchReferenceSequenceUtils(object):
         self.__srd = seqReferenceData
         if not self.__srd:
             self.__srd = SequenceReferenceData(self.__verbose, self.__lfh)
+        self.__accCode = ""
+        self.__refInfoD = {}
         #
         self.reset()
 

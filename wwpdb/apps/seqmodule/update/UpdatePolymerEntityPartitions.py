@@ -7,7 +7,7 @@
 #    7-Aug-2015  jdw   upper case input one-letter-code sequence -
 #    7-Sep-2017  zf    modified __updatePolymerEntityPartitions() to remove extra incorrect fragment assignment(s)
 #    7-Aug-2021  zf    add option for changing _entity_poly.type
-#    6-Jan-2024  zf    add Sequence Builder Form, modify Sequence Parition and Taxonomy Data Form 
+#    6-Jan-2024  zf    add Sequence Builder Form, modify Sequence Parition and Taxonomy Data Form
 #
 ##
 """
@@ -25,7 +25,9 @@ try:
 except ImportError:
     import pickle as pickle
 #
-import os,string,sys
+import os
+import string
+import sys
 import traceback
 import copy
 
@@ -77,7 +79,7 @@ class UpdatePolymerEntityPartitions(object):
          -->
 
         """
-#       <h3>Sequence Builder</h3>
+        # <h3>Sequence Builder</h3>
         seq_build_top_template = """
         <div class="head ui-corner-all">
         <div><a href="#" class="toggle"><span class="fltlft width20px"><span class="ui-icon ui-icon-circle-arrow-e"></span></span><span style="color:#696">Sequence Builder based on the relevant UniProt sequence(s) (Click to open the input form)</span></a></div>
@@ -187,7 +189,7 @@ class UpdatePolymerEntityPartitions(object):
             oL.append(seq_build_top_template % (self.__sessionId, entityId, 3))
             for i in range(0, 3):
                 oL.append("<tr>")
-                oL.append('<td>%d</td>' % (i+1))
+                oL.append('<td>%d</td>' % (i + 1))
                 oL.append('<td><input type="text" id="uniprot_id_%d" name="uniprot_id_%d" value="" size="20" /></td>' % (i + 1, i + 1))
                 oL.append('<td><input type="text" id="beg_uniprot_num_%d" name="beg_uniprot_num_%d" value="" size="10" /></td>' % (i + 1, i + 1))
                 oL.append('<td><input type="text" id="end_uniprot_num_%d" name="end_uniprot_num_%d" value="" size="10" /></td>' % (i + 1, i + 1))
@@ -372,8 +374,8 @@ class UpdatePolymerEntityPartitions(object):
                             dbAcc = tL[0]
                         #
                         fetchUtil.reset()
-                        fetchErr, refFeatureDict, refSeqList = fetchUtil.fetchReferenceSequence("UNP", dbAcc, dbIsoform, polyTypeCode="AA", \
-                                                                                                  refSeqBeg=dbSeqBegin, refSeqEnd=dbSeqEnd)
+                        fetchErr, refFeatureDict, _refSeqList = fetchUtil.fetchReferenceSequence("UNP", dbAcc, dbIsoform, polyTypeCode="AA",
+                                                                                                 refSeqBeg=dbSeqBegin, refSeqEnd=dbSeqEnd)
                         #
                         if fetchErr:
                             if errMsg:
@@ -412,7 +414,7 @@ class UpdatePolymerEntityPartitions(object):
             return self.__processBuiltSequence(entityId, seqPartList)
         except:  # noqa: E722 pylint: disable=bare-except
             self.__lfh.write("+UpdatePolymerEntityPartitions.seqBuilderResponder() failing\n")
-            traceback.print_exc(file=self._lfh)
+            traceback.print_exc(file=self.__lfh)
             return "Fetch reference sequence failed: got exception.", False, "", []
         #
 
@@ -435,13 +437,13 @@ class UpdatePolymerEntityPartitions(object):
                     continue
                 if s == ")":
                     inP = False
-                    seqlist.append( [ "(" + r3 + ")", 0 ] )
+                    seqlist.append(["(" + r3 + ")", 0])
                     continue
                 #
                 if inP:
                     r3 += s
                 else:
-                    seqlist.append( [ s, 0 ] )
+                    seqlist.append([s, 0])
                 #
             #
             seqPartD["queryTo"] = len(seqlist)
@@ -450,7 +452,7 @@ class UpdatePolymerEntityPartitions(object):
                ("hitTo" in seqPartD) and seqPartD["hitTo"] and (seqPartD["queryTo"] > seqPartD["queryFrom"]):
                 seqlist[-1][1] = 1
                 myD = {}
-                for key in ( "db_accession", "hitFrom", "hitTo", "queryFrom", "queryTo" ):
+                for key in ("db_accession", "hitFrom", "hitTo", "queryFrom", "queryTo"):
                     myD[key] = seqPartD[key]
                 #
                 reflist.append(myD)
@@ -468,10 +470,10 @@ class UpdatePolymerEntityPartitions(object):
             formatedLen += len(seqTup[0])
             if seqTup[1] == 1:
                 if len(seqInfoList) > 0:
-                    seqInfoD = { "beg_num": seqInfoList[-1]["end_num"] + 1, "end_num": idx }
+                    seqInfoD = {"beg_num": seqInfoList[-1]["end_num"] + 1, "end_num": idx}
                     seqInfoList.append(seqInfoD)
                 else:
-                    seqInfoList.append( { "beg_num": 1, "end_num": idx } )
+                    seqInfoList.append({"beg_num": 1, "end_num": idx})
                 #
             #
         #
@@ -482,7 +484,7 @@ class UpdatePolymerEntityPartitions(object):
                 seqInfoD["end_num"] = str(seqInfoD["end_num"])
             #
         else:
-            seqInfoList.append( { "beg_num": "1", "end_num": str(len(seqlist)) } )
+            seqInfoList.append({"beg_num": "1", "end_num": str(len(seqlist))})
         #
         matchRefSeqPickleFile = os.path.join(self.__sessionPath, "Entity-" + entityId + "-MatchedRefSeqs.pic")
         if os.access(matchRefSeqPickleFile, os.F_OK):
@@ -527,9 +529,8 @@ class UpdatePolymerEntityPartitions(object):
         self.__lfh.write("+UpdatePolymerEntityPartitions._getCurrentAuthSelection() no return for entityId %r partId %r\n" % (entityId, partId))
         return None, None, None
 
-
     def __formatSelectList(self, name, value, valList):
-        displayList = [ "" ]
+        displayList = [""]
         displayList.extend(valList)
         text = '<select name="' + name + '" id="' + name + '">\n'
         for disVal in displayList:

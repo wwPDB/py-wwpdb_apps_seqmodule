@@ -385,7 +385,7 @@ class AlignmentBackEndEditingTools(AlignmentTools):
                 sFeature.setAuthRefAlignDetails(
                     seqLen=len(newSeqList), alignLen=int(alignLength), seqSim=float(numMatch) / float(alignLength), seqSimWithGaps=float(numMatchGaps) / float(alignLength)
                 )
-                sFeature.setAuthRefAlignRange(refMatchBegin=matchBeg, refMatchEnd=matchEnd) 
+                sFeature.setAuthRefAlignRange(refMatchBegin=matchBeg, refMatchEnd=matchEnd)
             #
             if nextVersionFlag:
                 self.setFeature(sFeature.get(), seqType, seqInstId, seqPartId, seqAltId, nextVersion)
