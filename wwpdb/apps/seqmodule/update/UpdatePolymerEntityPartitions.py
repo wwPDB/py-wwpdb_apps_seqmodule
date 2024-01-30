@@ -85,6 +85,8 @@ class UpdatePolymerEntityPartitions(object):
         <div><a href="#" class="toggle"><span class="fltlft width20px"><span class="ui-icon ui-icon-circle-arrow-e"></span></span><span style="color:#696">Sequence Builder based on the relevant UniProt sequence(s) (Click to open the input form)</span></a></div>
         </div>
         <div style="display: none;">
+        <p style="color:#FF0000">Each row should only contain one portion of the author sequence. The "Expression Tag" or "Linker" sequence should have its own row and they should be put in
+        the "Expression Tag/linker Input Box" text box.</p>
         <form name="formseqbuilder" id="formseqbuilder" action="/service/sequence_editor/respond_form/seqbuilder" method="post" class="seqbuilder_ajaxform">
             <input type="hidden" name="sessionid" value="%s" />
             <input type="hidden" name="entityid" value="%s" />
@@ -400,6 +402,7 @@ class UpdatePolymerEntityPartitions(object):
                     seqPartD["hitFrom"] = int(dbSeqBegin)
                     seqPartD["hitTo"] = int(dbSeqEnd)
                     seqPartD["sequence"] = refFeatureDict["sequence"][seqPartD["hitFrom"] - 1: seqPartD["hitTo"]]
+                    seqPartD["taxonomy_id"] = refFeatureDict["taxonomy_id"]
                     seqPartList.append(seqPartD)
                 #
             #
@@ -423,7 +426,11 @@ class UpdatePolymerEntityPartitions(object):
         """
         seqlist = []
         reflist = []
+        taxIdList = []
         for seqPartD in seqPartList:
+            if ("taxonomy_id" in seqPartD) and seqPartD["taxonomy_id"]:
+                taxIdList.append(seqPartD["taxonomy_id"])
+            #
             inP = False
             r3 = ""
             seqPartD["queryFrom"] = len(seqlist) + 1
@@ -485,6 +492,11 @@ class UpdatePolymerEntityPartitions(object):
             #
         else:
             seqInfoList.append({"beg_num": "1", "end_num": str(len(seqlist))})
+        #
+        if len(seqInfoList) == len(taxIdList):
+            for idx, seqInfoD in enumerate(seqInfoList):
+                seqInfoD["taxonomy_id"] = taxIdList[idx]
+            #
         #
         matchRefSeqPickleFile = os.path.join(self.__sessionPath, "Entity-" + entityId + "-MatchedRefSeqs.pic")
         if os.access(matchRefSeqPickleFile, os.F_OK):
