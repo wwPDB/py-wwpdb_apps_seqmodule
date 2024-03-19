@@ -113,7 +113,8 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         self.__doRefSearchFlag = doRefSearch
         #
         if self._verbose:
-            self._lfh.write("\n+SequenceDataAssemble.doAssemble() STARTING with depId %r calPolyLink %r doRefSearch %r\n" % (self.__dataSetId, calPolyLink, doRefSearch))
+            self._lfh.write("\n+SequenceDataAssemble.doAssemble() STARTING with depId %r calPolyLink %r doRefSearch %r doAutoProcess %r\n" %
+                           (self.__dataSetId, calPolyLink, doRefSearch, doAutoProcess))
         #
         pdbxFilePath = self.__pI.getModelPdbxFilePath(self.__dataSetId, fileSource="session", versionId="1")
         polyLinkPath = self.__pI.getFilePath(self.__dataSetId, contentType="polymer-linkage-distances", formatType="json", fileSource="session")
@@ -720,8 +721,6 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 #
                 return {}, {}, {}
             #
-            # refD,ownRefD,otherRefD = self.__runSeqAllSearches(entityTupList)
-            #
             if withRefFlag and (len(entityTupList) == 1):
                 seqSearchUtil = LocalBlastSearchUtils(siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI,
                                                       doRefSearchFlag=self.__doRefSearchFlag, verbose=self._verbose, log=self._lfh)
@@ -810,82 +809,6 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             #
         #
         return {}, {}, {}
-
-    # def __runSeqAllSearches(self, entityTupList):
-    #     """Perform all searches of the reference sequences"""
-    #     try:
-    #         startTime = time.time()
-    #         #
-    #         if self.__cI.get("USE_COMPUTE_CLUSTER"):
-    #             numProc = len(entityTupList)
-    #         else:
-    #             numProc = int(multiprocessing.cpu_count() / 2)
-    #         mpu = MultiProcUtil(verbose=True)
-    #         mpu.set(workerObj=self, workerMethod="runMultiReferenceSearches")
-    #         mpu.setWorkingDir(self.__sessionPath)
-    #         #
-    #         # Setup limits for NCBI requets
-    #         apikey = self.__cI.get("NCBI_API_KEY")
-    #         apirate = self.__cI.get("NCBI_API_RATE")
-    #         if apikey:
-    #             if apirate:
-    #                 rate = int(apirate)
-    #             else:
-    #                 rate = 5
-    #             #
-    #         else:
-    #             rate = 1
-    #         #
-    #         mpl = MultiProcLimit(rate)
-    #         mpu.setOptions({"ncbilock": mpl})
-    #         #
-    #         _ok, _failList, retLists, _diagList = mpu.runMulti(dataList=entityTupList, numProc=numProc, numResults=1)
-    #         #
-    #         refD = {}
-    #         ownRefD = {}
-    #         otherRefD = {}
-    #         for tupList in retLists:
-    #             for tup in tupList:
-    #                 if tup[1]:
-    #                     refD[tup[0]] = tup[1]
-    #                 #
-    #                 if tup[2]:
-    #                     ownRefD[tup[0]] = tup[2]
-    #                 #
-    #                 if tup[3]:
-    #                     otherRefD[tup[0]] = tup[3]
-    #                 #
-    #             #
-    #         #
-    #         if self._verbose:
-    #             endTime = time.time()
-    #             self._lfh.write(
-    #                 "+SequenceDataAssemble.__runSeqAllSearches()  completed at %s (%.2f seconds)\n" % (time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
-    #             )
-    #         #
-    #         return refD, ownRefD, otherRefD
-    #     except:  # noqa: E722 pylint: disable=bare-except
-    #         if self._verbose:
-    #             self._lfh.write("+SequenceDataAssemble.__runSeqAllSearches() - failing \n")
-    #             traceback.print_exc(file=self._lfh)
-    #         #
-    #     #
-    #     return {}, {}, {}
-
-    # EP: Believe unused
-#   def runMultiReferenceSearches(self, dataList, procName, optionsD, workingDir):  # pylint: disable=unused-argument
-#       """Multiple reference sequence search processing API"""
-#       ncbilock = optionsD.get("ncbilock", None)
-#       rList = []
-#       for tupL in dataList:
-#           seqSearchUtil = SeqReferenceSearchUtils(
-#               siteId=self.__siteId, sessionPath=self.__sessionPath, pathInfo=self.__pI, verbose=self._verbose, log=self._lfh, ncbilock=ncbilock
-#           )
-#           eRefD, selfRefD, sameSeqRefD = seqSearchUtil.run(self.__dataSetId, tupL[1], tupL[2], self.__doRefSearchFlag, self.__forceBlastSearchFlag)
-#           rList.append((tupL[0], eRefD, selfRefD, sameSeqRefD))
-#           #
-#       #
-#       return rList, rList, []
 
     def __runSameSeqAnnotationSearch(self, entityTupList):
         """Search same sequence annotation information from processed entries"""

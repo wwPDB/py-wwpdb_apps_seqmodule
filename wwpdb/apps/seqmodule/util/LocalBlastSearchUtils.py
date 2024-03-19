@@ -965,6 +965,7 @@ class LocalBlastSearchUtils(object):
             if "non_isoform_score" not in hit:
                 hit["non_isoform_score"] = 1
             #
+            hit["db_score"] = 0
             if fullScoreFlag or ("identity_score" not in hit):
                 hit["identity_score"] = (float(hit["identity"]) - float(hit["gaps"])) * 100.0 / float(hit["query_length"])
                 hit["sorting_score"] = hit["identity_score"]
@@ -980,8 +981,6 @@ class LocalBlastSearchUtils(object):
                     #
                 if hit["db_name"] == "SP":
                     hit["db_score"] = 1
-                else:
-                    hit["db_score"] = 0
                 #
             #
             if self.__authRefIdList and ((hit["db_code"].strip().upper() in self.__authRefIdList) or (hit["db_accession"].strip().upper() in
@@ -1015,6 +1014,11 @@ class LocalBlastSearchUtils(object):
                 elif "gp_id" in targetAncestorD and targetAncestorD["gp_id"] == authAncestorD["id"]:
                     taxidMatch = 1
                 #
+            #
+            # Add the following modification per request by DAOTHER-8863
+            #
+            if (hit["db_score"] == 1) and (taxidMatch > 0):
+                taxidMatch = 3
             #
             hit["taxid_match"] = taxidMatch
             if fullScoreFlag and (taxidMatch == 3):
