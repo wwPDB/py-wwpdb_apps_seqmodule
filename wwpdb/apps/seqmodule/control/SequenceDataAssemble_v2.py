@@ -114,7 +114,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         if self._verbose:
             self._lfh.write("\n+SequenceDataAssemble.doAssemble() STARTING with depId %r calPolyLink %r doRefSearch %r doAutoProcess %r\n" %
-                           (self.__dataSetId, calPolyLink, doRefSearch, doAutoProcess))
+                            (self.__dataSetId, calPolyLink, doRefSearch, doAutoProcess))
         #
         pdbxFilePath = self.__pI.getModelPdbxFilePath(self.__dataSetId, fileSource="session", versionId="1")
         polyLinkPath = self.__pI.getFilePath(self.__dataSetId, contentType="polymer-linkage-distances", formatType="json", fileSource="session")
