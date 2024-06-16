@@ -375,7 +375,6 @@ class UpdatePolymerEntityPartitions(object):
                             dbIsoform = dbAccession
                             dbAcc = tL[0]
                         #
-                        fetchUtil.reset()
                         fetchErr, refFeatureDict, _refSeqList = fetchUtil.fetchReferenceSequence("UNP", dbAcc, dbIsoform, polyTypeCode="AA",
                                                                                                  refSeqBeg=dbSeqBegin, refSeqEnd=dbSeqEnd)
                         #

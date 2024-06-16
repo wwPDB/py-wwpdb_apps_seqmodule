@@ -6,7 +6,7 @@
 #  3-Oct-2022  zf  update fetchReferenceSequenceWithSeqMatch() methods for better handling author provided reference sequence cases.
 #                  add runSeqAlignment() & __toList() methods
 # 11-Nov-2022  zf  move __getRefInfo() method to FetchSeqInfoUtils class.
-#  6-Jan-2024  zf  add reset() method
+#  2-Jun-2024  zf  add persistent object self.__fetchSeqUtil.
 ##
 """
 Methods to get reference sequence data from reference database based database name and identifier.
@@ -40,27 +40,22 @@ class FetchReferenceSequenceUtils(object):
         self.__accCode = ""
         self.__refInfoD = {}
         #
-        self.reset()
-
-    def reset(self):
-        self.__accCode = ""
-        self.__refInfoD = {}
+        self.__fetchSeqUtil = FetchSeqInfoUtils(siteId=self.__siteId, seqReferenceData=self.__srd, verbose=self.__verbose, log=self.__lfh)
 
     def fetchReferenceSequence(self, dbName, dbAccession, dbIsoform, polyTypeCode="AA", refSeqBeg=None, refSeqEnd=None):
-        """return error message, sequence feature dictionary, sequence list"""
-        if not self.__refInfoD:
-            try:
-                start = int(str(refSeqBeg))
-            except:  # noqa: E722 pylint: disable=bare-except
-                start = 0
-            #
-            try:
-                end = int(str(refSeqEnd))
-            except:  # noqa: E722 pylint: disable=bare-except
-                end = 0
-            #
-            fetchSeqUtil = FetchSeqInfoUtils(siteId=self.__siteId, seqReferenceData=self.__srd, verbose=self.__verbose, log=self.__lfh)
-            self.__accCode, self.__refInfoD = fetchSeqUtil.getRefInfo(dbName, dbAccession, dbIsoform, start, end)
+        """return error message, sequence feature dictionary, sequence list
+        """
+        try:
+            start = int(str(refSeqBeg))
+        except:  # noqa: E722 pylint: disable=bare-except
+            start = 0
+        #
+        try:
+            end = int(str(refSeqEnd))
+        except:  # noqa: E722 pylint: disable=bare-except
+            end = 0
+        #
+        self.__accCode, self.__refInfoD = self.__fetchSeqUtil.getRefInfo(dbName, dbAccession, dbIsoform, start, end)
         #
         if (not self.__refInfoD) or ("sequence" not in self.__refInfoD):
             error = "Fetch reference sequence [ dbName=" + dbName + ", Accession=" + self.__accCode + "] failed."
@@ -137,12 +132,11 @@ class FetchReferenceSequenceUtils(object):
                 dbAccession = tL[0]
             #
         #
-        fetchSeqUtil = FetchSeqInfoUtils(siteId=self.__siteId, seqReferenceData=self.__srd, verbose=self.__verbose, log=self.__lfh)
-        self.__accCode, self.__refInfoD = fetchSeqUtil.getRefInfo(dbName, dbAccession, dbIsoform, 0, 0)
+        self.__accCode, self.__refInfoD = self.__fetchSeqUtil.getRefInfo(dbName, dbAccession, dbIsoform, 0, 0)
         #
         if (not self.__refInfoD) or ("sequence" not in self.__refInfoD) or (not self.__refInfoD["sequence"]):
             if dbCode:
-                self.__accCode, self.__refInfoD = fetchSeqUtil.getRefInfo(dbName, dbCode, "", 0, 0)
+                self.__accCode, self.__refInfoD = self.__fetchSeqUtil.getRefInfo(dbName, dbCode, "", 0, 0)
                 if (not self.__refInfoD) or ("sequence" not in self.__refInfoD) or (not self.__refInfoD["sequence"]):
                     return False, {}
                 #

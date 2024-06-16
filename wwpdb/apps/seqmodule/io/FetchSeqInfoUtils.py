@@ -21,6 +21,7 @@
 # 29-Sep-2022   zf Added input 'begin' & 'end' values checking from idTupleList in fetchUniProt() method.
 # 11-Nov-2022   zf Create FetchSeqInfoUtils class with fetchUniProt(), fetchNcbiGi(), fetchNcbiSummary(), and getRefInfo() methods.
 #                  getRefInfo() method is moved from FetchReferenceSequenceUtils.__getRefInfo() method.
+#  2-Jun-2024   zf Added persistent objects self.__resultDicts & self.__multiResultDicts. Fixed the bug related to missing start & end sequence numbers.
 ##
 """
 Utility methods to retrieve information from NCBI & Uniprot databases
@@ -54,6 +55,8 @@ class FetchSeqInfoUtils(object):
         if not self.__srd:
             self.__srd = SequenceReferenceData(self.__verbose, self.__lfh)
         #
+        self.__resultDicts = {}
+        self.__multiResultDicts = {}
 
     def getRefInfo(self, dbName, dbAccession, dbIsoform, start, end, addMissingKeyFlag=True):
         """Fetch sequence data from Uniprot or GeneBank database.
@@ -115,54 +118,72 @@ class FetchSeqInfoUtils(object):
         """
         if idTupleList is None:
             idTupleList = []
+        #
         d = {}
         if not idTupleList:
             return d
         #
         idCodeList = []
+        foundCache = False
         for idTuple in idTupleList:
+            if idTuple[0] in self.__resultDicts:
+                foundCache = True
+                continue
+            #
             if idTuple[0] not in idCodeList:
                 idCodeList.append(idTuple[0])
             #
         #
-        if not idCodeList:
+        if (not foundCache) and (not idCodeList):
             return d
         #
-        fobj = FetchUnpXml(verbose=self.__verbose, log=self.__lfh)
-        ok = fobj.fetchList(idCodeList)
-        if filePath is not None:
-            fobj.writeUnpXml(filePath)
+        self.__fetchUniProtXmlFile(idCodeList, filePath)
         #
-        if ok:
-            resultDicts = fobj.getResult()
-            multiResultDicts = fobj.getMultipleResultDict()
-            # filter any redundant annotations --
+        # filter any redundant annotations --
+        #
+        for idTuple in idTupleList:
+            if idTuple[0] not in self.__resultDicts:
+                continue
             #
-            for idTuple in idTupleList:
-                if idTuple[0] not in resultDicts:
-                    continue
+            vd = self.__resultDicts[idTuple[0]]
+            seqLength = 0
+            if ("sequence" in vd) and vd["sequence"] and (len(vd["sequence"]) > 1):
+                seqLength = len(vd["sequence"])
+            #
+            if (idTuple[0] in self.__multiResultDicts) and self.__multiResultDicts[idTuple[0]]:
+                try:
+                    idTuple1 = int(idTuple[1])
+                except:  # noqa: E722 pylint: disable=bare-except
+                    idTuple1 = 0
                 #
-                vd = resultDicts[idTuple[0]]
+                try:
+                    idTuple2 = int(idTuple[2])
+                except:  # noqa: E722 pylint: disable=bare-except
+                    idTuple2 = 0
                 #
-                if (idTuple[0] in multiResultDicts) and multiResultDicts[idTuple[0]]:
-                    found = False
+                if ((idTuple1 == 0) or (idTuple2 == 0)) and (seqLength > 1):
+                    idTuple1 = 1
+                    idTuple2 = seqLength
+                #
+                found = False
+                if (idTuple1 > 0) and (idTuple2 > 0) and (idTuple1 <= idTuple2):
                     diff = -1
-                    for retD in multiResultDicts[idTuple[0]]:
-                        if ("begin" not in retD) or ("end" not in retD) or (idTuple[1] and (idTuple[1] < retD["begin"])) or \
-                           (idTuple[2] and (idTuple[2] > retD["end"])):
+                    for retD in self.__multiResultDicts[idTuple[0]]:
+                        if ("begin" not in retD) or ("end" not in retD) or (idTuple1 and (idTuple1 < retD["begin"])) or \
+                           (idTuple2 and (idTuple2 > retD["end"])):
                             continue
                         #
                         if diff == -1:
                             found = True
                             vd = retD
                             try:
-                                diff = (int(idTuple[1]) - int(retD["begin"])) + (int(retD["end"]) - int(idTuple[2]))
+                                diff = (int(idTuple1) - int(retD["begin"])) + (int(retD["end"]) - int(idTuple2))
                             except:  # noqa: E722 pylint: disable=bare-except
                                 pass
                             #
                         else:
                             try:
-                                diff1 = (int(idTuple[1]) - int(retD["begin"])) + (int(retD["end"]) - int(idTuple[2]))
+                                diff1 = (int(idTuple1) - int(retD["begin"])) + (int(retD["end"]) - int(idTuple2))
                                 if diff1 < diff:
                                     diff = diff1
                                     vd = retD
@@ -172,40 +193,40 @@ class FetchSeqInfoUtils(object):
                             #
                         #
                     #
-                    if (not found) and ("all" in multiResultDicts[idTuple[0]][-1]) and (multiResultDicts[idTuple[0]][-1]["all"] == "yes"):
-                        vd = multiResultDicts[idTuple[0]][-1]
-                    #
                 #
-                for k in vd.keys():
-                    if k in ["ec", "comments", "synonyms"]:
-                        v = vd[k]
-                        oL = []
-                        tL = v.split(",")
-                        for it in tL:
-                            sV = str(it).strip()
-                            if k == "ec":
-                                sVL = sV.split(".")
-                                oL1 = []
-                                for s1 in sVL:
-                                    if str(s1).startswith("n"):
-                                        oL1.append("-")
-                                    else:
-                                        oL1.append(s1)
-                                    #
-                                #
-                                sV = ".".join(oL1)
-                            #
-                            if sV in oL:
-                                continue
-                            else:
-                                oL.append(sV)
-                            #
-                        #
-                        vd[k] = ",".join(oL)
-                    #
+                if (not found) and ("all" in self.__multiResultDicts[idTuple[0]][-1]) and (self.__multiResultDicts[idTuple[0]][-1]["all"] == "yes"):
+                    vd = self.__multiResultDicts[idTuple[0]][-1]
                 #
-                d[idTuple] = vd
             #
+            for k in vd.keys():
+                if k in ["ec", "comments", "synonyms"]:
+                    v = vd[k]
+                    oL = []
+                    tL = v.split(",")
+                    for it in tL:
+                        sV = str(it).strip()
+                        if k == "ec":
+                            sVL = sV.split(".")
+                            oL1 = []
+                            for s1 in sVL:
+                                if str(s1).startswith("n"):
+                                    oL1.append("-")
+                                else:
+                                    oL1.append(s1)
+                                #
+                            #
+                            sV = ".".join(oL1)
+                        #
+                        if sV in oL:
+                            continue
+                        else:
+                            oL.append(sV)
+                        #
+                    #
+                    vd[k] = ",".join(oL)
+                #
+            #
+            d[idTuple] = vd
         #
         return d
 
@@ -255,3 +276,19 @@ class FetchSeqInfoUtils(object):
             #
         #
         return myD
+
+    def __fetchUniProtXmlFile(self, idCodeList=[], filePath=None):
+        """ Fetch Uniprot Xml File
+        """
+        if not idCodeList:
+            return;
+        #
+        fobj = FetchUnpXml(verbose=self.__verbose, log=self.__lfh)
+        ok = fobj.fetchList(idCodeList)
+        if filePath is not None:
+            fobj.writeUnpXml(filePath)
+        #
+        if ok:
+            self.__resultDicts.update(fobj.getResult())
+            self.__multiResultDicts.update(fobj.getMultipleResultDict())
+        #
