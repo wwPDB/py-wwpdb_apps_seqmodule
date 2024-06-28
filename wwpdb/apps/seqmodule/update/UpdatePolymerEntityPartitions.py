@@ -598,6 +598,7 @@ class UpdatePolymerEntityPartitions(object):
         #
         partIdList = self.__sds.getPartIds(seqId0, dataType="sequence", seqType="auth")
 
+        lastPart = ""  # Keep pylint happy
         for partId in partIdList:
             vL = self.__sds.getVersionIds(seqId0, partId=partId, altId=1, dataType="sequence", seqType="auth")
             if len(vL) > 0:

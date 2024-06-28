@@ -1304,6 +1304,8 @@ class ModelFileIo(object):
     def getEncapsulatedCoordinates(self):
         """_pdbx_original_pdb_coordinates.coord_section"""
         try:
+            row = [""]  # Keep pylint happy.
+            encapCoordTable = [""]  # For pylint
             if self.__currentContainer.exists("pdbx_original_pdb_coordinates"):
                 encapCoordTable = self.__currentContainer.getObj("pdbx_original_pdb_coordinates")
             elif self.__currentContainer.exists("ndb_original_pdb_coordinates"):
@@ -1616,11 +1618,13 @@ class ModelFileIo(object):
         #
         i3L = colNames.index("label_seq_id")
         #
+        i4 = 0  # For pylint - should never happen
         if "pdbx_PDB_model_num" in colNames:
             i4 = colNames.index("pdbx_PDB_model_num")
         elif "ndb_model" in colNames:
             i4 = colNames.index("ndb_model")
         #
+        i8 = 0  # Should never happen - keep pylint happy
         if "pdbx_PDB_ins_code" in colNames:
             i8 = colNames.index("pdbx_PDB_ins_code")
         elif "ndb_ins_code" in colNames:

@@ -277,11 +277,12 @@ class FetchSeqInfoUtils(object):
         #
         return myD
 
-    def __fetchUniProtXmlFile(self, idCodeList=[], filePath=None):
+    def __fetchUniProtXmlFile(self, idCodeList=None, filePath=None):
         """ Fetch Uniprot Xml File
         """
+        # Handles empty list as well
         if not idCodeList:
-            return;
+            return
         #
         fobj = FetchUnpXml(verbose=self.__verbose, log=self.__lfh)
         ok = fobj.fetchList(idCodeList)

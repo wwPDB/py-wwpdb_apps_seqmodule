@@ -111,6 +111,9 @@ class BlastPlusReader(object):
         description = ""
         length = ""
         # _code = ""
+        dbName = ""
+        dbCode = ""
+        isoForm = ""
         for node in nodelist:
             if node.nodeType != node.ELEMENT_NODE:
                 continue

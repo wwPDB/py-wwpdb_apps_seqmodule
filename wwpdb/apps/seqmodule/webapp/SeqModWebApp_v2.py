@@ -512,6 +512,8 @@ class SeqModWebAppWorker(object):
         if authId is not None and len(authId) > 1:
             tL = str(authId).split("_")
             entityId = tL[2]
+        else:
+            entityId = "???"  # keep pylint happy
         cD = self.__makeTaxonomyEditForm(entityId=entityId, entryId=identifier)
         self.__reqObj.setReturnFormat(return_format="json")
         rC = SeqModResponseContent(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
@@ -571,6 +573,9 @@ class SeqModWebAppWorker(object):
             tL = str(refId).split("_")
             entityId = str(tL[1])
             partId = str(tL[3])
+        else:
+            entityId = ""
+            partId = ""
         #
         sdU = UpdatePolymerEntityReference(reqObj=self.__reqObj, verbose=self.__verbose, log=self.__lfh)
         cD = sdU.makeSeqdbrefEditForm(entityId, partId, entryId=identifier)
@@ -1298,6 +1303,7 @@ class SeqModWebAppWorker(object):
         if self.__verbose:
             self.__lfh.write("\n\n+SeqModWebApp.__closeSeqEditor() - starting with operation %s\n" % mode)
 
+        state = "???"  # pylint noted could be unset
         if mode == "completed":
             state = "closed(0)"
         elif mode == "unfinished":

@@ -287,6 +287,7 @@ class SequenceReferenceData(object):
             return r1L, r3L
 
         inP = False
+        r3 = ""  # For pylint
         for s in ss:
             if s in string.whitespace:
                 continue
@@ -325,6 +326,7 @@ class SequenceReferenceData(object):
             return r1L, r3L
 
         inP = False
+        r3 = ""  # For pylint
         for s in ss:
             if s in string.whitespace:
                 continue
@@ -363,6 +365,7 @@ class SequenceReferenceData(object):
             return r1L, r3L
 
         inP = False
+        r3 = ""  # To keep pylint happy
         for s in ss:
             if s in string.whitespace:
                 continue
