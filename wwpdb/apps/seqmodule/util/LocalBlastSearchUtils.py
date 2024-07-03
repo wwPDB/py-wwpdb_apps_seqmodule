@@ -355,15 +355,15 @@ class LocalBlastSearchUtils(object):
                     #
                 #
             #
-            autoMatchStatus, authHitList = self.__fetchAuthProvidedRefSequence(searchSequence, seqNumBeg, seqNumEnd, str(partNum), taxId, mutationList,
-                                                                               len(self.__entityD["PART_LIST"]))
+            autoMatchStatus, skipBlastSearch, authHitList = self.__fetchAuthProvidedRefSequence(searchSequence, seqNumBeg, seqNumEnd, str(partNum), \
+                                                                                       taxId, mutationList, len(self.__entityD["PART_LIST"]))
             if not autoMatchStatus:
                 foundPerfectMatch = False
             #
             if authHitList:
                 authRefD[str(partNum)] = authHitList
                 # Skip blast search if found perfect author provided reference sequence match
-                if autoMatchStatus:
+                if autoMatchStatus or skipBlastSearch:
                     continue
                 #
                 # Skip blast search for short sequence
@@ -468,7 +468,7 @@ class LocalBlastSearchUtils(object):
     def __fetchAuthProvidedRefSequence(self, sequence, seqNumBeg, seqNumEnd, seqPartId, taxId, mutationList, partNumbers):
         """Fetch reference sequence based on author provided ref IDs"""
         if (not self.__authRefDataList) or (len(self.__authRefDataList) > partNumbers):
-            return False, []
+            return False, False, []
         #
         refData = []
         if partNumbers > 1:
@@ -482,10 +482,10 @@ class LocalBlastSearchUtils(object):
             refData = self.__authRefDataList[0]
         #
         if not refData:
-            return False, []
+            return False, False, []
         #
         fetchUtil = FetchReferenceSequenceUtils(siteId=self.__siteId, seqReferenceData=self.__srd, verbose=self.__verbose, log=self.__lfh)
-        autoMatchStatus, hitD = fetchUtil.fetchReferenceSequenceWithSeqMatch(refData[0], refData[1], refData[2], taxId, sequence, seqNumBeg, mutationList)
+        autoMatchStatus, skipBlastSearch, hitD = fetchUtil.fetchReferenceSequenceWithSeqMatch(refData[0], refData[1], refData[2], taxId, sequence, seqNumBeg, mutationList)
         if hitD:
             hitD["beg_seq_num"] = seqNumBeg
             hitD["end_seq_num"] = seqNumEnd
@@ -500,12 +500,12 @@ class LocalBlastSearchUtils(object):
                 if autoMatchStatus:
                     hitD["auto_match_status"] = True
                 #
-                return autoMatchStatus, [hitD]
+                return autoMatchStatus, skipBlastSearch, [hitD]
             else:
                 self.__lfh.write("+LocalBlastSearchUtils.__fetchAuthProvidedRefSequence() get sequence alignment index error: %s\n" % error)
             #
         #
-        return False, []
+        return False, False, []
 
     def __writeSearchResult(self, rD):
         """Write out the current search result pickle file"""

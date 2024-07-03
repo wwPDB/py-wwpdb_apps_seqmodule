@@ -165,17 +165,16 @@ class FetchReferenceSequenceUtils(object):
                 #
             #
         #
-        autoMatchStatus, alignInfoD = self.runSeqAlignment(self.__refInfoD["sequence"], authSeq, seqNumBeg, mutationList, mutationMap)
+        autoMatchStatus, skipBlastSearch, alignInfoD = self.runSeqAlignment(self.__refInfoD["sequence"], authSeq, seqNumBeg, mutationList, mutationMap)
         if alignInfoD:
             # Check Taxonomy ID information
             if ("taxonomy_id" in self.__refInfoD) and (self.__refInfoD["taxonomy_id"]) and taxId and (self.__refInfoD["taxonomy_id"] != taxId):
                 autoMatchStatus = False
             #
-            self.__lfh.write("autoMatchStatus=%r alignInfoD=%d\n" % (autoMatchStatus, len(alignInfoD)))
             self.__refInfoD.update(alignInfoD)
-            return autoMatchStatus, self.__refInfoD
+            return autoMatchStatus, skipBlastSearch, self.__refInfoD
         else:
-            return False, {}
+            return False, False, {}
         #
 
     def runSeqAlignment(self, refSeq, authSeq, seqNumBeg, mutationList, mutationMap):
@@ -301,9 +300,14 @@ class FetchReferenceSequenceUtils(object):
         retD["sort_order"] = "1"
         #
         if (identity + mutation) == len(authSeqList):
-            return True, retD
+            # Add for DAOTHER-9536
+            if gaps == 0:
+                return True, True, retD
+            else:
+                return False, True, retD
+            #
         else:
-            return False, retD
+            return False, False, retD
         #
 
     def __getReferenceList(self, sequence, polyTypeCode, refSeqBeg, refSeqEnd, reverseOrder):
