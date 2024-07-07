@@ -355,8 +355,8 @@ class LocalBlastSearchUtils(object):
                     #
                 #
             #
-            autoMatchStatus, skipBlastSearch, authHitList = self.__fetchAuthProvidedRefSequence(searchSequence, seqNumBeg, seqNumEnd, str(partNum), \
-                                                                                       taxId, mutationList, len(self.__entityD["PART_LIST"]))
+            autoMatchStatus, skipBlastSearch, authHitList = self.__fetchAuthProvidedRefSequence(searchSequence, seqNumBeg, seqNumEnd, str(partNum),
+                                                                                                taxId, mutationList, len(self.__entityD["PART_LIST"]))
             if not autoMatchStatus:
                 foundPerfectMatch = False
             #

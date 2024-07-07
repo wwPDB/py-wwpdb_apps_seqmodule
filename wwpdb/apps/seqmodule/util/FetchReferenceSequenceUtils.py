@@ -138,10 +138,10 @@ class FetchReferenceSequenceUtils(object):
             if dbCode:
                 self.__accCode, self.__refInfoD = self.__fetchSeqUtil.getRefInfo(dbName, dbCode, "", 0, 0)
                 if (not self.__refInfoD) or ("sequence" not in self.__refInfoD) or (not self.__refInfoD["sequence"]):
-                    return False, {}
+                    return False, False, {}
                 #
             else:
-                return False, {}
+                return False, False, {}
             #
         #
 # Removed per ticket DAOTHER-7903
@@ -219,12 +219,12 @@ class FetchReferenceSequenceUtils(object):
             blockList.append((start, end))
         #
         if not blockList:
-            return False, {}
+            return False, False, {}
         #
         start = blockList[0][0]
         end = blockList[-1][1]
         if (start < 0) or ((2 * (end - start + 1)) < len(authSeqList)):
-            return False, {}
+            return False, False, {}
         #
         identity = 0
         mutation = 0
