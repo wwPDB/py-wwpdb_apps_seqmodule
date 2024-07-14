@@ -699,7 +699,7 @@ class UpdatePolymerEntityPartitions(object):
         nextVer = curVer + 1
         #
         seqIdxNext = []
-        if updateSequenceFlag:
+        if updateSequenceFlag or updatePolymerTypeFlag:
             # First update the sequences for each part IF the sequence has changed -
             _authSelectId, authSL, authFdObj = self.__getCurrentAuthSelection(entityId, partId=1)
             polyTypeCode = authFdObj.getPolymerType()
@@ -720,6 +720,7 @@ class UpdatePolymerEntityPartitions(object):
             for r3 in r3L:
                 comment = self.__getAuthSeqComment(ir, pD, seqBegMin, seqEndMax)
                 seqIdxNext.append((r3, str(ir), comment, ir, self.__srd.cnv3To1(r3), r3))
+                self.__lfh.write("r3=%r cnv3To1=%r\n" % (r3, self.__srd.cnv3To1(r3)))
                 ir += 1
             #
             for pId in pD.keys():
@@ -754,7 +755,7 @@ class UpdatePolymerEntityPartitions(object):
                 #
                 self.__sds.setFeatureObj(authFdObj, seqId0, seqType="auth", partId=partId, altId=1, version=nextVer)
                 #
-                if not updateSequenceFlag:
+                if (not updateSequenceFlag) and (not updatePolymerTypeFlag):
                     #  Update the annotation of the prior sequence ...
                     seqIdx = self.__sds.getSequence(seqId0, seqType="auth", partId=partId, altId=1, version=curVer)
                     sTupL = []
