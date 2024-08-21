@@ -40,6 +40,7 @@
 #  02-Sep-2020 zf  Excluded 'Uncharacterized protein' molecule name from Uniprot
 #  03-Oct-2022 zf  Excluded "SOURCE_STRAIN" from updateAuth() method.
 #                  add IS_AUTH_PROVIDED_ID
+#  18-Aug-2024 zf  Excluded "Uncharacterized conserved protein", "Protein of uncharacterized function", "Protein of uncharacterized function (DUF2001)"
 ##
 """
 Containers for sequence and residue labels/features used as identifiers and classifiers
@@ -89,6 +90,8 @@ class SequenceFeatureMap(object):
                 authFD["SOURCE_COMMON_NAME"] = common_name
             #
         #
+        excludedList = [ "PREDICTED PROTEIN", "PROTEIN OF UNCHARACTERIZED FUNCTION", "UNCHARACTERIZED CONSERVED PROTEIN", "UNCHARACTERIZED PROTEIN" ]
+        #
         for mapTup in mapTupList:
             if mapTup[0] == "ENTITY_DESCRIPTION":
                 updateFlag = False
@@ -99,7 +102,16 @@ class SequenceFeatureMap(object):
                         updateFlag = True
                     #
                 elif refFD[mapTup[1]] is not None and len(refFD[mapTup[1]]) > 1:
-                    if (refFD[mapTup[1]].strip().upper() != "UNCHARACTERIZED PROTEIN") and (refFD[mapTup[1]].strip().upper() != "PREDICTED PROTEIN"):
+                    uniProtName = refFD[mapTup[1]].strip().upper()
+                    #
+                    isExcludeName = False
+                    for excludeName in excludedList:
+                        if uniProtName.startswith(excludeName):
+                            isExcludeName = True
+                            break
+                        #
+                    #
+                    if not isExcludeName:
                         authFD[mapTup[0]] = refFD[mapTup[1]]
                         updateFlag = True
                     #
