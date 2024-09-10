@@ -90,7 +90,7 @@ class SequenceFeatureMap(object):
                 authFD["SOURCE_COMMON_NAME"] = common_name
             #
         #
-        excludedList = [ "PREDICTED PROTEIN", "PROTEIN OF UNCHARACTERIZED FUNCTION", "UNCHARACTERIZED CONSERVED PROTEIN", "UNCHARACTERIZED PROTEIN" ]
+        excludedList = ["PREDICTED PROTEIN", "PROTEIN OF UNCHARACTERIZED FUNCTION", "UNCHARACTERIZED CONSERVED PROTEIN", "UNCHARACTERIZED PROTEIN"]
         #
         for mapTup in mapTupList:
             if mapTup[0] == "ENTITY_DESCRIPTION":
