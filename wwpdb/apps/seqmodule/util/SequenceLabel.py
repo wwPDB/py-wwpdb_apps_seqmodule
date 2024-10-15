@@ -96,7 +96,7 @@ class SequenceFeatureMap(object):
             if mapTup[0] == "ENTITY_DESCRIPTION":
                 updateFlag = False
                 # Keep the original author provided name for DNA/RNA entities
-                if ("DB_NAME" in refFD) and (refFD["DB_NAME"] in ["GB", "DBJ", "EMB", "EMBL", "REF"]):
+                if ("DB_NAME" in refFD) and (refFD["DB_NAME"] in ["GB", "DBJ", "EMB", "EMBL", "REF", "TPG"]):
                     if ((mapTup[0] not in authFD) or (not authFD[mapTup[0]])) and (mapTup[1] in refFD) and len(refFD[mapTup[1]]) > 1:
                         authFD[mapTup[0]] = refFD[mapTup[1]]
                         updateFlag = True

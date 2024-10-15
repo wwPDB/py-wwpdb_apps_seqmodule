@@ -134,7 +134,7 @@ class SequenceReferenceData(object):
     def convertDbNameToResource(self, dbName):
         if dbName in ["SP", "TR"]:
             return "UNP"
-        elif dbName in ["GB", "DBJ", "EMB", "EMBL", "REF"]:
+        elif dbName in ["GB", "DBJ", "EMB", "EMBL", "REF", "TPG"]:
             return "GB"
         else:
             return dbName

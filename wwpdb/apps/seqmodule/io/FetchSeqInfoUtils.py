@@ -96,7 +96,7 @@ class FetchSeqInfoUtils(object):
             else:
                 return idCode, infoD
             #
-        elif dbResource in ["GB", "DBJ", "EMB", "EMBL", "REF"]:
+        elif dbResource in ["GB", "DBJ", "EMB", "EMBL", "REF", "TPG" ]:
             infoD = self.fetchNcbiGi(dbAccession)
             if not infoD:
                 return dbAccession, {}
