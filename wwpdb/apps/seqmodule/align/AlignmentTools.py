@@ -1215,6 +1215,8 @@ class AlignmentTools(AlignmentDataStore):
             if self._seqAlignList[i][refIdx][1] == self._gapSymbol:
                 if (i == 0) and (self._seqAlignList[i][authIdx][1] in ("MET", "MSE")):
                     comment = "initiating methionine"
+                elif (i == 0) and (self._seqAlignList[i][authIdx][1] == "ACE"):
+                    comment = "acetylation"
                 elif i < first_pair_position:
                     if first_fragment:
                         comment = "expression tag"
@@ -1223,7 +1225,11 @@ class AlignmentTools(AlignmentDataStore):
                     #
                 elif i > last_pair_position:
                     if last_fragment:
-                        comment = "expression tag"
+                        if (i == end_pos) and (self._seqAlignList[i][authIdx][1] == "NH2"):
+                            comment = "amidation"
+                        else:
+                            comment = "expression tag"
+                        #
                     else:
                         comment = "linker"
                     #
