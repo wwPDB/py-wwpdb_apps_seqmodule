@@ -49,6 +49,7 @@
 # 24-Aug-2017  zf  add '/service/sequence_editor/rerun_blast/start' & _reRunBlastOp for rerun blast search
 # 19-Oct-2022  zf  add __getSummaryPageContent() method
 #  6-Jan 2024  zf  add /service/sequence_editor/respond_form/seqbuilder and _respondSeqBuilderOp() method
+# 09-Dec-2024  zf  add EXT_PDB_ID
 ##
 #    WF Testing entry points -
 #
@@ -940,7 +941,8 @@ class SeqModWebAppWorker(object):
             rC.setIdentifier(self.__reqObj.getValue("identifier"))
             rC.setStructTitle(eD["STRUCT_TITLE"])
             rC.setCitationTitle(eD["CITATION_TITLE"])
-            rC.setPdbCode(eD["PDB_ID"])
+            #rC.setPdbCode(eD["PDB_ID"])
+            rC.setPdbCode(eD["EXT_PDB_ID"])
             rC.setGroupIdList(gIdList)
             #
             pI = PathInfo(siteId=self.__siteId, sessionPath=self.__sessionPath, verbose=self.__verbose, log=self.__lfh)

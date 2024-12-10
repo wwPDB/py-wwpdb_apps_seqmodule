@@ -25,6 +25,7 @@
 # 30-Aug-2017  zf  change self.__reqObj.getSummaryAlignList & self.__reqObj.getSummarySelectList to use latest UI input values
 # 29-Jun-2021  zf  added self.__checkPolyAlaAssignment()
 # 19-Oct-2022  zf  added section for generation summary landing page
+# 09-Dec-2024  zf  add EXT_PDB_ID
 ##
 """
 Controlling class for the production of data for the summary sequence view.
@@ -152,7 +153,7 @@ class SummaryView(object):
 
     def getEntryDetails(self, kyList=None):
         if kyList is None:
-            kyList = ["STRUCT_TITLE", "CITATION_TITLE", "PDB_ID"]
+            kyList = ["STRUCT_TITLE", "CITATION_TITLE", "PDB_ID", "EXT_PDB_ID"]
 
         eD = {}
         for ky in kyList:
