@@ -941,7 +941,7 @@ class SeqModWebAppWorker(object):
             rC.setIdentifier(self.__reqObj.getValue("identifier"))
             rC.setStructTitle(eD["STRUCT_TITLE"])
             rC.setCitationTitle(eD["CITATION_TITLE"])
-            #rC.setPdbCode(eD["PDB_ID"])
+            # rC.setPdbCode(eD["PDB_ID"])
             rC.setPdbCode(eD["EXT_PDB_ID"])
             rC.setGroupIdList(gIdList)
             #
