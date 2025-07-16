@@ -73,6 +73,7 @@ class SequenceReferenceData(object):
         "DA": "A",
         "DC": "C",
         "DG": "G",
+        "DN": "N",
         "DT": "T",
         "DU": "U",
         "DI": "I",
@@ -88,7 +89,7 @@ class SequenceReferenceData(object):
         ".": ".",
     }
 
-    _monDictDNA1 = {".": ".", "A": "DA", "C": "DC", "G": "DG", "I": "DI", "N": "N", "T": "DT", "U": "DU", "X": "UNK"}
+    _monDictDNA1 = {".": ".", "A": "DA", "C": "DC", "G": "DG", "I": "DI", "N": "DN", "T": "DT", "U": "DU", "X": "UNK"}
 
     _monDictRNA1 = {".": ".", "A": "A", "C": "C", "G": "G", "I": "I", "N": "N", "T": "T", "U": "U", "X": "UNK"}
 
