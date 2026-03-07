@@ -102,11 +102,9 @@ class ModelSequenceUtilsTests(unittest.TestCase):
                 if not os.access(inpFilePath, os.F_OK):
                     self.__lfh.write("+testSearchAndAssembleFromUpload() input file missing %s\n" % inpFilePath)
                     self.fail()
-                    break
                 if not os.access(pdbxFilePath, os.F_OK):
                     self.__lfh.write("+testSearchAndAssembleFromUpload() format conversion failed for %s\n" % idCode)
                     self.fail()
-                    break
 
                 c0 = PdbxFileIo(verbose=self.__verbose, log=self.__lfh).getContainer(pdbxFilePath)
                 msu = ModelSequenceUtils(dataContainer=c0, verbose=self.__verbose, log=self.__lfh)
