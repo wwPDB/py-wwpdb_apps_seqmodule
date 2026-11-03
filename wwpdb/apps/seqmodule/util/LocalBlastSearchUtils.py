@@ -714,7 +714,7 @@ class LocalBlastSearchUtils(object):
     def __runSingleLocalBlast(self, oneLetterCodeSeq, searchResultFile, partNum, taxId, dbName):
         """Internal method to execute the sequence search according to input polymer type."""
         if self.__verbose:
-            self.__lfh.write("+LocalBlastSearchUtils.__runSingleLocalBlast() STARTING %s Launch search for %s sequence = %s\n" % (self.__siteId, self.__seqType, oneLetterCodeSeq))
+            self.__lfh.write("+LocalBlastSearchUtils.__runSingleLocalBlast() STARTING %s Launch search with %s for %s sequence = %s\n" % (self.__siteId, dbName, self.__seqType, oneLetterCodeSeq))
             self.__lfh.flush()
         #
         timeBegin = time.time()
@@ -739,9 +739,9 @@ class LocalBlastSearchUtils(object):
             if self.__cleanUp and not self.__debug:
                 dp.cleanup()
             #
-        # elif self.__seqType == 'polyribonucleotide':
-        # for DAOTHER-6304
-        elif self.__seqType in ["polydeoxyribonucleotide", "polyribonucleotide"]:
+        elif self.__seqType == 'polyribonucleotide':
+#       Added DNA for DAOTHER-6304 and removed by DAOTHER-10682
+#       elif self.__seqType in ["polydeoxyribonucleotide", "polyribonucleotide"]:
             if len(oneLetterCodeSeq) > self.__minRnaSequenceSearchLength:
                 dp = RcsbDpUtility(tmpPath=tmpPathAbs, siteId=self.__siteId, verbose=True)
                 dp.addInput(name="one_letter_code_sequence", value=oneLetterCodeSeq)

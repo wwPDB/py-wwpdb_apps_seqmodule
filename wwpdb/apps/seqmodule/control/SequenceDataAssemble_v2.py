@@ -135,8 +135,10 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         #
         if doAutoProcess:
             self.__autoProcessFlag = no_coord_issue
+            self._lfh.write("\n+SequenceDataAssemble.doAssemble() autoProcessFlag=%r no_coord_issue=%r\n" % (self.__autoProcessFlag, no_coord_issue))
             if len(seqSimilarityInfoList) > 0:
                 self.__autoProcessFlag = False
+                self._lfh.write("\n+SequenceDataAssemble.doAssemble() autoProcessFlag=%r seqSimilarityInfoList=%d\n" % (self.__autoProcessFlag, len(seqSimilarityInfoList)))
             #
         #
         self.__getAuthDefinedRefD(depSeqAssign)
@@ -211,7 +213,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         startTime = time.time()
         if self._verbose:
             self._lfh.write(
-                "+SequenceDataAssemble loadSequenceDataStore for sessionId %s started at %s \n" % (self.__sessionObj.getId(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()))
+                "+SequenceDataAssemble.doAssemble() for sessionId %s started at %s \n" % (self.__sessionObj.getId(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()))
             )
         #
         if ("PDB_ID" in entryD["PDB_ID"]) and (len(entryD["PDB_ID"]) == 4):
@@ -242,6 +244,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             #
             dataExport = SequenceDataExport(reqObj=self._reqObj, exportList=defaultSelectedIdList, verbose=self._verbose, log=self._lfh)
             ok, numConflicts, _conflictList, _warningMsg = dataExport.exportAssignments()
+            self._lfh.write("+SequenceDataAssemble.doAssemble() autoProcessFlag=%r ok=%r numConflicts=%d\n" % (self.__autoProcessFlag, ok, numConflicts))
             if (not ok) or (numConflicts > 0):
                 assignFilePath = self.__pI.getSequenceAssignmentFilePath(self.__dataSetId, fileSource="session", versionId="latest")
                 if assignFilePath and os.access(assignFilePath, os.R_OK):
@@ -252,7 +255,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         if self._verbose:
             endTime = time.time()
             self._lfh.write(
-                "+SequenceDataAssemble loadSequenceDataStore completed at %s (%.2f seconds)\n" % (time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
+                "+SequenceDataAssemble.doAssemble() completed at %s (%.2f seconds)\n" % (time.strftime("%Y %m %d %H:%M:%S", time.localtime()), endTime - startTime)
             )
             self._lfh.write("+SequenceDataAssemble.doAssemble() COMPLETED for %r\n\n" % self.__dataSetId)
         #
@@ -667,6 +670,10 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         """
         try:
             startTime = time.time()
+            if self._verbose:
+                self._lfh.write(
+                    "+SequenceDataAssemble.__doReferenceSearch() for sessionId %s started at %s \n" % (self.__sessionObj.getId(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()))
+                )
             #
             entityTupList = []
             for eId in entityIdList:
@@ -698,6 +705,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                     #
                     # Stop autoProcess for poly-ALA Seq per ticket# DAOTHER-8256
                     if (10 * countALA) > (9 * seqLen):
+                        self._lfh.write("+SequenceDataAssemble.__doReferenceSearch() poly-ALA Seq case autoProcessFlag=%r\n" % self.__autoProcessFlag)
                         self.__autoProcessFlag = False
                     #
                 #
@@ -737,6 +745,7 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
             if self.__reRunBlastSearchFlag:
                 blastList = entityTupList
                 self.__autoProcessFlag = False
+                self._lfh.write("+SequenceDataAssemble.__doReferenceSearch() rerun Blast search case autoProcessFlag=%r\n" % self.__autoProcessFlag)
             else:
                 for entityTup in entityTupList:
                     hasOwnRef = False
@@ -776,12 +785,14 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 autoMatchStatus, refD = self.__runSeqBlastSearch(blastList)
                 if (not autoMatchStatus) or (not refD):
                     self.__autoProcessFlag = False
+                    self._lfh.write("+SequenceDataAssemble.__doReferenceSearch() No reference case autoProcessFlag=%r\n" % self.__autoProcessFlag)
                 #
             #
             if refD:
                 for k, _v in refD.items():
                     if k in naList:
                         self.__autoProcessFlag = False
+                        self._lfh.write("+SequenceDataAssemble.__doReferenceSearch() DNA entity case autoProcessFlag=%r\n" % self.__autoProcessFlag)
                     #
                 #
             #
@@ -814,6 +825,10 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         """Search same sequence annotation information from processed entries"""
         try:
             startTime = time.time()
+            if self._verbose:
+                self._lfh.write(
+                    "+SequenceDataAssemble.__runSameSeqAnnotationSearch() for sessionId %s started at %s \n" % (self.__sessionObj.getId(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()))
+                )
             #
             if self.__cI.get("USE_COMPUTE_CLUSTER"):
                 numProc = len(entityTupList)
@@ -867,6 +882,10 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
         """Perform blast reference sequence search"""
         try:
             startTime = time.time()
+            if self._verbose:
+                self._lfh.write(
+                    "+SequenceDataAssemble.__runSeqBlastSearch() for sessionId %s started at %s \n" % (self.__sessionObj.getId(), time.strftime("%Y %m %d %H:%M:%S", time.localtime()))
+                )
             #
             if self.__cI.get("USE_COMPUTE_CLUSTER"):
                 numProc = len(entityTupList)
