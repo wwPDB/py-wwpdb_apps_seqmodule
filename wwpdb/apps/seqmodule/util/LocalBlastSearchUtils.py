@@ -740,8 +740,8 @@ class LocalBlastSearchUtils(object):
                 dp.cleanup()
             #
         elif self.__seqType == 'polyribonucleotide':
-#       Added DNA for DAOTHER-6304 and removed by DAOTHER-10682
-#       elif self.__seqType in ["polydeoxyribonucleotide", "polyribonucleotide"]:
+            # Added DNA for DAOTHER-6304 and removed by DAOTHER-10682
+            # elif self.__seqType in ["polydeoxyribonucleotide", "polyribonucleotide"]:
             if len(oneLetterCodeSeq) > self.__minRnaSequenceSearchLength:
                 dp = RcsbDpUtility(tmpPath=tmpPathAbs, siteId=self.__siteId, verbose=True)
                 dp.addInput(name="one_letter_code_sequence", value=oneLetterCodeSeq)
