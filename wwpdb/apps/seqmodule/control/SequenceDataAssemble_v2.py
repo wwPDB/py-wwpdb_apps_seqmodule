@@ -831,10 +831,10 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 )
             #
             if self.__cI.get("USE_COMPUTE_CLUSTER"):
-                numProc = len(entityTupList)
+                defaultNumProc = len(entityTupList)
             else:
-                numProc = ResourceAllocation.default_worker_count()
-            numProc = ResourceAllocation(config_info=self.__cI).get_worker_count("seqmodule.same_seq_annotation", numProc)
+                defaultNumProc = "cpus / 2"
+            numProc = ResourceAllocation(config_info=self.__cI).get_worker_count("seqmodule.same_seq_annotation", defaultNumProc)
             mpu = MultiProcUtil(verbose=True)
             mpu.set(workerObj=self, workerMethod="runMultiSameSeqAnnotationSearches")
             mpu.setWorkingDir(self.__sessionPath)
@@ -889,10 +889,10 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 )
             #
             if self.__cI.get("USE_COMPUTE_CLUSTER"):
-                numProc = len(entityTupList)
+                defaultNumProc = len(entityTupList)
             else:
-                numProc = ResourceAllocation.default_worker_count()
-            numProc = ResourceAllocation(config_info=self.__cI).get_worker_count("seqmodule.blast", numProc)
+                defaultNumProc = "cpus / 2"
+            numProc = ResourceAllocation(config_info=self.__cI).get_worker_count("seqmodule.blast", defaultNumProc)
             mpu = MultiProcUtil(verbose=True)
             mpu.set(workerObj=self, workerMethod="runMultiBlastReferenceSearches")
             mpu.setWorkingDir(self.__sessionPath)

@@ -381,7 +381,7 @@ class LocalBlastSearchUtils(object):
         rD = {}
         try:
             if blastDataList:
-                numProc = ResourceAllocation(site_id=self.__siteId).get_worker_count("seqmodule.blast", ResourceAllocation.default_worker_count())
+                numProc = ResourceAllocation(site_id=self.__siteId).get_worker_count("seqmodule.blast", "cpus / 2")
                 mpu = MultiProcUtil(verbose=True)
                 mpu.set(workerObj=self, workerMethod="runMultiLocalBlasts")
                 mpu.setWorkingDir(self.__sessionPath)
@@ -1122,7 +1122,7 @@ class LocalBlastSearchUtils(object):
         """Get Auth/Ref sequence alignments"""
         alignMap = {}
         try:
-            numProc = ResourceAllocation(site_id=self.__siteId).get_worker_count("seqmodule.ref_alignments", ResourceAllocation.default_worker_count())
+            numProc = ResourceAllocation(site_id=self.__siteId).get_worker_count("seqmodule.ref_alignments", "cpus / 2")
             mpu = MultiProcUtil(verbose=True)
             mpu.set(workerObj=self, workerMethod="getMultiSeqAlignmentProcess")
             mpu.setWorkingDir(self.__sessionPath)
