@@ -36,7 +36,6 @@ except ImportError:
     import pickle as pickle
 #
 import json
-import multiprocessing
 import os
 import shutil
 import sys
@@ -61,6 +60,7 @@ from wwpdb.apps.seqmodule.util.MultiProcLimit import MultiProcLimit
 from wwpdb.utils.config.ConfigInfo import ConfigInfo
 from rcsb.utils.multiproc.MultiProcUtil import MultiProcUtil
 from wwpdb.io.locator.PathInfo import PathInfo
+from wwpdb.io.misc.ResourceAllocation import ResourceAllocation
 from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
 from wwpdb.utils.session.UtilDataStore import UtilDataStore
 
@@ -831,9 +831,10 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 )
             #
             if self.__cI.get("USE_COMPUTE_CLUSTER"):
-                numProc = len(entityTupList)
+                defaultNumProc = len(entityTupList)
             else:
-                numProc = int(multiprocessing.cpu_count() / 2)
+                defaultNumProc = "cpus / 2"
+            numProc = ResourceAllocation(config_info=self.__cI).get_worker_count("seqmodule.same_seq_annotation", defaultNumProc)
             mpu = MultiProcUtil(verbose=True)
             mpu.set(workerObj=self, workerMethod="runMultiSameSeqAnnotationSearches")
             mpu.setWorkingDir(self.__sessionPath)
@@ -888,9 +889,10 @@ class SequenceDataAssemble(UpdateSequenceDataStoreUtils):
                 )
             #
             if self.__cI.get("USE_COMPUTE_CLUSTER"):
-                numProc = len(entityTupList)
+                defaultNumProc = len(entityTupList)
             else:
-                numProc = int(multiprocessing.cpu_count() / 2)
+                defaultNumProc = "cpus / 2"
+            numProc = ResourceAllocation(config_info=self.__cI).get_worker_count("seqmodule.blast", defaultNumProc)
             mpu = MultiProcUtil(verbose=True)
             mpu.set(workerObj=self, workerMethod="runMultiBlastReferenceSearches")
             mpu.setWorkingDir(self.__sessionPath)

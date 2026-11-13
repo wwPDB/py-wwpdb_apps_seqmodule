@@ -36,7 +36,6 @@ try:
 except ImportError:
     import pickle as pickle
 #
-import multiprocessing
 import copy
 import os
 import sys
@@ -51,6 +50,7 @@ from wwpdb.apps.seqmodule.util.FetchReferenceSequenceUtils import FetchReference
 from wwpdb.apps.seqmodule.util.SequenceReferenceData import SequenceReferenceData
 from rcsb.utils.multiproc.MultiProcUtil import MultiProcUtil
 from wwpdb.io.locator.PathInfo import PathInfo
+from wwpdb.io.misc.ResourceAllocation import ResourceAllocation
 from wwpdb.utils.config.ConfigInfoApp import ConfigInfoAppCommon
 from wwpdb.utils.dp.RcsbDpUtility import RcsbDpUtility
 
@@ -381,7 +381,7 @@ class LocalBlastSearchUtils(object):
         rD = {}
         try:
             if blastDataList:
-                numProc = int(multiprocessing.cpu_count() / 2)
+                numProc = ResourceAllocation(site_id=self.__siteId).get_worker_count("seqmodule.blast", "cpus / 2")
                 mpu = MultiProcUtil(verbose=True)
                 mpu.set(workerObj=self, workerMethod="runMultiLocalBlasts")
                 mpu.setWorkingDir(self.__sessionPath)
@@ -1122,7 +1122,7 @@ class LocalBlastSearchUtils(object):
         """Get Auth/Ref sequence alignments"""
         alignMap = {}
         try:
-            numProc = int(multiprocessing.cpu_count() / 2)
+            numProc = ResourceAllocation(site_id=self.__siteId).get_worker_count("seqmodule.ref_alignments", "cpus / 2")
             mpu = MultiProcUtil(verbose=True)
             mpu.set(workerObj=self, workerMethod="getMultiSeqAlignmentProcess")
             mpu.setWorkingDir(self.__sessionPath)
