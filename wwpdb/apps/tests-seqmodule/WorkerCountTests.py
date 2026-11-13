@@ -8,7 +8,8 @@ per entity use one worker per entity when the compute cluster is enabled.  The r
 count for each call site.  The tests replace the process pool, the site configuration and the CPU counts, so nothing
 real is started.
 """
-# pylint: disable=protected-access,unused-argument
+
+# pylint: disable=protected-access,unused-argument,no-member,abstract-method
 
 import json
 import multiprocessing
@@ -19,7 +20,7 @@ import unittest
 from unittest import mock
 
 try:
-    import MySQLdb  # noqa: F401
+    import MySQLdb  # noqa: F401  # pylint: disable=unused-import
 except ImportError:
     # The database driver is not needed here; a stand-in lets the modules under test import.
     _MYSQL = mock.MagicMock()
